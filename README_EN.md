@@ -61,6 +61,16 @@ settings to them.
 
 ## Download & install
 
+### Microsoft Store (recommended)
+
+<a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft" /></a>
+
+[Open in the Microsoft Store](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) · x64 and ARM64, updated automatically by the Store;
+Settings › Updates can also check for and install Store updates. Start with Windows uses a startup task you can manage
+under Task Manager › Startup apps.
+
+### Installer
+
 Run `EncoDeck-Setup-<version>-win-x64.exe` from [Releases](https://github.com/TIANLI0/EncoDeck/releases).
 It installs per user into `%LOCALAPPDATA%\Programs\EncoDeck` without administrator rights.
 **Installing a newer version over an existing one upgrades it in place**, keeping settings, cache and
@@ -71,7 +81,7 @@ downloading it in the background; can be turned off, and preview versions are op
 size and SHA-256 are verified, nothing is installed until you click "Restart and update now", and
 EncoDeck starts again after the update.
 
-Requirements: Windows 10 19041 or later (Windows 11 recommended), x64.
+Requirements: Windows 10 19041 or later (Windows 11 recommended); the installer is x64, the Store version supports x64 and ARM64.
 
 ## Building
 

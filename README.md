@@ -35,6 +35,14 @@
 
 ## 下载与安装
 
+### Microsoft Store（推荐）
+
+<a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" width="200" alt="从 Microsoft 获取" /></a>
+
+[在 Microsoft Store 中打开](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) · 支持 x64 / ARM64，由商店自动更新；设置 › 更新 也可手动检查并安装商店更新。开机自启使用系统启动任务，可在任务管理器“启动应用”中管理。
+
+### 安装包
+
 从 [Releases](https://github.com/TIANLI0/EncoDeck/releases) 下载 `EncoDeck-Setup-<版本>-win-x64.exe` 运行即可：
 
 - 默认按用户安装到 `%LOCALAPPDATA%\Programs\EncoDeck`，无需管理员权限；
@@ -42,7 +50,7 @@
 - 卸载时会询问是否删除用户数据（`%LOCALAPPDATA%\EncoDeck`）；
 - **应用内更新**：设置 › 更新 可检查 GitHub Releases 上的新版本（默认每天自动检查并在后台下载，可关闭；可选择接收预览版）。安装包下载后会校验大小与 SHA-256，只有点击“立即重启并更新”才会安装，完成后自动重新启动 EncoDeck。
 
-系统要求：Windows 10 19041 及以上（推荐 Windows 11），x64。
+系统要求：Windows 10 19041 及以上（推荐 Windows 11）；安装包为 x64，商店版支持 x64 / ARM64。
 
 ## 自己编译
 
