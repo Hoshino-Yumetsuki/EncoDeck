@@ -47,9 +47,11 @@ public sealed partial class HomePage : Page
         {
             SyncDevices(f, ready);
 
-            bool spatial = f.Has(DeviceCapability.SpatialAudio) && f.State.Spatial is not null;
+            // Rows follow the (cached) model capabilities only, not whether the live value has been
+            // read yet, so the layout is the same right after a restart as once connected.
+            bool spatial = f.Has(DeviceCapability.SpatialAudio);
             SpatialRow.Visibility = spatial ? Visibility.Visible : Visibility.Collapsed;
-            SpatialValue.Text = f.SpatialMode switch
+            SpatialValue.Text = f.State.Spatial is null ? string.Empty : f.SpatialMode switch
             {
                 SpatialAudioMode.Fixed => Loc.Get("Spatial_Fixed"),
                 SpatialAudioMode.HeadTracking => Loc.Get("Spatial_HeadTracking"),
@@ -72,9 +74,10 @@ public sealed partial class HomePage : Page
 
     private void SyncDevices(FeaturesViewModel f, bool ready)
     {
-        bool available = f.Has(DeviceCapability.DualDeviceConnection) && f.State.SourceDevices is not null;
+        bool available = f.Has(DeviceCapability.DualDeviceConnection);
         DevicesCard.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
-        if (!available) return;
+        // Keep the card (and its height) while the list has not been read yet.
+        if (!available || f.State.SourceDevices is null) return;
 
         var devices = f.SourceDevices;
         string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsAudioActive}/{d.Name}")) + $"#{ready}";

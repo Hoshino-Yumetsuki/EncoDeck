@@ -142,7 +142,7 @@
                             <TextBlock x:Uid="Home_Devices" Text="Device management" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
                             <HyperlinkButton x:Uid="Home_DevicesMore" Content="More" HorizontalAlignment="Right" Padding="4,2" Click="OnOpenControls" />
                         </Grid>
-                        <Grid x:Name="DeviceHost" ColumnSpacing="8" />
+                        <Grid x:Name="DeviceHost" ColumnSpacing="8" MinHeight="104" />
                     </StackPanel>
                 </Border>
 

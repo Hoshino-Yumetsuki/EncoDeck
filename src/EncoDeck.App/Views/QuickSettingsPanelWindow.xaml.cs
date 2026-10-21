@@ -92,6 +92,9 @@ public sealed partial class QuickSettingsPanelWindow : Window
             Enter(target);
             return;
         }
+        // Other topmost windows (and the shell, when the Start menu was open) can end up above
+        // the panel: keep it at the top of the topmost band while Quick Settings is open.
+        _ = WindowInterop.EnsureTopmost(this);
         if (target == _target && !_leaving) return;
 
         // Sub-page, media card or content change: glide to the new place (and come back if leaving).
@@ -160,6 +163,7 @@ public sealed partial class QuickSettingsPanelWindow : Window
         WindowInterop.MoveAndResize(this, target with { Y = (int)Math.Round(_y) });
         WindowInterop.SetWindowAlpha(this, (byte)Math.Round(255 * _alpha));
         WindowInterop.GetAppWindow(this).Show(activateWindow: false);
+        _ = WindowInterop.EnsureTopmost(this);
         if (animate) Animate(target.Y, 1, EnterMilliseconds, EaseOutCubic, completed: null);
     }
 
