@@ -67,7 +67,8 @@ public partial class App : Application
     {
         Device = new DeviceViewModel(Host.Store, Host.Devices, Host.Settings, Host.Resources, dispatcher);
         Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Device, dispatcher);
-        Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates, dispatcher,
+        Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
+            Host.StoreUpdates, static () => 0, dispatcher,
             static () => { }, Host.Loggers.CreateLogger<SettingsViewModel>());
         Windows = new WindowManager(new ThemeService(Host.Settings), static () => false, static () => { });
     }
@@ -169,7 +170,8 @@ public partial class App : Application
         Windows = new WindowManager(theme, () => Host.Settings.Current.KeepRunningInTray, ExitApp);
         Device = new DeviceViewModel(Host.Store, Host.Devices, Host.Settings, Host.Resources, _dispatcher);
         Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Device, _dispatcher);
-        Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates, _dispatcher,
+        Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
+            Host.StoreUpdates, () => Windows.MainHandle, _dispatcher,
             ExitApp, Host.Loggers.CreateLogger<SettingsViewModel>());
 
         _tray = new TrayIconService(Device, Host.Settings, Windows, ExitApp);
@@ -190,6 +192,7 @@ public partial class App : Application
         Host.Start();
 
         HandleCommandLine(commandLine, isLaunch: true);
+        if (PackageIdentity.IsPackaged && Host.Settings.Current.AutoCheckUpdates != false) _ = CheckStoreUpdatesAsync();
         // Launched into the tray (e.g. with Windows): give back what start-up touched.
         Windows.TrimWhenIdle();
     }
@@ -327,6 +330,22 @@ public partial class App : Application
     }
 
     /// <summary>A background download finished: one tray notification, never over a game (retried later instead).</summary>
+    /// <summary>Start-up Store check for the MSIX build; only a tray notification, installing stays the user's choice.</summary>
+    private async Task CheckStoreUpdatesAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Settings.CheckStoreUpdatesCommand.ExecuteAsync(null);
+            if (Settings.IsStoreUpdateAvailable && !_exiting && FullscreenDetector.GetState() == InterruptionState.Available)
+                _tray?.Notify(Loc.Get("Notify_StoreUpdate_Title"), Loc.Get("Notify_StoreUpdate_Message"));
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning("Store update check failed ({Reason})", ex.GetType().Name);
+        }
+    }
+
     private void OnUpdateReady(object? sender, UpdateRelease release) => _dispatcher?.TryEnqueue(() =>
     {
         _pendingUpdateNotice = release;

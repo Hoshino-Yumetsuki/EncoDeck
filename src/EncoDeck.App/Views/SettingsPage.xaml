@@ -192,6 +192,24 @@
                 </StackPanel>
             </Border>
 
+            <!-- Updates through the Microsoft Store (MSIX build) -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind services:Ui.Collapsed(ViewModel.HasSelfUpdate)}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Updates" Text="Updates" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow Header="{x:Bind ViewModel.CurrentVersionText}" Description="{x:Bind ViewModel.StoreUpdateStatus, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Uid="Settings_CheckUpdates" Content="Check for updates" Command="{x:Bind ViewModel.CheckStoreUpdatesCommand}" />
+                            <Button x:Uid="Settings_StoreUpdate" Style="{StaticResource AccentButtonStyle}" Content="Update"
+                                    Command="{x:Bind ViewModel.InstallStoreUpdateCommand}" Visibility="{x:Bind services:Ui.Visible(ViewModel.IsStoreUpdateAvailable), Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_StoreAutoUpdate" Header="Check for updates automatically"
+                                         Description="Checks the Microsoft Store at start-up and lets you know when a new version is available.">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.AutoCheckUpdates, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
             <!-- About -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="8">

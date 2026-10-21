@@ -459,4 +459,10 @@
   <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>已在后台下载。前往 设置 › 更新 安装。</value></data>
   <data name="Notify_Updated_Title" xml:space="preserve"><value>EncoDeck 已更新到 {0}</value></data>
   <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck 正在通知区域中运行。</value></data>
+  <data name="Settings_StoreUpdate.Content" xml:space="preserve"><value>更新</value></data>
+  <data name="Settings_StoreAutoUpdate.Header" xml:space="preserve"><value>自动检查更新</value></data>
+  <data name="Settings_StoreAutoUpdate.Description" xml:space="preserve"><value>启动时检查 Microsoft Store，有新版本时通知你。</value></data>
+  <data name="StoreUpdate_Available" xml:space="preserve"><value>Microsoft Store 中有新版本。</value></data>
+  <data name="Notify_StoreUpdate_Title" xml:space="preserve"><value>EncoDeck 有更新</value></data>
+  <data name="Notify_StoreUpdate_Message" xml:space="preserve"><value>打开设置，通过 Microsoft Store 更新。</value></data>
 </root>

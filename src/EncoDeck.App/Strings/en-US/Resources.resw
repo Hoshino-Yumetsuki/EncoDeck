@@ -459,4 +459,10 @@
   <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>Downloaded in the background. Install it from Settings › Updates.</value></data>
   <data name="Notify_Updated_Title" xml:space="preserve"><value>EncoDeck was updated to {0}</value></data>
   <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck is running in the notification area.</value></data>
+  <data name="Settings_StoreUpdate.Content" xml:space="preserve"><value>Update</value></data>
+  <data name="Settings_StoreAutoUpdate.Header" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="Settings_StoreAutoUpdate.Description" xml:space="preserve"><value>Checks the Microsoft Store at start-up and lets you know when a new version is available.</value></data>
+  <data name="StoreUpdate_Available" xml:space="preserve"><value>A new version is available in the Microsoft Store.</value></data>
+  <data name="Notify_StoreUpdate_Title" xml:space="preserve"><value>EncoDeck update available</value></data>
+  <data name="Notify_StoreUpdate_Message" xml:space="preserve"><value>Open Settings to update through the Microsoft Store.</value></data>
 </root>

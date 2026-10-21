@@ -32,6 +32,7 @@ public sealed class AppHost : IAsyncDisposable
         Updates = new UpdateManager(
             new GitHubUpdateClient(new HttpClient(), paths.UpdatesDirectory, SemanticVersion.FromAssembly(typeof(AppHost).Assembly)),
             settings, Path.Combine(paths.UpdatesDirectory, "last-check.txt"), loggers.CreateLogger<UpdateManager>());
+        StoreUpdates = new StoreUpdateService(loggers.CreateLogger<StoreUpdateService>());
         Paths = paths;
         FileLog = fileLog;
         Loggers = loggers;
@@ -62,6 +63,9 @@ public sealed class AppHost : IAsyncDisposable
 
     /// <summary>GitHub Releases check and background download; installs only when the user asks.</summary>
     public UpdateManager Updates { get; }
+
+    /// <summary>Store updates for the MSIX build (see <see cref="PackageIdentity"/>).</summary>
+    public StoreUpdateService StoreUpdates { get; }
 
     public StartupRegistration Startup { get; } = new();
 

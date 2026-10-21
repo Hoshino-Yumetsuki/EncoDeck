@@ -104,3 +104,47 @@ jobs:
             EncoDeck.Probe-win-x64.zip
             installer/*.exe
             installer/*.sha256
+
+  # Microsoft Store: build the MSIX bundle and submit it to Partner Center (certification + publish).
+  # Needs the STORE_* secrets from a Microsoft Entra app added in Partner Center (Account settings →
+  # User management → Microsoft Entra applications, role Manager). Without them the job is skipped.
+  store:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-test
+    runs-on: windows-latest
+    env:
+      STORE_TENANT_ID: ${{ secrets.STORE_TENANT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.STORE_TENANT_ID != ''
+
+      - uses: actions/setup-dotnet@v4
+        if: env.STORE_TENANT_ID != ''
+        with:
+          global-json-file: global.json
+
+      - name: Build Store package
+        if: env.STORE_TENANT_ID != ''
+        shell: pwsh
+        run: |
+          dotnet restore src/EncoDeck.App
+          ./build/build-msix.ps1 -SkipTests -Version $env:GITHUB_REF_NAME.TrimStart('v')
+
+      - uses: microsoft/setup-msstore-cli@v1
+        if: env.STORE_TENANT_ID != ''
+
+      - name: Submit to Microsoft Store
+        if: env.STORE_TENANT_ID != ''
+        shell: pwsh
+        run: |
+          msstore reconfigure --tenantId "${{ secrets.STORE_TENANT_ID }}" --sellerId "${{ secrets.STORE_SELLER_ID }}" `
+            --clientId "${{ secrets.STORE_CLIENT_ID }}" --clientSecret "${{ secrets.STORE_CLIENT_SECRET }}"
+          $upload = Get-ChildItem artifacts/*.msixupload | Select-Object -First 1
+          msstore publish $PWD -i $upload.FullName -id 9PN6D8G1K9WZ
+          if ($LASTEXITCODE -ne 0) { throw "msstore publish failed." }
+
+      - uses: actions/upload-artifact@v4
+        if: env.STORE_TENANT_ID != ''
+        with:
+          name: EncoDeck-msixupload
+          path: artifacts/*.msixupload

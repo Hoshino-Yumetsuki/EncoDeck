@@ -28,6 +28,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly DeviceResourceSync _artwork;
     private readonly string _artworkRoot;
     private readonly UpdateManager _updates;
+    private readonly StoreUpdateService _storeUpdates;
+    private readonly Func<nint> _ownerWindow;
     private readonly DispatcherQueue _dispatcher;
     private readonly Action _exit;
     private readonly ILogger _logger;
@@ -38,13 +40,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <param name="artworkRoot">Opened by "Open folder" while nothing is cached for the device yet.</param>
     /// <param name="exit">The app's clean shutdown, used after the installer has been started.</param>
     public SettingsViewModel(ISettingsStore settings, StartupRegistration startup, DeviceResourceSync artwork, string artworkRoot,
-        UpdateManager updates, DispatcherQueue dispatcher, Action exit, ILogger<SettingsViewModel> logger)
+        UpdateManager updates, StoreUpdateService storeUpdates, Func<nint> ownerWindow, DispatcherQueue dispatcher, Action exit, ILogger<SettingsViewModel> logger)
     {
         _settings = settings;
         _startup = startup;
         _artwork = artwork;
         _artworkRoot = artworkRoot;
         _updates = updates;
+        _storeUpdates = storeUpdates;
+        _ownerWindow = ownerWindow;
         _dispatcher = dispatcher;
         _exit = exit;
         _logger = logger;
@@ -361,6 +365,52 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
         catch (Exception ex) { _logger.LogWarning("Update failed ({Reason})", ex.GetType().Name); }
         finally { ApplyUpdates(); }
+    }
+
+    // ---- Store updates (MSIX build) ------------------------------------------------------------------
+
+    [ObservableProperty] public partial string StoreUpdateStatus { get; set; } = Loc.Get("Update_NeverChecked");
+    [ObservableProperty] public partial bool IsStoreUpdateAvailable { get; set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckStoreUpdatesCommand), nameof(InstallStoreUpdateCommand))]
+    public partial bool IsStoreUpdateIdle { get; set; } = true;
+
+    [RelayCommand(CanExecute = nameof(IsStoreUpdateIdle))]
+    private async Task CheckStoreUpdatesAsync()
+    {
+        IsStoreUpdateIdle = false;
+        StoreUpdateStatus = Loc.Get("Update_Checking");
+        try
+        {
+            IsStoreUpdateAvailable = await _storeUpdates.CheckAsync() > 0;
+            StoreUpdateStatus = Loc.Get(IsStoreUpdateAvailable ? "StoreUpdate_Available" : "Update_UpToDate");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Store update check failed ({Reason})", ex.GetType().Name);
+            StoreUpdateStatus = Loc.Get("Update_Error_Other");
+        }
+        finally { IsStoreUpdateIdle = true; }
+    }
+
+    /// <summary>Hands the download and install to the Store, which restarts EncoDeck when it is done.</summary>
+    [RelayCommand(CanExecute = nameof(IsStoreUpdateIdle))]
+    private async Task InstallStoreUpdateAsync()
+    {
+        IsStoreUpdateIdle = false;
+        StoreUpdateStatus = Loc.Get("Update_Installing");
+        try
+        {
+            bool installed = await _storeUpdates.InstallAsync(_ownerWindow());
+            if (!installed) await CheckStoreUpdatesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Store update failed ({Reason})", ex.GetType().Name);
+            StoreUpdateStatus = Loc.Get("Update_Error_Other");
+        }
+        finally { IsStoreUpdateIdle = true; }
     }
 
     private static string Bytes(long bytes) => bytes switch
