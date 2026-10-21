@@ -6,6 +6,7 @@ using EncoDeck.Core.Profiles;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Cache;
 using EncoDeck.Platform.Logging;
+using EncoDeck.Platform.Packaging;
 using EncoDeck.Platform.Paths;
 using EncoDeck.Platform.Resources;
 using EncoDeck.Platform.Settings;
@@ -112,7 +113,8 @@ public sealed class AppHost : IAsyncDisposable
         Resources.StartWatching();
         ResourceSync.Start();
         Devices.Start();
-        Updates.Start();
+        // The Store updates the MSIX build; GitHub Releases are for the installer build only.
+        if (!PackageIdentity.IsPackaged) Updates.Start();
     }
 
     public async ValueTask DisposeAsync()

@@ -273,6 +273,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     // ---- Updates --------------------------------------------------------------------------------
 
+    /// <summary>False for the MSIX (Store) build, which the Store keeps up to date.</summary>
+    public bool HasSelfUpdate { get; } = !EncoDeck.Platform.Packaging.PackageIdentity.IsPackaged;
+
     public string CurrentVersionText => Loc.Format("Update_CurrentVersion", Version);
 
     public bool AutoCheckUpdates

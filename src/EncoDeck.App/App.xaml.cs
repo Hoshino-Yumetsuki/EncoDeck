@@ -6,6 +6,7 @@ using EncoDeck.Core.Notifications;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Input;
 using EncoDeck.Platform.Instance;
+using EncoDeck.Platform.Packaging;
 using EncoDeck.Platform.Shell;
 using EncoDeck.Platform.Startup;
 using EncoDeck.Platform.Updates;
@@ -74,6 +75,13 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         string[] commandLine = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        // The MSIX StartupTask launches without arguments; treat it like the Run entry's --background.
+        if (PackageIdentity.IsPackaged
+            && Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs().Kind
+                == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.StartupTask)
+        {
+            commandLine = [.. commandLine, StartupRegistration.BackgroundArgument];
+        }
         _dispatcher = DispatcherQueue.GetForCurrentThread();
 
         int modelTest = Array.FindIndex(commandLine, a => string.Equals(a, ModelSelfTest.Argument, StringComparison.OrdinalIgnoreCase));

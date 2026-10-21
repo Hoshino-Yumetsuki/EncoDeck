@@ -168,8 +168,8 @@
                 </StackPanel>
             </Border>
 
-            <!-- Updates (GitHub Releases) -->
-            <Border Style="{StaticResource CardStyle}">
+            <!-- Updates (GitHub Releases); the Store build is updated by the Store -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind services:Ui.Visible(ViewModel.HasSelfUpdate)}">
                 <StackPanel Spacing="12">
                     <TextBlock x:Uid="Settings_Updates" Text="Updates" Style="{StaticResource BodyStrongTextBlockStyle}" />
                     <controls:SettingRow Header="{x:Bind ViewModel.CurrentVersionText}" Description="{x:Bind ViewModel.UpdateStatus, Mode=OneWay}">
