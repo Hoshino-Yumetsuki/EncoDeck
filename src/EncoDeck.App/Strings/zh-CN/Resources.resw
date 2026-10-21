@@ -149,6 +149,23 @@
   <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>关闭窗口后继续在通知区域运行</value></data>
   <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>在快速设置上方显示耳机面板</value></data>
   <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>仅限 Windows 11。随快速设置（Win+A）一起打开和关闭。</value></data>
+  <data name="Settings_Hotkeys.Text" xml:space="preserve"><value>快捷键</value></data>
+  <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>在任何程序中都能切换降噪模式，EncoDeck 只在通知区域运行时也可以。点击按钮，然后按下要使用的按键组合。</value></data>
+  <data name="Settings_HotkeyToggle.Header" xml:space="preserve"><value>降噪 / 通透切换</value></data>
+  <data name="Settings_HotkeyToggle.Description" xml:space="preserve"><value>在降噪和通透之间切换；处于其他模式时切换到降噪。</value></data>
+  <data name="Settings_HotkeyCycle.Header" xml:space="preserve"><value>下一个模式</value></data>
+  <data name="Settings_HotkeyCycle.Description" xml:space="preserve"><value>降噪 → 自适应 → 通透 → 关闭，只切换耳机支持的模式。</value></data>
+  <data name="Settings_HotkeyAnc.Header" xml:space="preserve"><value>降噪</value></data>
+  <data name="Settings_HotkeyAdaptive.Header" xml:space="preserve"><value>自适应</value></data>
+  <data name="Settings_HotkeyTransparency.Header" xml:space="preserve"><value>通透</value></data>
+  <data name="Settings_HotkeyOff.Header" xml:space="preserve"><value>关闭降噪</value></data>
+  <data name="Hotkey_None" xml:space="preserve"><value>未设置</value></data>
+  <data name="Hotkey_Recording" xml:space="preserve"><value>请按下快捷键…</value></data>
+  <data name="Hotkey_InUse" xml:space="preserve"><value>已被其他程序或系统占用，请换一个组合。</value></data>
+  <data name="Hotkey_Invalid" xml:space="preserve"><value>无法使用这个组合。</value></data>
+  <data name="Hotkey_NeedsModifier" xml:space="preserve"><value>需要同时按下 Ctrl、Alt、Shift 或 Win（F1–F24 可以单独使用）。Esc 取消。</value></data>
+  <data name="Hotkey_Clear.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>移除快捷键</value></data>
+  <data name="Hotkey_Clear.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>移除快捷键</value></data>
   <data name="Settings_Theme.Header" xml:space="preserve"><value>主题</value></data>
   <data name="Settings_Theme_System.Content" xml:space="preserve"><value>跟随系统</value></data>
   <data name="Settings_Theme_Light.Content" xml:space="preserve"><value>浅色</value></data>

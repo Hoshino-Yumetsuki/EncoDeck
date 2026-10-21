@@ -34,6 +34,8 @@ sound from your PC instead of reaching for your phone.
   when it is not reporting.
 - **Noise control**: noise cancelling (high / moderate / low / auto), adaptive, transparency, off —
   stays in sync when you change it on the earbuds or your phone.
+- **Global hotkeys**: switch between noise cancelling and transparency, step through the modes or
+  jump to one from any app (fullscreen games included); bind them in Settings › Hotkeys.
 - **Real device communication**: every change is sent over Bluetooth RFCOMM, acknowledged and read
   back from the earbuds; failures roll back. EncoDeck never shows simulated state.
 - **Fluent Design**: WinUI 3, Mica / Acrylic, light & dark, system accent colour, Chinese / English.

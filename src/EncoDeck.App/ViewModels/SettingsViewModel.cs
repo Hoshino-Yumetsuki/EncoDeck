@@ -102,6 +102,27 @@ public sealed partial class SettingsViewModel : ObservableObject
         set => Update(s => s with { ShowAboveQuickSettings = value }, nameof(ShowAboveQuickSettings));
     }
 
+    /// <summary>The action's hotkey as stored (<see cref="Hotkey"/> text), or null.</summary>
+    public string? GetHotkey(HotkeyAction action) => S.Hotkeys?.Get(action);
+
+    /// <summary>Sets or (null) removes a hotkey. A combination does one thing: any other action using it loses it.</summary>
+    public void SetHotkey(HotkeyAction action, Hotkey? hotkey)
+    {
+        string? text = hotkey?.ToString();
+        _settings.Update(s =>
+        {
+            var bindings = s.Hotkeys ?? new HotkeyBindings();
+            if (text is not null)
+            {
+                foreach (var other in Enum.GetValues<HotkeyAction>())
+                {
+                    if (other != action && bindings.Get(other) == text) bindings = bindings.With(other, null);
+                }
+            }
+            return s with { Hotkeys = bindings.With(action, text) };
+        });
+    }
+
     public bool ShowConnectionPopup
     {
         get => S.ShowConnectionPopup;

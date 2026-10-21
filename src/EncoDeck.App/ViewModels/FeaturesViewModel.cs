@@ -100,6 +100,24 @@ public sealed class FeaturesViewModel
     /// <summary>Official mutex: EQ changes and the bass engine switch need enhanced game sound off.</summary>
     public bool GameSoundBlocksSoundChanges => Toggle(DeviceToggle.GamingMode) == true && GameSoundType != 0;
 
+    /// <summary>
+    /// <see cref="GameSoundBlocksSoundChanges"/> after reading game mode and game sound from the
+    /// earbuds again; the stored values can be out of date. A failed read keeps the stored values.
+    /// </summary>
+    public async Task<bool> CheckGameSoundBlocksAsync()
+    {
+        if (!GameSoundBlocksSoundChanges) return false;
+        try
+        {
+            await _commands.RefreshGameModeAsync();
+        }
+        catch (Exception)
+        {
+            // Best effort: decide with what is known.
+        }
+        return GameSoundBlocksSoundChanges;
+    }
+
     /// <summary>Turns enhanced game sound off the way the official mutex dialog does.</summary>
     public async Task<bool> ReleaseGameSoundAsync()
     {

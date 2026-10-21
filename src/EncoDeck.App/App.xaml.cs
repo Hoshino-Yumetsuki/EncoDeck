@@ -4,6 +4,7 @@ using EncoDeck.App.ViewModels;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Notifications;
 using EncoDeck.Core.State;
+using EncoDeck.Platform.Input;
 using EncoDeck.Platform.Instance;
 using EncoDeck.Platform.Shell;
 using EncoDeck.Platform.Startup;
@@ -53,6 +54,9 @@ public partial class App : Application
     public SettingsViewModel Settings { get; private set; } = null!;
 
     public WindowManager Windows { get; private set; } = null!;
+
+    /// <summary>The noise-control hotkeys; null in the diagnostic modes.</summary>
+    public HotkeyService? Hotkeys { get; private set; }
 
     /// <summary>Diagnostics only (<see cref="PopupSelfTest"/>): a host that is never started.</summary>
     internal void SetHostForDiagnostics(AppHost host) => Host = host;
@@ -164,6 +168,8 @@ public partial class App : Application
         _tray.Create();
         _quickSettings = new QuickSettingsCompanion(Host.Settings, Windows, Device,
             new QuickSettingsWatcher(Host.Loggers.CreateLogger<QuickSettingsWatcher>()), _dispatcher);
+        Hotkeys = new HotkeyService(Host.Settings, Device, new GlobalHotkeys(Host.Loggers.CreateLogger<GlobalHotkeys>()), _dispatcher,
+            Host.Loggers.CreateLogger<HotkeyService>());
 
         _instance.ActivationRequested += (_, forwarded) => _dispatcher.TryEnqueue(() => HandleCommandLine(forwarded, isLaunch: false));
         _instance.StartListening();
@@ -366,6 +372,7 @@ public partial class App : Application
         _noticeTimer?.Stop();
         _tray?.Dispose();
         _quickSettings?.Dispose();
+        Hotkeys?.Dispose();
         Windows?.CloseAll();
         try
         {

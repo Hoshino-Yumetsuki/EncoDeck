@@ -139,6 +139,20 @@ public class OppoFeatureTests
     }
 
     [Fact]
+    public async Task RefreshGameMode_ReadsChangesMadeElsewhere()
+    {
+        await using var h = await StartAsync();
+        Assert.False(h.State.Toggles[DeviceToggle.GamingMode].Value);
+        // Game mode on and enhanced game sound chosen on the phone, without events reaching us.
+        h.Device.Features[0x28] = 1;
+        h.Device.GameSoundType = 3;
+        Assert.True((await h.Controller.RefreshGameModeAsync(Ct)).IsSuccess);
+        Assert.True(h.State.Toggles[DeviceToggle.GamingMode].Value);
+        Assert.Equal(3, h.State.GameSound!.Value.SelectedType);
+        Assert.Equal(0, h.Count(OppoCommand.SetFeature) + h.Count(OppoCommand.SetGameSound));
+    }
+
+    [Fact]
     public async Task SetGameSound_RejectsTypeNotOffered()
     {
         await using var h = await StartAsync();

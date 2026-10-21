@@ -42,6 +42,36 @@
                 </StackPanel>
             </Border>
 
+            <!-- Global hotkeys for noise control -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="2">
+                        <TextBlock x:Uid="Settings_Hotkeys" Text="Hotkeys" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Uid="Settings_HotkeysSummary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
+                                   Text="Switch noise control from any app, also while EncoDeck is only in the notification area. Click a box, then press the keys." />
+                    </StackPanel>
+                    <controls:SettingRow x:Uid="Settings_HotkeyToggle" Header="Noise cancelling / transparency"
+                                         Description="Switches between the two; from any other mode to noise cancelling.">
+                        <controls:HotkeyBox ActionName="ToggleNoise" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_HotkeyCycle" Header="Next mode" Description="Noise cancelling → adaptive → transparency → off.">
+                        <controls:HotkeyBox ActionName="CycleNoise" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_HotkeyAnc" Header="Noise cancelling">
+                        <controls:HotkeyBox ActionName="NoiseCancellation" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_HotkeyAdaptive" Header="Adaptive">
+                        <controls:HotkeyBox ActionName="Adaptive" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_HotkeyTransparency" Header="Transparency">
+                        <controls:HotkeyBox ActionName="Transparency" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_HotkeyOff" Header="Noise control off">
+                        <controls:HotkeyBox ActionName="NoiseOff" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
             <!-- Connection popup -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="12">

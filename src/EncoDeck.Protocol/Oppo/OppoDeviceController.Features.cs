@@ -132,6 +132,22 @@ public sealed partial class OppoDeviceController : IAdvancedDeviceCommands
             cancellationToken);
     }
 
+    /// <summary>
+    /// The game-sound type is only reported when asked (no event), and game mode can change on the
+    /// phone or with a gesture: the mutex dialog reads both fresh before deciding.
+    /// </summary>
+    public async Task<CommandResult> RefreshGameModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsAvailable(DeviceCapability.GamingMode)) return CommandResult.Unsupported("Game mode is not available on this model.");
+        if (!_session.IsOpen) return CommandResult.NotConnected;
+        byte[] ids = [.. Model.FeatureSwitches.Where(f => f.Toggle is DeviceToggle.GamingMode or DeviceToggle.LowLatency).Select(f => f.FeatureId)];
+        var requests = new List<OppoRequest>();
+        if (ids.Length > 0) requests.Add(new OppoRequest(OppoCommand.QueryFeatureStatus, [(byte)ids.Length, .. ids], SequenceMode.FixedQuery));
+        if (Model.GameSoundTypes.Count > 0) requests.Add(new OppoRequest(OppoCommand.QueryGameSound, []));
+        var status = await RunQueriesAsync(requests, cancellationToken).ConfigureAwait(false);
+        return ToCommandResult(status, "Game mode");
+    }
+
     public Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default)
     {
         if (!IsAvailable(DeviceCapability.PromptVolume)) return Task.FromResult(CommandResult.Unsupported("Prompt volume is not available on this model."));

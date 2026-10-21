@@ -4,6 +4,7 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Cache;
+using EncoDeck.Platform.Input;
 using EncoDeck.Platform.Logging;
 using EncoDeck.Platform.Settings;
 using EncoDeck.Platform.Shell;
@@ -79,11 +80,53 @@ public class PopupPlacementTests
     }
 
     [Fact]
+    public void AboveQuickSettings_GoesBesideTheCardsWhenTheTopIsTooLow()
+    {
+        // Tall cards (media card, sub-page) on the right: to their left, bottoms aligned.
+        var rect = PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(1984, 200, 2560, 1528), WorkArea150, 300, 18);
+        Assert.Equal(new PixelRect(1444, 1210, 540, 300), rect);
+        // Taskbar on the left: to their right.
+        var left = PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(0, 200, 576, 1528), WorkArea150, 300, 18);
+        Assert.Equal(new PixelRect(576, 1210, 540, 300), left);
+    }
+
+    [Fact]
     public void AboveQuickSettings_NullWhenItDoesNotFit()
     {
-        Assert.Null(PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(1984, 200, 2560, 1528), WorkArea150, 300, 18));
         Assert.Null(PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(1984, 916, 2010, 1528), WorkArea150, 300, 18));
+        // Taller than the screen.
+        Assert.Null(PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(1984, 200, 2560, 1528), WorkArea150, 1600, 18));
+        // No room above and none beside.
+        Assert.Null(PopupPlacement.PlaceAboveQuickSettings(PixelRect.FromLtrb(0, 200, 2560, 1528), WorkArea150, 300, 18));
     }
+}
+
+public class GlobalHotkeysTests
+{
+    // Nobody's combination; registered only for the duration of the test.
+    private static readonly Hotkey Unused = new(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, 0x87);
+
+    [Fact]
+    public void Registers_RaisesPressed_AndReportsTakenCombinations()
+    {
+        using var hotkeys = new GlobalHotkeys(NullLogger<GlobalHotkeys>.Instance);
+        var pressed = new List<int>();
+        hotkeys.Pressed += (_, id) => pressed.Add(id);
+
+        Assert.Equal(HotkeyRegistration.Registered, hotkeys.Register(7, Unused));
+        SendMessage(hotkeys.WindowHandle, 0x0312, 7, 0); // WM_HOTKEY, as Windows delivers it
+        Assert.Equal([7], pressed);
+
+        // The same combination for a second id is taken (by ourselves, here).
+        Assert.Equal(HotkeyRegistration.InUse, hotkeys.Register(8, Unused));
+        Assert.Equal(HotkeyRegistration.Invalid, hotkeys.Register(9, new Hotkey(HotkeyModifiers.None, 0x41)));
+
+        hotkeys.UnregisterAll();
+        Assert.Equal(HotkeyRegistration.Registered, hotkeys.Register(8, Unused));
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SendMessageW")]
+    private static extern nint SendMessage(nint hwnd, uint message, nint wParam, nint lParam);
 }
 
 public class LogRedactorTests
@@ -136,6 +179,29 @@ public class SettingsStoreTests
             var store = new JsonSettingsStore(path, NullLogger<JsonSettingsStore>.Instance);
             Assert.Equal(new AppSettings(), store.Current);
             Assert.True(File.Exists(path + ".bak"));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Hotkeys_PersistAndOlderFilesHaveNone()
+    {
+        string dir = Directory.CreateTempSubdirectory("encodeck-test").FullName;
+        try
+        {
+            string path = Path.Combine(dir, "settings.json");
+            File.WriteAllText(path, """{ "schemaVersion": 1, "keepRunningInTray": true }""");
+            var store = new JsonSettingsStore(path, NullLogger<JsonSettingsStore>.Instance);
+            Assert.Null(store.Current.Hotkeys);
+
+            store.Update(s => s with { Hotkeys = new HotkeyBindings { ToggleNoise = "Ctrl+Alt+N", CycleNoise = "F13" } });
+            var reloaded = new JsonSettingsStore(path, NullLogger<JsonSettingsStore>.Instance).Current.Hotkeys;
+            Assert.Equal("Ctrl+Alt+N", reloaded?.ToggleNoise);
+            Assert.Equal("F13", reloaded?.CycleNoise);
+            Assert.Null(reloaded?.Transparency);
         }
         finally
         {

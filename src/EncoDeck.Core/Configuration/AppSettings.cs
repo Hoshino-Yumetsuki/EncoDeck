@@ -78,8 +78,12 @@ public sealed record AppSettings
     /// <summary>Also offer pre-releases (e.g. 0.6.0-beta.1).</summary>
     public bool IncludePrereleaseUpdates { get; init; }
 
+    /// <summary>System-wide noise-control hotkeys; none are set by default (a hotkey takes the combination away from every other app).</summary>
+    public HotkeyBindings? Hotkeys { get; init; }
+
     public AppSettings Normalize() => this with
     {
+        Hotkeys = Hotkeys?.Normalize(),
         AutoCheckUpdates = AutoCheckUpdates ?? true,
         PopupDurationSeconds = Math.Clamp(PopupDurationSeconds, 1.5, 30),
         // Missing in settings saved by older versions (read as 0): the standard size.

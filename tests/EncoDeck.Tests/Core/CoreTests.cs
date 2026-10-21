@@ -221,6 +221,54 @@ public class AppSettingsTests
     }
 }
 
+public class HotkeyTests
+{
+    [Theory]
+    [InlineData("Ctrl+Alt+N", HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x4E)]
+    [InlineData(" shift + win + f9 ", HotkeyModifiers.Shift | HotkeyModifiers.Windows, 0x78)]
+    [InlineData("Ctrl+Num+", HotkeyModifiers.Control, 0x6B)]
+    [InlineData("Alt+Num7", HotkeyModifiers.Alt, 0x67)]
+    [InlineData("Ctrl+Shift+;", HotkeyModifiers.Control | HotkeyModifiers.Shift, 0xBA)]
+    [InlineData("F13", HotkeyModifiers.None, 0x7C)]
+    [InlineData("Ctrl+0xB3", HotkeyModifiers.Control, 0xB3)]
+    public void Parses(string text, HotkeyModifiers modifiers, int key)
+    {
+        Assert.True(Hotkey.TryParse(text, out var hotkey));
+        Assert.Equal(new Hotkey(modifiers, key), hotkey);
+        // Round trip through the canonical text.
+        Assert.True(Hotkey.TryParse(hotkey.ToString(), out var again));
+        Assert.Equal(hotkey, again);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("N")] // a plain key would be taken away from typing
+    [InlineData("Ctrl+Alt")] // modifiers only
+    [InlineData("Ctrl+Shift")]
+    [InlineData("Hyper+N")]
+    [InlineData("Ctrl+NoSuchKey")]
+    public void RejectsUnusable(string? text) => Assert.False(Hotkey.TryParse(text, out _));
+
+    [Fact]
+    public void Formats_InTheUsualOrder()
+    {
+        var hotkey = new Hotkey(HotkeyModifiers.Windows | HotkeyModifiers.Shift | HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x41);
+        Assert.Equal("Ctrl+Alt+Shift+Win+A", hotkey.ToString());
+        Assert.Equal("Ctrl + Alt + Shift + Win + A", hotkey.Format(" + "));
+    }
+
+    [Fact]
+    public void Bindings_NormalizeToCanonicalText()
+    {
+        var bindings = new HotkeyBindings { ToggleNoise = "alt + ctrl + n", Transparency = "T" }.Normalize();
+        Assert.Equal("Ctrl+Alt+N", bindings.ToggleNoise);
+        Assert.Null(bindings.Transparency);
+        Assert.Equal("Ctrl+Alt+N", bindings.Get(HotkeyAction.ToggleNoise));
+        Assert.Equal("F9", bindings.With(HotkeyAction.NoiseOff, "F9").NoiseOff);
+    }
+}
+
 public class BluetoothAddressTests
 {
     [Fact]

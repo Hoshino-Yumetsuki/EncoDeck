@@ -21,6 +21,9 @@ public interface IAdvancedDeviceCommands
 
     Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default);
 
+    /// <summary>Re-reads game mode, low latency and the game-sound type (read only).</summary>
+    Task<CommandResult> RefreshGameModeAsync(CancellationToken cancellationToken = default);
+
     Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default);
 
     Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default);

@@ -402,6 +402,13 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
         {
             result = new CommandResult(CommandStatus.Cancelled);
         }
+        catch (Exception ex)
+        {
+            // E.g. the session being torn down mid-command. The pending marker must still go: a
+            // marker left behind keeps the control disabled until the app restarts.
+            _logger.LogWarning(ex, "Command {Name} failed", name);
+            result = new CommandResult(CommandStatus.TransportError, ex.Message);
+        }
 
         _store.TryUpdate(_identity.DeviceId, state =>
         {

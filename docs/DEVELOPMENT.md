@@ -60,7 +60,9 @@ tests/EncoDeck.Tests     单元测试（含 X4 实测抓包回归）
 10. `AppWindow` 的尺寸/位置是物理像素，需要乘以 DPI 缩放。
 11. `BluetoothDevice.GetDeviceSelectorFromPairingState(true)` 的结果偶尔包含 `FromIdAsync` 拒绝的条目，必须逐个容错。
 12. **设置文件里缺少的 `init` 属性读成类型默认值**（`false` / `0`），不是声明里的默认值：默认开启的新开关要用 `bool?` 并在 `Normalize()` 补回（见 `ShowAboveQuickSettings`、`PopupScale`）。
-13. **Windows 11 快速设置没有扩展 API**（`QuickSettingsWatcher`）：在 26H2 build 26340 上实测，它是 `ShellHost.exe` 的 `ControlCenterWindow`，窗口和工作区一样高且透明，只有窗口区域（`GetWindowRgnBox`，卡片加 12 DIP 外边距）可见、能点击；UIA 读不到内部元素。它一失去前台就开始约 300 ms 的关闭动画然后才 HIDE，所以面板在前台切走时就退场。面板必须 `WS_EX_NOACTIVATE`，否则一点它快速设置就关闭。更早的 Windows 11 版本若不是这个窗口类，功能静默不生效。
+13. **Windows 11 快速设置没有扩展 API**（`QuickSettingsWatcher`）：在 26H2 build 26340 上实测，它是 `ShellHost.exe` 的 `ControlCenterWindow`，窗口和工作区一样高且透明，只有窗口区域（`GetWindowRgnBox`，卡片加 12 DIP 外边距）可见、能点击；UIA 读不到内部元素。它一失去前台就开始约 300 ms 的关闭动画然后才 HIDE，所以面板在前台切走时就退场。面板必须 `WS_EX_NOACTIVATE`，否则一点它快速设置就关闭。更早的 Windows 11 版本若不是这个窗口类，功能静默不生效。面板高度会随降噪档位行出现而变化，上方放不下时改放在卡片旁边（`PopupPlacement.PlaceAboveQuickSettings`）。
+14. **WinUI `RadioButtons` 在同一轮里重建 `Items` 再设 `SelectedIndex`，选中状态不显示**（`--ui-snapshot` 可复现）：设备状态驱动的单选一律用普通 `RadioButton` + `GroupName`，每次同步直接设 `IsChecked`（音效页 EQ、空间音频）。
+15. **全局快捷键**（`GlobalHotkeys`）：`RegisterHotKey` 注册到 UI 线程上的 message-only 窗口，WinUI 的消息循环会派发 `WM_HOTKEY`；同一组合只能注册一次（`ERROR_HOTKEY_ALREADY_REGISTERED` = 被占用）。录制新组合时要先注销已有快捷键，否则按下已设置的组合会直接触发而不是被录到。
 
 ## 部署说明（unpackaged）
 

@@ -122,4 +122,54 @@ internal static partial class NativeMethods
 
     [LibraryImport("dwmapi.dll")]
     public static partial int DwmGetWindowAttribute(nint hwnd, int attribute, out int value, int size);
+
+    public const uint WM_HOTKEY = 0x0312;
+    public const uint MOD_NOREPEAT = 0x4000;
+    public const nint HWND_MESSAGE = -3;
+
+    [LibraryImport("user32.dll", EntryPoint = "RegisterClassExW")]
+    public static partial ushort RegisterClassEx(in WNDCLASSEXW windowClass);
+
+    [LibraryImport("user32.dll", EntryPoint = "UnregisterClassW", StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool UnregisterClass(string className, nint instance);
+
+    [LibraryImport("user32.dll", EntryPoint = "CreateWindowExW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    public static partial nint CreateWindowEx(uint exStyle, string className, string windowName, uint style,
+        int x, int y, int width, int height, nint parent, nint menu, nint instance, nint param);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DestroyWindow(nint hwnd);
+
+    [LibraryImport("user32.dll", EntryPoint = "DefWindowProcW")]
+    public static partial nint DefWindowProc(nint hwnd, uint message, nint wParam, nint lParam);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool RegisterHotKey(nint hwnd, int id, uint modifiers, uint virtualKey);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool UnregisterHotKey(nint hwnd, int id);
+
+    [LibraryImport("kernel32.dll", EntryPoint = "GetModuleHandleW", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial nint GetModuleHandle(string? moduleName);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct WNDCLASSEXW
+{
+    public uint cbSize;
+    public uint style;
+    public delegate* unmanaged<nint, uint, nint, nint, nint> lpfnWndProc;
+    public int cbClsExtra;
+    public int cbWndExtra;
+    public nint hInstance;
+    public nint hIcon;
+    public nint hCursor;
+    public nint hbrBackground;
+    public char* lpszMenuName;
+    public char* lpszClassName;
+    public nint hIconSm;
 }

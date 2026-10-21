@@ -24,12 +24,14 @@ public sealed partial class SoundPage : Page
     private readonly List<(EqualizerPresetViewModel Preset, RadioButton Button)> _buttons = [];
     private readonly List<(int Id, RadioButton Button)> _customButtons = [];
     private readonly List<(Slider Slider, TextBlock Value)> _bands = [];
+    private readonly List<(SpatialAudioMode Mode, RadioButton Button)> _spatialButtons = [];
     private DispatcherQueueTimer? _bandTimer;
     private DispatcherQueueTimer? _bassTimer;
     private string _customSignature = string.Empty;
     private int? _editorPresetId;
     private int _bandCount = -1;
     private bool _syncing;
+    private bool _dialogOpen;
     private string _spatialSignature = string.Empty;
 
     public SoundPage()
@@ -222,14 +224,23 @@ public sealed partial class SoundPage : Page
         if (signature != _spatialSignature)
         {
             _spatialSignature = signature;
-            SpatialChoice.Items.Clear();
+            _spatialButtons.Clear();
+            SpatialHost.Children.Clear();
             foreach (int type in types)
             {
-                SpatialChoice.Items.Add(Loc.Get(type switch { 0 => "Spatial_Off", 1 => model.HasSpatialAudioV2 ? "Spatial_Fixed" : "Spatial_On", _ => "Spatial_HeadTracking" }));
+                string label = Loc.Get(type switch { 0 => "Spatial_Off", 1 => model.HasSpatialAudioV2 ? "Spatial_Fixed" : "Spatial_On", _ => "Spatial_HeadTracking" });
+                var button = new RadioButton { Content = label, Tag = (SpatialAudioMode)type, GroupName = "Spatial" };
+                button.Click += OnSpatialClick;
+                _spatialButtons.Add(((SpatialAudioMode)type, button));
+                SpatialHost.Children.Add(button);
             }
         }
-        SpatialChoice.SelectedIndex = f.SpatialMode is { } mode && (int)mode < SpatialChoice.Items.Count ? (int)mode : -1;
-        SpatialChoice.IsEnabled = ready && !f.IsPending("spatial");
+        bool enabled = ready && !f.IsPending("spatial");
+        foreach (var (mode, button) in _spatialButtons)
+        {
+            button.IsChecked = f.SpatialMode == mode;
+            button.IsEnabled = enabled;
+        }
         SpatialHiResNote.Visibility = Show(f.IsHiResOn);
     }
 
@@ -257,7 +268,8 @@ public sealed partial class SoundPage : Page
         if (sender is not RadioButton { Tag: string id }) return;
         Sync();
         if (!await ReleaseGameSoundIfNeededAsync()) return;
-        ViewModel.SetEqualizerCommand.Execute(id);
+        await ViewModel.SetEqualizerCommand.ExecuteAsync(id);
+        Sync();
     }
 
     private async void OnCustomClick(object sender, RoutedEventArgs e)
@@ -299,14 +311,13 @@ public sealed partial class SoundPage : Page
         if (Features.SelectedCustomEqualizer is not { } preset) return;
         var dialog = new ContentDialog
         {
-            XamlRoot = XamlRoot,
             Title = Loc.Get("Eq_Delete_Title"),
             Content = preset.Name,
             PrimaryButtonText = Loc.Get("Eq_Delete_Confirm"),
             CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
         await Features.DeleteCustomEqualizerAsync(preset.Id);
         _editorPresetId = null;
         Sync();
@@ -352,25 +363,23 @@ public sealed partial class SoundPage : Page
         _bassTimer.Start();
     }
 
-    private async void OnSpatialChanged(object sender, SelectionChangedEventArgs e)
+    private async void OnSpatialClick(object sender, RoutedEventArgs e)
     {
-        if (_syncing || SpatialChoice.SelectedIndex < 0) return;
-        var mode = (SpatialAudioMode)SpatialChoice.SelectedIndex;
+        if (sender is not RadioButton { Tag: SpatialAudioMode mode }) return;
+        Sync(); // the earbuds decide; the buttons show the confirmed mode until then
         if (mode == Features.SpatialMode) return;
-        Sync();
         // Official Hi-Res mutex: confirm, then spatial on and Hi-Res off.
         if (mode != SpatialAudioMode.Off && Features.IsHiResOn && Features.Model?.SpatialHiResMutex == true)
         {
             var dialog = new ContentDialog
             {
-                XamlRoot = XamlRoot,
                 Title = Loc.Get("Spatial_HiRes_Title"),
                 Content = new TextBlock { Text = Loc.Get("Spatial_HiRes_Message"), TextWrapping = TextWrapping.Wrap },
                 PrimaryButtonText = Loc.Get("Common_TurnOn"),
                 CloseButtonText = Loc.Get("Common_Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
             };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
         }
         await Features.SetSpatialAudioAsync(mode);
         Sync();
@@ -385,21 +394,48 @@ public sealed partial class SoundPage : Page
     private async Task<bool> ReleaseGameSoundIfNeededAsync()
     {
         if (!Features.GameSoundBlocksSoundChanges) return true;
+        if (_dialogOpen) return false;
+        // The stored game mode may be stale (changed on the phone or with a gesture): ask the earbuds.
+        if (!await Features.CheckGameSoundBlocksAsync()) return true;
         var dialog = new ContentDialog
         {
-            XamlRoot = XamlRoot,
             Title = Loc.Get("Mutex_GameSound_Title"),
             Content = new TextBlock { Text = Loc.Get("Mutex_GameSound_Message"), TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = Loc.Get("Common_OK"),
             CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Primary,
         };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary)
         {
             Sync();
             return false;
         }
-        return await Features.ReleaseGameSoundAsync();
+        bool released = await Features.ReleaseGameSoundAsync();
+        Sync();
+        return released;
+    }
+
+    /// <summary>
+    /// One dialog at a time (a second ContentDialog throws, and an exception in these async void
+    /// handlers would leave the page waiting for nothing). Returns None when it could not be shown.
+    /// </summary>
+    private async Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog)
+    {
+        if (_dialogOpen || XamlRoot is null) return ContentDialogResult.None;
+        _dialogOpen = true;
+        try
+        {
+            dialog.XamlRoot = XamlRoot;
+            return await dialog.ShowAsync();
+        }
+        catch (Exception)
+        {
+            return ContentDialogResult.None;
+        }
+        finally
+        {
+            _dialogOpen = false;
+        }
     }
 
     private DispatcherQueueTimer CreateTimer(TimeSpan interval, Func<Task> action)

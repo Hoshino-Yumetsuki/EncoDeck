@@ -149,6 +149,23 @@
   <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>Keep running in the notification area when the window is closed</value></data>
   <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>Show the earbuds panel on top of Quick Settings</value></data>
   <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>Windows 11 only. Opens and closes with Quick Settings (Win+A).</value></data>
+  <data name="Settings_Hotkeys.Text" xml:space="preserve"><value>Hotkeys</value></data>
+  <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>Switch noise control from any app, also while EncoDeck is only in the notification area. Click a box, then press the keys.</value></data>
+  <data name="Settings_HotkeyToggle.Header" xml:space="preserve"><value>Noise cancelling / transparency</value></data>
+  <data name="Settings_HotkeyToggle.Description" xml:space="preserve"><value>Switches between the two; from any other mode to noise cancelling.</value></data>
+  <data name="Settings_HotkeyCycle.Header" xml:space="preserve"><value>Next mode</value></data>
+  <data name="Settings_HotkeyCycle.Description" xml:space="preserve"><value>Noise cancelling → adaptive → transparency → off, skipping modes the earbuds don't have.</value></data>
+  <data name="Settings_HotkeyAnc.Header" xml:space="preserve"><value>Noise cancelling</value></data>
+  <data name="Settings_HotkeyAdaptive.Header" xml:space="preserve"><value>Adaptive</value></data>
+  <data name="Settings_HotkeyTransparency.Header" xml:space="preserve"><value>Transparency</value></data>
+  <data name="Settings_HotkeyOff.Header" xml:space="preserve"><value>Noise control off</value></data>
+  <data name="Hotkey_None" xml:space="preserve"><value>Not set</value></data>
+  <data name="Hotkey_Recording" xml:space="preserve"><value>Press the keys…</value></data>
+  <data name="Hotkey_InUse" xml:space="preserve"><value>Another app or Windows already uses this combination. Choose another one.</value></data>
+  <data name="Hotkey_Invalid" xml:space="preserve"><value>This combination can't be used.</value></data>
+  <data name="Hotkey_NeedsModifier" xml:space="preserve"><value>Hold Ctrl, Alt, Shift or Win with the key (F1–F24 also work alone). Esc cancels.</value></data>
+  <data name="Hotkey_Clear.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Remove hotkey</value></data>
+  <data name="Hotkey_Clear.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove hotkey</value></data>
   <data name="Settings_Theme.Header" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_Theme_System.Content" xml:space="preserve"><value>Use system setting</value></data>
   <data name="Settings_Theme_Light.Content" xml:space="preserve"><value>Light</value></data>

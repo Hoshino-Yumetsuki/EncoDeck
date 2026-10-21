@@ -29,7 +29,7 @@ internal sealed partial class EncoApiJsonContext : JsonSerializerContext;
 /// <summary>Fetches model-specific artwork through EncoAPI and atomically publishes a verified local cache.</summary>
 public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Action invalidate, Uri? apiBase = null) : IDeviceResourceDownloader, IDisposable
 {
-    public static Uri DefaultApi { get; } = new("https://encoapi.vercel.app/");
+    public static Uri DefaultApi { get; } = new("https://encoapi.tianli0.top/");
     private readonly Uri _api = apiBase ?? DefaultApi;
     private const long MaxArchive = 64L * 1024 * 1024;
     private const long MaxExtracted = 384L * 1024 * 1024;

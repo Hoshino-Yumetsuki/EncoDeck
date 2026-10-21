@@ -238,6 +238,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default) => WithController(c => c.SetGameSoundAsync(type, cancellationToken));
 
+    public Task<CommandResult> RefreshGameModeAsync(CancellationToken cancellationToken = default) => WithController(c => c.RefreshGameModeAsync(cancellationToken));
+
     public Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default) => WithController(c => c.SetPromptVolumeAsync(level, cancellationToken));
 
     public Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default) => WithController(c => c.SetBassEngineLevelAsync(level, cancellationToken));

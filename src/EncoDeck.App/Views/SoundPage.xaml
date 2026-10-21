@@ -80,7 +80,8 @@
             <Border x:Name="SpatialCard" Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="8">
                     <TextBlock x:Uid="Sound_Spatial" Text="Spatial audio" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <RadioButtons x:Name="SpatialChoice" SelectionChanged="OnSpatialChanged" />
+                    <!-- Plain radio buttons like the EQ presets: RadioButtons drops a SelectedIndex set while it builds its items. -->
+                    <StackPanel x:Name="SpatialHost" Spacing="4" />
                     <TextBlock x:Name="SpatialHiResNote" x:Uid="Spatial_HiResNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
                                Text="Hi-Res mode is on, so spatial audio is off. Turning spatial audio on turns Hi-Res mode off." />
                 </StackPanel>

@@ -113,14 +113,25 @@ public static class PopupPlacement
     /// Places a <paramref name="height"/> pixels tall panel on top of Windows 11 Quick Settings.
     /// <paramref name="cards"/> is the Quick Settings window region: its cards plus the shell's
     /// <paramref name="margin"/> around them. The panel lines up with the cards' edges and keeps the
-    /// gap the shell keeps between its own cards. Null when it does not fit below the work area top.
+    /// gap the shell keeps between its own cards. When there is no room above (a short screen, the
+    /// media card, a tall sub-page, or the noise level row appearing) it goes beside the cards
+    /// instead, on the side facing the middle of the screen, bottoms aligned. Null when it fits
+    /// neither way.
     /// </summary>
     public static PixelRect? PlaceAboveQuickSettings(PixelRect cards, PixelRect workArea, int height, int margin)
     {
         int width = cards.Width - 2 * margin;
+        if (width <= 0 || height <= 0) return null;
         int y = cards.Y - height;
-        if (width <= 0 || height <= 0 || y < workArea.Y + margin) return null;
-        return new PixelRect(cards.X + margin, y, width, height);
+        if (y >= workArea.Y + margin) return new PixelRect(cards.X + margin, y, width, height);
+
+        int bottom = cards.Bottom - margin;
+        int top = Math.Max(workArea.Y + margin, bottom - height);
+        if (bottom - top < height) return null;
+        bool onRight = cards.X + cards.Width / 2 >= workArea.X + workArea.Width / 2;
+        int x = onRight ? cards.X - width : cards.Right;
+        if (x < workArea.X + margin || x + width > workArea.Right - margin) return null;
+        return new PixelRect(x, top, width, height);
     }
 
     /// <summary>True when the popup sits along the top of the screen (it then slides down, not up).</summary>
