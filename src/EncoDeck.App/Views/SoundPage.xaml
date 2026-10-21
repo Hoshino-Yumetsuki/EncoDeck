@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EncoDeck.App.Views.SoundPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
+        <Grid>
+        <StackPanel MaxWidth="{StaticResource PageMaxWidth}" Padding="32,8,32,32" Spacing="16">
+            <InfoBar
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Severity="Error"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                CloseButtonCommand="{x:Bind ViewModel.DismissErrorCommand}" />
+
+            <!-- EQ on the left; BassWave and spatial audio beside it (stacked when narrow). -->
+            <Grid x:Name="SoundColumns" ColumnSpacing="16" RowSpacing="16" SizeChanged="OnColumnsSizeChanged">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="LeftColumn" Width="*" />
+                    <ColumnDefinition x:Name="RightColumn" Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+            <!-- EQ presets and custom EQ -->
+            <Border x:Name="EqCard" Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Uid="Sound_DeviceEq" Text="Earbud EQ (applied inside the earbuds)" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <StackPanel x:Name="PresetHost" Spacing="4" />
+                    <StackPanel x:Name="CustomHost" Spacing="4" />
+                    <Button x:Name="AddCustomButton" x:Uid="Eq_AddCustom" Content="Add custom EQ" Click="OnAddCustomClick" />
+
+                    <StackPanel x:Name="CustomEditor" Spacing="10" Margin="0,6,0,0">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="CustomNameBox" MaxLength="42" MaxWidth="320" HorizontalAlignment="Stretch" />
+                            <Button x:Name="RenameButton" x:Uid="Eq_Rename" Grid.Column="1" Content="Rename" Click="OnRenameClick" />
+                            <Button x:Name="DeleteButton" x:Uid="Eq_Delete" Grid.Column="2" Content="Delete" Click="OnDeleteClick" />
+                        </Grid>
+                        <Grid x:Name="BandHost" ColumnSpacing="4" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind ViewModel.EqualizerText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel x:Name="SideCards" Grid.Column="1" Spacing="16">
+            <!-- Bass engine (BassWave) -->
+            <Border x:Name="BassCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Uid="Bass_Title" Text="BassWave dynamic bass" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Uid="Bass_Summary" Text="Strengthens low frequencies inside the earbuds." Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="BassSwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnBassToggled" />
+                    </Grid>
+                    <Grid x:Name="BassLevelRow" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Bass_Weak" Text="Weak" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                        <Slider x:Name="BassSlider" Grid.Column="1" MinWidth="160" StepFrequency="1" TickFrequency="1" TickPlacement="BottomRight" ValueChanged="OnBassLevelChanged" />
+                        <TextBlock x:Uid="Bass_Strong" Grid.Column="2" Text="Strong" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Spatial audio -->
+            <Border x:Name="SpatialCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="Sound_Spatial" Text="Spatial audio" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <RadioButtons x:Name="SpatialChoice" SelectionChanged="OnSpatialChanged" />
+                    <TextBlock x:Name="SpatialHiResNote" x:Uid="Spatial_HiResNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
+                               Text="Hi-Res mode is on, so spatial audio is off. Turning spatial audio on turns Hi-Res mode off." />
+                </StackPanel>
+            </Border>
+            </StackPanel>
+            </Grid>
+        </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Windows Bluetooth layer (WinRT public APIs only): discovery, SDP, RFCOMM transport, channel supervision. -->
+  <PropertyGroup>
+    <TargetFramework>$(EncoDeckWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(EncoDeckMinWindows)</SupportedOSPlatformVersion>
+    <RootNamespace>EncoDeck.Bluetooth</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EncoDeck.Core\EncoDeck.Core.csproj" />
+    <ProjectReference Include="..\EncoDeck.Protocol\EncoDeck.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EncoDeck.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from one table so zh-CN and en-US stay in sync. SPDX-License-Identifier: GPL-3.0-only -->
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Battery_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Battery_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Battery_Case" xml:space="preserve"><value>Case</value></data>
+  <data name="Battery_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Battery_LastRead" xml:space="preserve"><value>Last read {0}</value></data>
+  <data name="Battery_Charging" xml:space="preserve"><value>charging</value></data>
+  <data name="Device_None" xml:space="preserve"><value>No earbuds</value></data>
+  <data name="Connection_NotDetected" xml:space="preserve"><value>No supported earbuds</value></data>
+  <data name="Connection_PairedNotConnected" xml:space="preserve"><value>Paired, not connected</value></data>
+  <data name="Connection_AudioConnected" xml:space="preserve"><value>Connected, preparing controls</value></data>
+  <data name="Connection_ControlConnecting" xml:space="preserve"><value>Connecting controls…</value></data>
+  <data name="Connection_ControlReady" xml:space="preserve"><value>Connected</value></data>
+  <data name="Connection_ControlUnavailable" xml:space="preserve"><value>Controls unavailable</value></data>
+  <data name="Connection_Reconnecting" xml:space="preserve"><value>Reconnecting…</value></data>
+  <data name="Connection_Disconnected" xml:space="preserve"><value>Disconnected</value></data>
+  <data name="Error_Timeout" xml:space="preserve"><value>The earbuds did not respond. Nothing was changed.</value></data>
+  <data name="Error_Transport" xml:space="preserve"><value>The control connection failed. Please try again.</value></data>
+  <data name="Error_Rejected" xml:space="preserve"><value>The earbuds rejected this setting.</value></data>
+  <data name="Error_Unsupported" xml:space="preserve"><value>These earbuds do not support this feature.</value></data>
+  <data name="Error_NotConnected" xml:space="preserve"><value>The earbuds' control channel is not connected.</value></data>
+  <data name="Status_UpdatedAt" xml:space="preserve"><value>Updated {0}</value></data>
+  <data name="Noise_Unknown" xml:space="preserve"><value>Noise control unknown</value></data>
+  <data name="NoiseMode_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="NoiseMode_NoiseCancellation" xml:space="preserve"><value>Noise cancelling</value></data>
+  <data name="NoiseMode_Transparency" xml:space="preserve"><value>Transparency</value></data>
+  <data name="NoiseMode_Adaptive" xml:space="preserve"><value>Adaptive</value></data>
+  <data name="NoiseLevel_Smart" xml:space="preserve"><value>Auto</value></data>
+  <data name="NoiseLevel_Deep" xml:space="preserve"><value>High</value></data>
+  <data name="NoiseLevel_Medium" xml:space="preserve"><value>Moderate</value></data>
+  <data name="NoiseLevel_Light" xml:space="preserve"><value>Low</value></data>
+  <data name="NoiseLevel_AdaptiveLess" xml:space="preserve"><value>Less noise</value></data>
+  <data name="NoiseLevel_AdaptiveStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="NoiseLevel_AdaptiveMore" xml:space="preserve"><value>More noise</value></data>
+  <data name="NoiseSelector_Level" xml:space="preserve"><value>Noise cancelling level</value></data>
+  <data name="NoiseSelector_AdaptiveLevel" xml:space="preserve"><value>Adaptive preference</value></data>
+  <data name="Eq_DynaudioOriginal" xml:space="preserve"><value>Dynaudio original sound</value></data>
+  <data name="Eq_DynaudioHiRes" xml:space="preserve"><value>Dynaudio high-resolution</value></data>
+  <data name="Eq_PureVocals" xml:space="preserve"><value>Pure vocals</value></data>
+  <data name="Eq_CrispHighs" xml:space="preserve"><value>Crisp highs</value></data>
+  <data name="Eq_ThunderingBass" xml:space="preserve"><value>Thundering bass</value></data>
+  <data name="Eq_UnknownPreset" xml:space="preserve"><value>Preset {0}</value></data>
+  <data name="Toggle_InEarDetection" xml:space="preserve"><value>In-ear detection</value></data>
+  <data name="Toggle_InEarDetection_Description" xml:space="preserve"><value>Remove either earbud to pause audio playback or switch to another channel, and insert it again to resume.</value></data>
+  <data name="Cap_BatteryLevel" xml:space="preserve"><value>Battery level</value></data>
+  <data name="Cap_ChargingStatus" xml:space="preserve"><value>Charging status</value></data>
+  <data name="Cap_NoiseCancellation" xml:space="preserve"><value>Noise control</value></data>
+  <data name="Cap_AdaptiveNoiseCancellation" xml:space="preserve"><value>Smart / adaptive ANC</value></data>
+  <data name="Cap_NoiseCancellationLevel" xml:space="preserve"><value>Noise cancelling level</value></data>
+  <data name="Cap_Equalizer" xml:space="preserve"><value>Device EQ presets</value></data>
+  <data name="Cap_CustomEqualizer" xml:space="preserve"><value>Custom EQ</value></data>
+  <data name="Cap_SpatialAudio" xml:space="preserve"><value>Spatial audio</value></data>
+  <data name="Cap_HeadTracking" xml:space="preserve"><value>Head tracking</value></data>
+  <data name="Cap_GamingMode" xml:space="preserve"><value>Game mode</value></data>
+  <data name="Cap_InEarDetection" xml:space="preserve"><value>In-ear detection</value></data>
+  <data name="Cap_TouchCustomization" xml:space="preserve"><value>Touch controls</value></data>
+  <data name="Cap_DualDeviceConnection" xml:space="preserve"><value>Dual-device connection</value></data>
+  <data name="Cap_FindMyEarbuds" xml:space="preserve"><value>Find my earbuds</value></data>
+  <data name="Home_FirmwareLabel" xml:space="preserve"><value>Firmware</value></data>
+  <data name="Cap_FirmwareInformation" xml:space="preserve"><value>Firmware information</value></data>
+  <data name="Support_Supported" xml:space="preserve"><value>Supported</value></data>
+  <data name="Support_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Support_Unsupported" xml:space="preserve"><value>Not supported</value></data>
+  <data name="Devices_StatusConnected" xml:space="preserve"><value>Connected</value></data>
+  <data name="Devices_StatusNotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="Devices_Active" xml:space="preserve"><value>Current device</value></data>
+  <data name="Devices_UseThis" xml:space="preserve"><value>Use this device</value></data>
+  <data name="Devices_ExportDone" xml:space="preserve"><value>Exported: {0}</value></data>
+  <data name="Devices_ExportFailed" xml:space="preserve"><value>Export failed: {0}</value></data>
+  <data name="Tray_Open" xml:space="preserve"><value>Open EncoDeck</value></data>
+  <data name="Tray_NoiseControl" xml:space="preserve"><value>Noise control</value></data>
+  <data name="Tray_ConnectionPopup" xml:space="preserve"><value>Connection popup</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Popup_Announcement" xml:space="preserve"><value>{0} connected</value></data>
+  <data name="Popup_ConnectedTitle" xml:space="preserve"><value>Connected {0}</value></data>
+  <data name="Notify_LowBattery_Title" xml:space="preserve"><value>{0} battery low</value></data>
+  <data name="Nav_Home.Content" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav_Sound.Content" xml:space="preserve"><value>Sound</value></data>
+  <data name="Nav_Controls.Content" xml:space="preserve"><value>Controls</value></data>
+  <data name="Nav_Devices.Content" xml:space="preserve"><value>Devices</value></data>
+  <data name="Nav_Settings.Content" xml:space="preserve"><value>Settings</value></data>
+  <data name="Home_GenericModel.Title" xml:space="preserve"><value>Unrecognized model</value></data>
+  <data name="Home_NoDevice_Title.Text" xml:space="preserve"><value>No supported earbuds found</value></data>
+  <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>Pair your OPPO earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically.</value></data>
+  <data name="Home_NoDevice_OpenSettings.Content" xml:space="preserve"><value>Open Bluetooth settings</value></data>
+  <data name="Home_Unavailable_Title.Text" xml:space="preserve"><value>Earbud controls are unavailable</value></data>
+  <data name="Home_Unavailable_Body.Text" xml:space="preserve"><value>Audio may still work, but EncoDeck could not open the earbuds' control channel.</value></data>
+  <data name="Home_Reconnect2.Content" xml:space="preserve"><value>Try again</value></data>
+  <data name="Home_Diagnostics.Content" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Home_NoiseControl.Text" xml:space="preserve"><value>Noise control</value></data>
+  <data name="NoiseSelector_Off.Text" xml:space="preserve"><value>Off</value></data>
+  <data name="NoiseSelector_Anc.Text" xml:space="preserve"><value>Noise cancelling</value></data>
+  <data name="NoiseSelector_Adaptive.Text" xml:space="preserve"><value>Adaptive</value></data>
+  <data name="NoiseSelector_Transparency.Text" xml:space="preserve"><value>Transparency</value></data>
+  <data name="Sound_Title.Text" xml:space="preserve"><value>Sound</value></data>
+  <data name="Sound_DeviceEq.Text" xml:space="preserve"><value>Earbud EQ (applied inside the earbuds)</value></data>
+  <data name="Sound_DeviceEq_Note.Text" xml:space="preserve"><value>These presets run on the earbuds. EncoDeck never changes Windows audio processing and does not provide a Windows-side equalizer.</value></data>
+  <data name="Sound_Spatial.Text" xml:space="preserve"><value>Spatial Audio</value></data>
+  <data name="Controls_Title.Text" xml:space="preserve"><value>Controls</value></data>
+  <data name="Controls_Settings.Text" xml:space="preserve"><value>More settings</value></data>
+  <data name="Controls_Capabilities.Text" xml:space="preserve"><value>Feature support</value></data>
+  <data name="Controls_Capabilities_Note.Text" xml:space="preserve"><value>Every feature follows HeyMelody's official implementation for this model and is shown only after the earbuds confirm it.</value></data>
+  <data name="Devices_Title.Text" xml:space="preserve"><value>Devices</value></data>
+  <data name="Devices_Paired.Text" xml:space="preserve"><value>Paired earbuds</value></data>
+  <data name="Devices_None.Text" xml:space="preserve"><value>No paired earbuds that EncoDeck supports. Pair them in Windows Bluetooth settings.</value></data>
+  <data name="Devices_OpenBluetooth.Content" xml:space="preserve"><value>Open Bluetooth settings</value></data>
+  <data name="Devices_Diagnostics.Text" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Devices_Diagnostics_Note.Text" xml:space="preserve"><value>Diagnostic exports contain logs and settings with Bluetooth addresses redacted. For deeper analysis, run EncoDeck.Probe (see docs/TESTING.md).</value></data>
+  <data name="Devices_Reconnect.Content" xml:space="preserve"><value>Reconnect control channel</value></data>
+  <data name="Devices_Export.Content" xml:space="preserve"><value>Export diagnostics</value></data>
+  <data name="Devices_OpenLogs.Content" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_General.Text" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_StartWithWindows.Header" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>Keep running in the notification area when the window is closed</value></data>
+  <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>Show the earbuds panel on top of Quick Settings</value></data>
+  <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>Windows 11 only. Opens and closes with Quick Settings (Win+A).</value></data>
+  <data name="Settings_Theme.Header" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings_Theme_System.Content" xml:space="preserve"><value>Use system setting</value></data>
+  <data name="Settings_Theme_Light.Content" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings_Theme_Dark.Content" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_Language.Header" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_Language_System.Content" xml:space="preserve"><value>Use system language</value></data>
+  <data name="Settings_Popup.Text" xml:space="preserve"><value>Connection popup</value></data>
+  <data name="Settings_ShowPopup.Header" xml:space="preserve"><value>Show a popup when earbuds connect</value></data>
+  <data name="Settings_PopupDuration.Header" xml:space="preserve"><value>Display time (seconds)</value></data>
+  <data name="Settings_SuppressFullscreen.Header" xml:space="preserve"><value>Don't show while a fullscreen app or game is in front</value></data>
+  <data name="Settings_Notifications.Text" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Settings_LowBattery.Header" xml:space="preserve"><value>Notify when an earbud's battery is low</value></data>
+  <data name="Settings_LowBatteryThreshold.Header" xml:space="preserve"><value>Low battery level (%)</value></data>
+  <data name="Settings_Advanced.Text" xml:space="preserve"><value>Advanced</value></data>
+  <data name="Settings_RawLogging.Header" xml:space="preserve"><value>Log control-channel traffic (diagnostics)</value></data>
+  <data name="Settings_About.Text" xml:space="preserve"><value>About</value></data>
+  <data name="Settings_Disclaimer.Text" xml:space="preserve"><value>EncoDeck is an open-source community project. It is not affiliated with, endorsed by or supported by OPPO, OnePlus or realme. Product names are used only to describe compatibility.</value></data>
+  <data name="Settings_License.Text" xml:space="preserve"><value>Licensed under the GNU General Public License v3.0 only (GPL-3.0-only). Third-party notices are included with the app.</value></data>
+  <data name="Settings_Source.Content" xml:space="preserve"><value>Source code</value></data>
+  <data name="Settings_Notices.Content" xml:space="preserve"><value>Third-party notices</value></data>
+  <data name="Panel_OpenApp.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open EncoDeck</value></data>
+  <data name="Panel_OpenApp.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Open EncoDeck</value></data>
+  <data name="Panel_Noise.Text" xml:space="preserve"><value>Noise control</value></data>
+  <data name="Panel_NoDevice.Text" xml:space="preserve"><value>No supported earbuds paired.</value></data>
+  <data name="Panel_Reconnect.Content" xml:space="preserve"><value>Reconnect</value></data>
+  <data name="Popup_Close.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Close</value></data>
+  <data name="Error_WearRequired" xml:space="preserve"><value>Wear your earbuds to use this feature.</value></data>
+  <data name="Error_BusyOtherDevice" xml:space="preserve"><value>The earbuds are busy or in use by another device. Try again later.</value></data>
+  <data name="Error_BatteryLow" xml:space="preserve"><value>The earbuds' battery is too low. Charge them and try again.</value></data>
+  <data name="Error_CycleAtLeastTwo" xml:space="preserve"><value>At least 2 items need to be selected</value></data>
+  <data name="Error_RemoveConnected" xml:space="preserve"><value>Only unconnected devices can be removed</value></data>
+  <data name="Error_MaxPresets" xml:space="preserve"><value>You have reached the maximum number of custom EQs</value></data>
+  <data name="Error_InvalidName" xml:space="preserve"><value>The name must be unique, not empty and at most 42 characters</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Common_TurnOn" xml:space="preserve"><value>Turn on</value></data>
+  <data name="Toggle_SleepDetection" xml:space="preserve"><value>Pause music playback when asleep</value></data>
+  <data name="Toggle_SleepDetection_Description" xml:space="preserve"><value>Pauses playback when the earbuds detect that you fell asleep.</value></data>
+  <data name="Toggle_SwiftPair" xml:space="preserve"><value>Swift Pair</value></data>
+  <data name="Toggle_SwiftPair_Description" xml:space="preserve"><value>Windows PCs nearby show a quick pairing notification when the earbuds are in pairing mode.</value></data>
+  <data name="Toggle_VoiceCommands" xml:space="preserve"><value>Voice commands</value></data>
+  <data name="Toggle_VoiceCommands_Description" xml:space="preserve"><value>Say commands such as play, pause, next track or noise cancellation without a wake word (Mandarin).</value></data>
+  <data name="Cap_FitTest" xml:space="preserve"><value>Earbud fit test</value></data>
+  <data name="Cap_PromptVolume" xml:space="preserve"><value>Alert sound volume</value></data>
+  <data name="Cap_BassEngine" xml:space="preserve"><value>BassWave dynamic bass</value></data>
+  <data name="Controls_NotReady.Message" xml:space="preserve"><value>Connect your earbuds to change these settings.</value></data>
+  <data name="Game_Title.Text" xml:space="preserve"><value>Game mode</value></data>
+  <data name="Game_Summary.Text" xml:space="preserve"><value>Lower audio latency and enhanced sound effects for games.</value></data>
+  <data name="Game_LowLatency.Text" xml:space="preserve"><value>Low game latency</value></data>
+  <data name="Game_LowLatency_Summary.Text" xml:space="preserve"><value>Reduce audio latency for a smoother gaming experience.</value></data>
+  <data name="Game_Sound.Text" xml:space="preserve"><value>Enhanced sound effects</value></data>
+  <data name="GameSound_0" xml:space="preserve"><value>Off</value></data>
+  <data name="GameSound_3" xml:space="preserve"><value>Sound effects for shooting games</value></data>
+  <data name="Mutex_GameSound_Title" xml:space="preserve"><value>Switch the EQ mode?</value></data>
+  <data name="Mutex_GameSound_Message" xml:space="preserve"><value>Enhanced sound effects will be turned off.</value></data>
+  <data name="Dual_Title.Text" xml:space="preserve"><value>Dual connection</value></data>
+  <data name="Dual_Summary.Text" xml:space="preserve"><value>Simultaneously connect to 2 devices through Bluetooth and switch between them freely.</value></data>
+  <data name="Dual_Paired.Text" xml:space="preserve"><value>Paired devices</value></data>
+  <data name="Dual_AutoSelect" xml:space="preserve"><value>Auto select</value></data>
+  <data name="Dual_Connect" xml:space="preserve"><value>Connect</value></data>
+  <data name="Dual_Disconnect" xml:space="preserve"><value>Disconnect</value></data>
+  <data name="Dual_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Dual_ConnectNew_Title" xml:space="preserve"><value>Connect to a new device</value></data>
+  <data name="Dual_ConnectNew_Message" xml:space="preserve"><value>Connecting to "{0}" will disconnect another device.</value></data>
+  <data name="Dual_Disconnect_Title" xml:space="preserve"><value>Device disconnection</value></data>
+  <data name="Dual_Disconnect_Message" xml:space="preserve"><value>This will disconnect "{0}".</value></data>
+  <data name="Dual_Remove_Title" xml:space="preserve"><value>Remove this device?</value></data>
+  <data name="Dual_Connecting" xml:space="preserve"><value>Connecting</value></data>
+  <data name="Dual_InUseThis" xml:space="preserve"><value>In use (this device)</value></data>
+  <data name="Dual_ConnectedThis" xml:space="preserve"><value>Connected (this device)</value></data>
+  <data name="Dual_This" xml:space="preserve"><value>This device</value></data>
+  <data name="Dual_InUse" xml:space="preserve"><value>In use</value></data>
+  <data name="Dual_Connected" xml:space="preserve"><value>Connected</value></data>
+  <data name="Dual_NotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="Gesture_Title.Text" xml:space="preserve"><value>Earbud controls</value></data>
+  <data name="Gesture_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Gesture_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Gesture_Single" xml:space="preserve"><value>Quick-squeeze</value></data>
+  <data name="Gesture_Double" xml:space="preserve"><value>Double-squeeze</value></data>
+  <data name="Gesture_Triple" xml:space="preserve"><value>Triple-squeeze</value></data>
+  <data name="Gesture_Slide" xml:space="preserve"><value>Slide control</value></data>
+  <data name="Gesture_Hold" xml:space="preserve"><value>Squeeze and hold</value></data>
+  <data name="Gesture_CallSingle" xml:space="preserve"><value>Quick-squeeze</value></data>
+  <data name="Gesture_CallDouble" xml:space="preserve"><value>Double-squeeze</value></data>
+  <data name="Gesture_CallTitle.Text" xml:space="preserve"><value>When on a call</value></data>
+  <data name="Function_0" xml:space="preserve"><value>None</value></data>
+  <data name="Function_1" xml:space="preserve"><value>Play/Pause</value></data>
+  <data name="Function_3" xml:space="preserve"><value>Voice assistant</value></data>
+  <data name="Function_5" xml:space="preserve"><value>Previous</value></data>
+  <data name="Function_6" xml:space="preserve"><value>Next track</value></data>
+  <data name="Function_7" xml:space="preserve"><value>Volume control</value></data>
+  <data name="Function_8" xml:space="preserve"><value>Noise control</value></data>
+  <data name="Function_10" xml:space="preserve"><value>Switch track</value></data>
+  <data name="Function_17" xml:space="preserve"><value>Game mode</value></data>
+  <data name="Function_28" xml:space="preserve"><value>Decline/End call</value></data>
+  <data name="Function_29" xml:space="preserve"><value>Answer/End call</value></data>
+  <data name="Head_Title.Text" xml:space="preserve"><value>Head nodding/shaking control</value></data>
+  <data name="Head_Summary.Text" xml:space="preserve"><value>Answer or decline incoming calls by nodding or shaking your head.</value></data>
+  <data name="Head_NodAnswers" xml:space="preserve"><value>Nod head to answer, shake head to decline</value></data>
+  <data name="Head_ShakeAnswers" xml:space="preserve"><value>Shake head to answer, nod head to decline</value></data>
+  <data name="Find_Title.Text" xml:space="preserve"><value>Find my earbuds</value></data>
+  <data name="Find_Summary.Text" xml:space="preserve"><value>Play a sound from the earbuds. It stops after 50 seconds or when they go back into the case.</value></data>
+  <data name="Find_Play" xml:space="preserve"><value>Play sound</value></data>
+  <data name="Find_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Find_InEar_Title" xml:space="preserve"><value>Play audio to find your earbuds?</value></data>
+  <data name="Find_InEar_Message" xml:space="preserve"><value>Earbuds are being worn. To prevent hearing damage, remove them before playing sound.</value></data>
+  <data name="Find_InCase" xml:space="preserve"><value>Your earbuds are in the charging case</value></data>
+  <data name="Fit_Title.Text" xml:space="preserve"><value>Earbud fit test</value></data>
+  <data name="Fit_Summary.Text" xml:space="preserve"><value>Wear both earbuds and keep quiet while the test tone plays.</value></data>
+  <data name="Fit_Start.Content" xml:space="preserve"><value>Start test</value></data>
+  <data name="Fit_Running" xml:space="preserve"><value>Testing…</value></data>
+  <data name="Fit_Perfect" xml:space="preserve"><value>Perfect fit!</value></data>
+  <data name="Fit_Adjust" xml:space="preserve"><value>Adjust your earbuds</value></data>
+  <data name="Fit_Failed" xml:space="preserve"><value>Test failed. Please try again.</value></data>
+  <data name="Fit_Good" xml:space="preserve"><value>Good</value></data>
+  <data name="Fit_Average" xml:space="preserve"><value>Average</value></data>
+  <data name="Fit_Poor" xml:space="preserve"><value>Poor</value></data>
+  <data name="Fit_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Fit_Failed_Short" xml:space="preserve"><value>Failed</value></data>
+  <data name="Eq_AddCustom.Content" xml:space="preserve"><value>Add custom EQ</value></data>
+  <data name="Eq_Rename.Content" xml:space="preserve"><value>Rename</value></data>
+  <data name="Eq_Delete.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="Eq_Delete_Title" xml:space="preserve"><value>Delete this custom EQ?</value></data>
+  <data name="Eq_Delete_Confirm" xml:space="preserve"><value>Delete</value></data>
+  <data name="Bass_Title.Text" xml:space="preserve"><value>BassWave™ dynamic bass</value></data>
+  <data name="Bass_Summary.Text" xml:space="preserve"><value>Strengthens low frequencies inside the earbuds.</value></data>
+  <data name="Bass_Weak.Text" xml:space="preserve"><value>Weak</value></data>
+  <data name="Bass_Strong.Text" xml:space="preserve"><value>Strong</value></data>
+  <data name="Spatial_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Spatial_Fixed" xml:space="preserve"><value>Fixed</value></data>
+  <data name="Spatial_HeadTracking" xml:space="preserve"><value>Head tracking</value></data>
+  <data name="Spatial_HiResNote.Text" xml:space="preserve"><value>Hi-Res mode is on, so spatial audio is off. Turning spatial audio on turns Hi-Res mode off.</value></data>
+  <data name="Spatial_HiRes_Title" xml:space="preserve"><value>Turn on Spatial Audio?</value></data>
+  <data name="Spatial_HiRes_Message" xml:space="preserve"><value>Turning it on will turn off Hi-Res mode for optimal sound experience.</value></data>
+  <data name="Settings_Language.Description" xml:space="preserve"><value>Takes effect after restarting EncoDeck.</value></data>
+  <data name="Settings_PopupDuration.Description" xml:space="preserve"><value>Animations with timing information use their own duration. This setting applies to other images and videos.</value></data>
+  <data name="Settings_SuppressFullscreen.Description" xml:space="preserve"><value>When off, the popup appears over fullscreen apps and games as a click-through overlay: it never takes focus and every click goes to the game. It never appears over exclusive-fullscreen games.</value></data>
+  <data name="Settings_RawLogging.Description" xml:space="preserve"><value>Writes protocol frames to the log. Frames containing other devices' names or addresses are masked.</value></data>
+  <data name="Prompt_Title.Header" xml:space="preserve"><value>Alert sound volume</value></data>
+  <data name="Dual_Preferred.Header" xml:space="preserve"><value>Preferred device</value></data>
+  <data name="Dual_Preferred.Description" xml:space="preserve"><value>When the preferred device is within the connection range, the earbuds connect to it first.</value></data>
+  <data name="Settings_PopupPosition.Header" xml:space="preserve"><value>Position</value></data>
+  <data name="Settings_PopupPosition_NearTray.Content" xml:space="preserve"><value>Next to the notification area (default)</value></data>
+  <data name="Settings_PopupPosition_BottomRight.Content" xml:space="preserve"><value>Bottom right</value></data>
+  <data name="Settings_PopupPosition_BottomCenter.Content" xml:space="preserve"><value>Bottom centre</value></data>
+  <data name="Settings_PopupPosition_BottomLeft.Content" xml:space="preserve"><value>Bottom left</value></data>
+  <data name="Settings_PopupPosition_TopLeft.Content" xml:space="preserve"><value>Top left</value></data>
+  <data name="Settings_PopupPosition_TopCenter.Content" xml:space="preserve"><value>Top centre</value></data>
+  <data name="Settings_PopupPosition_TopRight.Content" xml:space="preserve"><value>Top right</value></data>
+  <data name="Settings_PopupScale.Header" xml:space="preserve"><value>Size</value></data>
+  <data name="Settings_PopupPreview.Header" xml:space="preserve"><value>Preview</value></data>
+  <data name="Settings_PopupPreview.Description" xml:space="preserve"><value>Shows the connection popup once with the current position and size.</value></data>
+  <data name="Settings_PopupPreviewButton.Content" xml:space="preserve"><value>Show now</value></data>
+  <data name="Home_Devices.Text" xml:space="preserve"><value>Device management</value></data>
+  <data name="Home_DevicesMore.Content" xml:space="preserve"><value>More</value></data>
+  <data name="Home_SoundCard.Text" xml:space="preserve"><value>Sound</value></data>
+  <data name="Home_Eq.Text" xml:space="preserve"><value>Earbud EQ</value></data>
+  <data name="Home_Spatial.Text" xml:space="preserve"><value>Spatial audio</value></data>
+  <data name="Home_GameMode.Header" xml:space="preserve"><value>Game mode</value></data>
+  <data name="Home_DragHint.Text" xml:space="preserve"><value>Drag to rotate</value></data>
+  <data name="Home_Model_Name" xml:space="preserve"><value>3D model of the earbuds; drag or use the arrow keys to rotate</value></data>
+  <data name="Home_GenericModel_Message" xml:space="preserve"><value>These earbuds (product ID {0}) are not in the official app's model list either, so only battery and firmware information is shown.</value></data>
+  <data name="Error_CycleAtLeastOne" xml:space="preserve"><value>Select at least 1 item</value></data>
+  <data name="Gesture_CycleTitle" xml:space="preserve"><value>Noise control modes for {0}</value></data>
+  <data name="Gesture_CycleNote" xml:space="preserve"><value>At least {0} items need to be selected</value></data>
+  <data name="Gesture_Tap1" xml:space="preserve"><value>Single-tap</value></data>
+  <data name="Gesture_Tap2" xml:space="preserve"><value>Double-tap</value></data>
+  <data name="Gesture_Tap3" xml:space="preserve"><value>Triple-tap</value></data>
+  <data name="Gesture_TapHold" xml:space="preserve"><value>Touch and hold</value></data>
+  <data name="Gesture_TapLongHold" xml:space="preserve"><value>Long touch and hold</value></data>
+  <data name="Gesture_LongHold" xml:space="preserve"><value>Long squeeze and hold</value></data>
+  <data name="Gesture_ButtonHold" xml:space="preserve"><value>Press and hold middle button</value></data>
+  <data name="Gesture_ButtonDouble" xml:space="preserve"><value>Double-press multifunction button</value></data>
+  <data name="Gesture_CallButton" xml:space="preserve"><value>Press middle button</value></data>
+  <data name="Gesture_CallButtonHold" xml:space="preserve"><value>Press and hold middle button</value></data>
+  <data name="Gesture_CallTap1" xml:space="preserve"><value>Single-tap</value></data>
+  <data name="Gesture_CallTap2" xml:space="preserve"><value>Double-tap</value></data>
+  <data name="Gesture_CallTap3" xml:space="preserve"><value>Triple-tap</value></data>
+  <data name="Gesture_CallTapLongHold" xml:space="preserve"><value>Long touch and hold</value></data>
+  <data name="Gesture_CallTriple" xml:space="preserve"><value>Triple-squeeze</value></data>
+  <data name="Gesture_CallLongHold" xml:space="preserve"><value>Long squeeze and hold</value></data>
+  <data name="Gesture_Other" xml:space="preserve"><value>Other gesture</value></data>
+  <data name="Function_11" xml:space="preserve"><value>Volume up</value></data>
+  <data name="Function_12" xml:space="preserve"><value>Volume down</value></data>
+  <data name="Function_13" xml:space="preserve"><value>Switch devices</value></data>
+  <data name="Function_18" xml:space="preserve"><value>Zen Mode Air</value></data>
+  <data name="Function_22" xml:space="preserve"><value>Add a song to favorites</value></data>
+  <data name="Spatial_On" xml:space="preserve"><value>On</value></data>
+  <data name="NoiseMode_Voice" xml:space="preserve"><value>Voice</value></data>
+  <data name="NoiseLevel_Weak" xml:space="preserve"><value>Weak noise cancellation</value></data>
+  <data name="NoiseLevel_Strong" xml:space="preserve"><value>Max noise cancellation</value></data>
+  <data name="NoiseLevel_SmartTop" xml:space="preserve"><value>Smart</value></data>
+  <data name="Eq_Mode1" xml:space="preserve"><value>Classic</value></data>
+  <data name="Eq_Mode1Alt" xml:space="preserve"><value>Nature Balance</value></data>
+  <data name="Eq_Mode2" xml:space="preserve"><value>Dynamic bass</value></data>
+  <data name="Eq_Mode2Alt" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="Eq_Mode3" xml:space="preserve"><value>Clear vocals</value></data>
+  <data name="Eq_Mode3Alt" xml:space="preserve"><value>Clear vocals</value></data>
+  <data name="Eq_Mode4" xml:space="preserve"><value>Clear</value></data>
+  <data name="Eq_Mode4Alt" xml:space="preserve"><value>Gentle</value></data>
+  <data name="Eq_Mode5" xml:space="preserve"><value>Default</value></data>
+  <data name="Eq_Mode6" xml:space="preserve"><value>Dynaudio Simple &amp; Clear</value></data>
+  <data name="Eq_Mode7" xml:space="preserve"><value>Dynaudio Warm &amp; Soft</value></data>
+  <data name="Eq_Mode8" xml:space="preserve"><value>Dynaudio Punchy</value></data>
+  <data name="Eq_Mode9" xml:space="preserve"><value>Dynaudio Real</value></data>
+  <data name="Eq_Mode10" xml:space="preserve"><value>Tuned by Joe Hisaishi</value></data>
+  <data name="Eq_Mode11" xml:space="preserve"><value>Balanced (Default)</value></data>
+  <data name="Eq_Mode12" xml:space="preserve"><value>Bass</value></data>
+  <data name="Eq_Mode13" xml:space="preserve"><value>Bold</value></data>
+  <data name="Eq_Mode14" xml:space="preserve"><value>Clear Vocals</value></data>
+  <data name="Eq_Mode15" xml:space="preserve"><value>Gentle</value></data>
+  <data name="Eq_Mode16" xml:space="preserve"><value>Enco X Classic</value></data>
+  <data name="Eq_Mode17" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Eq_Mode18" xml:space="preserve"><value>Reno Featured (Dawn)</value></data>
+  <data name="Eq_Mode19" xml:space="preserve"><value>Hans Zimmer Soundscape Tuning</value></data>
+  <data name="Eq_Mode20" xml:space="preserve"><value>Natural Inspiration</value></data>
+  <data name="Eq_Mode21" xml:space="preserve"><value>Reno Featured (Sunrise Glow)</value></data>
+  <data name="Eq_Mode22" xml:space="preserve"><value>Nature Balance</value></data>
+  <data name="Eq_Mode25" xml:space="preserve"><value>Reno Featured (Purple Galaxy)</value></data>
+  <data name="Eq_Mode26" xml:space="preserve"><value>Ultimate sound</value></data>
+  <data name="Eq_Mode27" xml:space="preserve"><value>HD clarity</value></data>
+  <data name="Eq_Mode30" xml:space="preserve"><value>Dynaudio featured</value></data>
+  <data name="Eq_Mode31" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="Eq_Mode32" xml:space="preserve"><value>Clear vocals</value></data>
+  <data name="Eq_Mode33" xml:space="preserve"><value>Galactic Monologue</value></data>
+  <data name="Eq_Mode34" xml:space="preserve"><value>Vibrant</value></data>
+  <data name="Eq_Mode35" xml:space="preserve"><value>Default</value></data>
+  <data name="Eq_Mode40" xml:space="preserve"><value>Dynaudio vocal</value></data>
+  <data name="Eq_Mode41" xml:space="preserve"><value>Clear &amp; crisp</value></data>
+  <data name="Settings_AuthorLabel.Text" xml:space="preserve"><value>Author</value></data>
+  <data name="Home_DeviceThisPc" xml:space="preserve"><value>This PC</value></data>
+  <data name="Home_DeviceBusy" xml:space="preserve"><value>Working…</value></data>
+  <data name="Home_DeviceConnected" xml:space="preserve"><value>Connected · tap to disconnect</value></data>
+  <data name="Home_DeviceTapToConnect" xml:space="preserve"><value>Tap to connect</value></data>
+  <data name="Home_DeviceThisPc_Hint" xml:space="preserve"><value>Disconnect this PC in Windows Bluetooth settings</value></data>
+  <data name="Home_DeviceThisPc_Title" xml:space="preserve"><value>This is this PC</value></data>
+  <data name="Home_DeviceThisPc_Message" xml:space="preserve"><value>The earbuds are connected to this PC. To disconnect this PC, disconnect the earbuds in Windows Bluetooth settings.</value></data>
+  <data name="Home_OpenBluetoothSettings" xml:space="preserve"><value>Open Bluetooth settings</value></data>
+  <data name="Home_DeviceDisconnect_Title" xml:space="preserve"><value>Disconnect “{0}”?</value></data>
+  <data name="Home_DeviceDisconnect_Message" xml:space="preserve"><value>The earbuds disconnect from this device. You can connect it again here.</value></data>
+  <data name="Settings_Artwork.Text" xml:space="preserve"><value>Device artwork</value></data>
+  <data name="Settings_ArtworkOpenFolder.Content" xml:space="preserve"><value>Open cache folder</value></data>
+  <data name="Settings_ArtworkRedownload.Content" xml:space="preserve"><value>Download again</value></data>
+  <data name="Settings_ArtworkUpdated.Header" xml:space="preserve"><value>Last updated</value></data>
+  <data name="Settings_ArtworkCache.Header" xml:space="preserve"><value>Local cache</value></data>
+  <data name="Settings_ArtworkSource.Header" xml:space="preserve"><value>Source</value></data>
+  <data name="Settings_ArtworkSource.Description" xml:space="preserve"><value>A community service, not affiliated with OPPO. Only the product ID and color are sent.</value></data>
+  <data name="Artwork_Device" xml:space="preserve"><value>{0} · product ID {1} · color {2}</value></data>
+  <data name="Artwork_NoDevice" xml:space="preserve"><value>No earbuds identified yet</value></data>
+  <data name="Artwork_Checking" xml:space="preserve"><value>Checking for artwork…</value></data>
+  <data name="Artwork_Downloading" xml:space="preserve"><value>Downloading package {0} of {1}…</value></data>
+  <data name="Artwork_DownloadingBytes" xml:space="preserve"><value>Downloading package {0} of {1} ({2} of {3})</value></data>
+  <data name="Artwork_Extracting" xml:space="preserve"><value>Unpacking package {0} of {1}…</value></data>
+  <data name="Artwork_Completed" xml:space="preserve"><value>Artwork updated.</value></data>
+  <data name="Artwork_UpToDate" xml:space="preserve"><value>Artwork is up to date.</value></data>
+  <data name="Artwork_Cached" xml:space="preserve"><value>Using the cached artwork.</value></data>
+  <data name="Artwork_NotDownloaded" xml:space="preserve"><value>No artwork downloaded yet; a generic illustration is shown.</value></data>
+  <data name="Artwork_KeepingCache" xml:space="preserve"><value>The existing artwork is still used.</value></data>
+  <data name="Artwork_Error_Offline" xml:space="preserve"><value>Could not reach the artwork server. Check your internet connection and try again.</value></data>
+  <data name="Artwork_Error_Server" xml:space="preserve"><value>The artwork server is temporarily unavailable. Try again later.</value></data>
+  <data name="Artwork_Error_NotAvailable" xml:space="preserve"><value>No artwork is available for these earbuds or this color yet; a generic illustration is shown.</value></data>
+  <data name="Artwork_Error_InvalidData" xml:space="preserve"><value>The downloaded artwork failed the integrity check and was discarded. Try again later.</value></data>
+  <data name="Artwork_Error_Storage" xml:space="preserve"><value>Could not write the artwork cache. Check disk space and permissions.</value></data>
+  <data name="Artwork_Error_Other" xml:space="preserve"><value>Downloading the artwork failed. Try again later.</value></data>
+  <data name="Artwork_CacheSummary" xml:space="preserve"><value>{0} files · {1}</value></data>
+  <data name="Settings_Updates.Text" xml:space="preserve"><value>Updates</value></data>
+  <data name="Settings_CheckUpdates.Content" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Settings_ReleaseNotes.Content" xml:space="preserve"><value>Release notes</value></data>
+  <data name="Settings_AutoUpdate.Header" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="Settings_AutoUpdate.Description" xml:space="preserve"><value>Checks GitHub once a day and downloads new versions in the background. Nothing is installed until you choose to.</value></data>
+  <data name="Settings_Prerelease.Header" xml:space="preserve"><value>Receive preview versions</value></data>
+  <data name="Settings_Prerelease.Description" xml:space="preserve"><value>Also offer pre-releases. They may be less stable.</value></data>
+  <data name="Update_CurrentVersion" xml:space="preserve"><value>Current version {0}</value></data>
+  <data name="Update_NeverChecked" xml:space="preserve"><value>Not checked yet.</value></data>
+  <data name="Update_LastChecked" xml:space="preserve"><value>Last checked: {0}</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>EncoDeck is up to date.</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading {0} ({1} of {2})…</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Version {0} is downloaded and verified, ready to install.</value></data>
+  <data name="Update_Installing" xml:space="preserve"><value>Starting the installer. EncoDeck will close and start again after the update…</value></data>
+  <data name="Update_Error_Offline" xml:space="preserve"><value>Could not reach GitHub. Check your internet connection and try again.</value></data>
+  <data name="Update_Error_RateLimited" xml:space="preserve"><value>GitHub is limiting requests for now. Try again later.</value></data>
+  <data name="Update_Error_NotFound" xml:space="preserve"><value>The releases page could not be found. Try again later.</value></data>
+  <data name="Update_Error_Verification" xml:space="preserve"><value>The downloaded installer failed verification and was deleted. Try again later.</value></data>
+  <data name="Update_Error_Storage" xml:space="preserve"><value>Could not save or start the installer. Check disk space and permissions.</value></data>
+  <data name="Update_Error_Other" xml:space="preserve"><value>Checking for updates failed. Try again later.</value></data>
+  <data name="Update_DownloadAndInstall" xml:space="preserve"><value>Download and install</value></data>
+  <data name="Update_InstallNow" xml:space="preserve"><value>Restart and update now</value></data>
+  <data name="Notify_UpdateReady_Title" xml:space="preserve"><value>EncoDeck {0} is ready to install</value></data>
+  <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>Downloaded in the background. Install it from Settings › Updates.</value></data>
+  <data name="Notify_Updated_Title" xml:space="preserve"><value>EncoDeck was updated to {0}</value></data>
+  <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck is running in the notification area.</value></data>
+</root>

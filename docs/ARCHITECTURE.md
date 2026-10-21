@@ -1,0 +1,98 @@
+# 架构（ARCHITECTURE）
+
+## 分层
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ EncoDeck.App (WinUI 3)                                       │
+│  Views: MainWindow / 各页面 / TrayPanelWindow / ConnectionPopup│
+│  ViewModels: DeviceViewModel（唯一 UI 状态投影）、Settings    │
+│  Services: AppHost、TrayIconService、WindowManager、Theme…    │
+└───────────────┬──────────────────────────────┬───────────────┘
+                │ IDeviceCommandService         │ IDeviceStateStore（只读订阅）
+┌───────────────▼──────────────────────────────┴───────────────┐
+│ EncoDeck.Bluetooth (WinRT 公共 API)                          │
+│  DeviceManager：已配对设备 → 选择当前设备 → 监督控制通道      │
+│  PairedDeviceWatcher / BluetoothLinkMonitor（事件驱动）       │
+│  ControlChannelSupervisor（连接/退避重连状态机）              │
+│  RfcommChannelConnector / RfcommByteChannel、SDP 解析        │
+└───────────────┬──────────────────────────────────────────────┘
+                │ IChannelConnector / IDuplexByteChannel
+┌───────────────▼──────────────────────────────────────────────┐
+│ EncoDeck.Protocol（纯 .NET，与平台无关）                      │
+│  OppoFrame / OppoLink / OppoFrameDecoder（分帧、分片）        │
+│  OppoSession（串行写入、请求关联、超时、取消、主动上报）      │
+│  OppoDeviceController（初始化、事件→状态、确认式命令/回滚）   │
+│  OppoParsers、OppoCapabilityBitmap、OppoRedaction            │
+│  Models: OppoModelDefinition / OppoModels / OppoDeviceProfile │
+└───────────────┬──────────────────────────────────────────────┘
+┌───────────────▼──────────────┐  ┌────────────────────────────┐
+│ EncoDeck.Core（纯 .NET）      │  │ EncoDeck.Platform（Win32） │
+│  DeviceState / Observed<T>   │  │  设置、日志、缓存、开机启动 │
+│  能力系统、命令结果、Profile  │  │  单实例、全屏检测、窗口定位 │
+│  弹窗/低电量策略、重连策略    │  └────────────────────────────┘
+└──────────────────────────────┘
+EncoDeck.Probe：无界面诊断工具，复用 Bluetooth + Protocol 的同一套代码。
+```
+
+`Core` 与 `Protocol` 只依赖 .NET，可在任何平台单元测试；`Bluetooth`、`Platform`、`App` 依赖 Windows。
+
+## 统一状态源
+
+- `IDeviceStateStore` 保存当前设备的**不可变快照** `DeviceState`。所有写入都通过 `TryUpdate(deviceId, mutate)`；`deviceId` 不匹配时丢弃，防止切换设备后旧会话的迟到结果污染新设备。
+- 每个值都是 `Observed<T>`：值 + 时间戳 + 来源（`DeviceNotification` / `QueryResponse` / `CommandConfirmation` / `Optimistic` / `Cache`）。UI 依据来源和年龄显示“上次读取”。
+- 状态还包含：待执行命令（`PendingCommands`）、最近响应时间、最后更新来源、最近错误、单调递增 `Revision`。
+- 主窗口、托盘面板、连接弹窗、托盘提示文字全部绑定同一个 `DeviceViewModel`，后者只从 store 投影；不存在各自维护的设备信息副本。
+
+## 命令流程（DeviceCommandService）
+
+所有改变耳机状态的操作都经过 `IDeviceCommandService`（由 `DeviceManager` 实现，转发给当前 `OppoDeviceController`）：
+
+```
+校验能力（Profile + 是否允许实验性）→ 校验能力位图
+ → 写入乐观值 + PendingCommand
+ → 发送 SET（固定 SEQ F0）→ 等待 0x84xx 确认（3 s）
+ → 状态字节 = 0 ? 回读（0x010C / 0x010F / 0x010D）: Rejected
+ → 回读与目标一致 ? Success : Rejected（并采用设备真实值）
+ → 失败：仅回滚仍为 Optimistic 的字段，记录 LastError
+```
+
+结果类型：`Success / Timeout / TransportError / Rejected / Unsupported / NotConnected / Cancelled`。超时后仍会尝试回读，若设备实际已切换则视为成功。
+
+## 连接状态机（ControlChannelSupervisor）
+
+```
+链路断开 ──► PairedNotConnected / Disconnected（等待链路事件，不轮询）
+链路建立 ──► AudioConnected ─(1 s 稳定)─► ControlConnecting
+ControlConnecting ─成功─► ControlReady ─通道掉线且链路仍在─► Reconnecting
+                  └失败─► Reconnecting（1,2,4,8,16,30 s，最多 6 次）
+重试耗尽 / 无控制服务 / 拒绝访问 ─► ControlUnavailable（等待用户重试或链路重新建立）
+```
+
+同一时间最多一个连接尝试；没有无限高速重连。系统从睡眠唤醒时（`PowerManager.SystemSuspendStatusChanged`）主动重建通道，因为睡眠前的 socket 常常“假活”。
+
+## 设备 Profile 与能力系统
+
+- `IDeviceProfile`（Core）：型号 ID、显示名、图片键、能力表、降噪选项、EQ 预设、控制服务 UUID、匹配评分。
+- `IDeviceCapabilities`：15 项能力，每项 `Supported / Unsupported / Unknown / Experimental` + 证据说明。UI 只显示 `Supported`；`Experimental` 需在设置中开启；`Unknown` 永不提供。
+- `OppoModelDefinition`（Protocol）：声明式型号数据——产品 ID、蓝牙名、UUID、降噪模式树（父/子 protocolIndex）、EQ 预设、功能开关 ID、订阅事件。新增型号只需新增一个定义，并附带证据；**MainWindow 中没有任何型号判断**。
+- 安全降级：按名称匹配到型号、但产品 ID 不符时，控制器切换为只读通用配置 `oppo-generic`，不发送型号专属写命令。
+
+## 生命周期与性能
+
+- 空闲时没有轮询定时器：设备列表（`DeviceWatcher`）、链路状态（`ConnectionStatusChanged`）、耳机状态（订阅事件）全部由推送驱动。
+- 唯一的计时器：弹窗显示期间的倒计时、缓存的延迟保存（20 s 合并写入）。
+- 主窗口关闭即释放（不是隐藏）；托盘面板复用一个实例；连接弹窗每次创建、关闭后释放。
+- 退出时依次：移除托盘图标 → 关闭窗口 → 释放 DeviceManager（关闭 RFCOMM、停止 watcher、释放 BluetoothDevice）→ 刷新缓存与日志。
+
+## 隐私
+
+- `BluetoothAddress` 默认格式化为 `**:**:**:**:2A:A3`；日志写入前经 `LogRedactor` 再次脱敏。
+- `OppoRedaction` 遮盖包含其他设备名称/地址的帧（事件 06、`0x8112`）及能力以外的敏感响应。
+- 缓存文件以哈希作键，不写入蓝牙地址。
+
+## 扩展点
+
+- `IChannelConnector` / `IDuplexByteChannel`：可加入 GATT（LE Audio）传输。
+- BLE 广播开盒弹窗：需先实测广播格式（见 PROTOCOL_FINDINGS §6），再实现 `IBleAdvertisementSource`。
+- 新命令：在 `OppoCommand` 增加常量，在 `OppoParsers` 增加严格解析器，在控制器中通过能力位图门控。

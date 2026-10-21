@@ -1,0 +1,71 @@
+// SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.Core.Configuration;
+using EncoDeck.Platform.Settings;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+
+namespace EncoDeck.App.Services;
+
+/// <summary>Applies the user's light/dark/system theme to every open window.</summary>
+public sealed class ThemeService
+{
+    private readonly ISettingsStore _settings;
+    private readonly Lock _lock = new();
+    private readonly List<Registration> _windows = [];
+
+    public ThemeService(ISettingsStore settings)
+    {
+        _settings = settings;
+        _settings.Changed += (_, _) => ApplyAll();
+    }
+
+    public ElementTheme Theme => _settings.Current.Theme switch
+    {
+        AppTheme.Light => ElementTheme.Light,
+        AppTheme.Dark => ElementTheme.Dark,
+        _ => ElementTheme.Default,
+    };
+
+    public void Register(Window window)
+    {
+        var registration = new Registration(new WeakReference<Window>(window), window.DispatcherQueue);
+        lock (_lock)
+        {
+            _windows.RemoveAll(r => !r.Window.TryGetTarget(out _));
+            _windows.Add(registration);
+        }
+        // WinUI throws for any use of a closed window (0x800710DD), and from a dispatcher callback
+        // that ends the app: forget the window as soon as it closes.
+        window.Closed += (_, _) =>
+        {
+            lock (_lock) _windows.Remove(registration);
+        };
+        Apply(window);
+    }
+
+    /// <summary>Diagnostics: what a settings change does.</summary>
+    internal void ReapplyForDiagnostics() => ApplyAll();
+
+    private void ApplyAll()
+    {
+        Registration[] windows;
+        lock (_lock) windows = [.. _windows];
+        foreach (var registration in windows)
+        {
+            registration.Queue.TryEnqueue(() =>
+            {
+                // Closed after this was queued: leave it alone.
+                bool open;
+                lock (_lock) open = _windows.Contains(registration);
+                if (open && registration.Window.TryGetTarget(out var window)) Apply(window);
+            });
+        }
+    }
+
+    private void Apply(Window window)
+    {
+        if (window.Content is FrameworkElement root) root.RequestedTheme = Theme;
+    }
+
+    private sealed record Registration(WeakReference<Window> Window, DispatcherQueue Queue);
+}

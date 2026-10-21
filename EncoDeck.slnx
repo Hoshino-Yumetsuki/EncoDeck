@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EncoDeck.App/EncoDeck.App.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="src/EncoDeck.Bluetooth/EncoDeck.Bluetooth.csproj" />
+    <Project Path="src/EncoDeck.Core/EncoDeck.Core.csproj" />
+    <Project Path="src/EncoDeck.Platform/EncoDeck.Platform.csproj" />
+    <Project Path="src/EncoDeck.Protocol/EncoDeck.Protocol.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EncoDeck.Tests/EncoDeck.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/EncoDeck.Probe/EncoDeck.Probe.csproj" />
+  </Folder>
+</Solution>

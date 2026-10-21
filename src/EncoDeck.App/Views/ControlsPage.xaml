@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EncoDeck.App.Views.ControlsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
+        <Grid>
+        <StackPanel MaxWidth="{StaticResource PageMaxWidth}" Padding="32,8,32,32" Spacing="16">
+            <InfoBar
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Severity="Error"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                CloseButtonCommand="{x:Bind ViewModel.DismissErrorCommand}" />
+            <InfoBar x:Name="NotReadyBar" x:Uid="Controls_NotReady" IsClosable="False" Severity="Informational"
+                     Message="Connect your earbuds to change these settings." />
+
+            <!-- Game mode (official GameSetFragment) -->
+            <Border x:Name="GameCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Uid="Game_Title" Text="Game mode" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Uid="Game_Summary" Text="Low latency and enhanced game sound." Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="GameModeSwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnGameModeToggled" />
+                    </Grid>
+                    <StackPanel x:Name="GameOptions" Spacing="10" Margin="12,0,0,0">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock x:Uid="Game_LowLatency" Text="Low game latency" />
+                                <TextBlock x:Uid="Game_LowLatency_Summary" Text="Reduce audio latency for a smoother gaming experience." Style="{StaticResource SecondaryTextStyle}" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="LowLatencySwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnLowLatencyToggled" />
+                        </Grid>
+                        <StackPanel x:Name="GameSoundSection" Spacing="4">
+                            <TextBlock x:Uid="Game_Sound" Text="Enhanced sound effects" />
+                            <StackPanel x:Name="GameSoundHost" Spacing="2" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Dual connection (official MultipleDevicesConnectionFragmentV2) -->
+            <Border x:Name="DualCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Uid="Dual_Title" Text="Dual connection" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Uid="Dual_Summary" Text="Simultaneously connect to 2 devices through Bluetooth and switch between them freely." Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="DualSwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnDualToggled" />
+                    </Grid>
+                    <TextBlock x:Uid="Dual_Paired" Text="Paired devices" Style="{StaticResource SecondaryTextStyle}" />
+                    <StackPanel x:Name="SourceHost" Spacing="6" />
+                    <controls:SettingRow x:Name="PreferredSection" x:Uid="Dual_Preferred" Header="Preferred device"
+                                         Description="When the preferred device is within the connection range, the earbuds connect to it first.">
+                        <ComboBox x:Name="PreferredBox" MinWidth="200" SelectionChanged="OnPreferredChanged" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Earbud gestures (official control / callControl) -->
+            <Border x:Name="GestureCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Uid="Gesture_Title" Text="Earbud controls" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <RadioButtons x:Name="EarSelector" MaxColumns="2" SelectionChanged="OnEarChanged" />
+                    <StackPanel x:Name="GestureHost" Spacing="8" />
+                    <StackPanel x:Name="CycleSection" Spacing="4">
+                        <TextBlock x:Name="CycleTitle" TextWrapping="Wrap" />
+                        <StackPanel x:Name="CycleHost" Orientation="Horizontal" Spacing="12" />
+                        <TextBlock x:Name="CycleNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                    <TextBlock x:Name="CallGestureTitle" x:Uid="Gesture_CallTitle" Text="When on a call" Margin="0,6,0,0" />
+                    <StackPanel x:Name="CallGestureHost" Spacing="8" />
+                </StackPanel>
+            </Border>
+
+            <!-- Head gestures for calls (official HeadMotionItem) -->
+            <Border x:Name="HeadCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Uid="Head_Title" Text="Head nodding/shaking control" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Uid="Head_Summary" Text="Answer or decline incoming calls by nodding or shaking your head." Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="HeadSwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnHeadToggled" />
+                    </Grid>
+                    <RadioButtons x:Name="HeadMotionChoice" SelectionChanged="OnHeadMotionChanged" />
+                </StackPanel>
+            </Border>
+
+            <!-- Find earbuds and fit test -->
+            <Border x:Name="FindCard" Style="{StaticResource CardStyle}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="2">
+                        <TextBlock x:Uid="Find_Title" Text="Find my earbuds" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Uid="Find_Summary" Text="Play a sound from the earbuds. It stops after 50 seconds or when they go back into the case." Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                    <Button x:Name="FindButton" Grid.Column="1" MinWidth="120" VerticalAlignment="Center" Click="OnFindClick" />
+                </Grid>
+            </Border>
+
+            <Border x:Name="FitCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Uid="Fit_Title" Text="Earbud fit test" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Uid="Fit_Summary" Text="Wear both earbuds and keep quiet while the test tone plays." Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <ProgressRing x:Name="FitProgress" Width="20" Height="20" IsActive="False" />
+                            <Button x:Name="FitButton" x:Uid="Fit_Start" Content="Start test" MinWidth="120" Click="OnFitClick" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock x:Name="FitResultText" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- More settings -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Controls_Settings" Text="More settings" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <StackPanel x:Name="ToggleHost" Spacing="12" />
+                    <controls:SettingRow x:Name="PromptVolumeSection" x:Uid="Prompt_Title" Header="Alert sound volume">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Slider x:Name="PromptVolumeSlider" Width="{StaticResource RowSliderWidth}" Minimum="1" Maximum="10" StepFrequency="1"
+                                    TickFrequency="1" TickPlacement="BottomRight" VerticalAlignment="Center" ValueChanged="OnPromptVolumeChanged" />
+                            <TextBlock x:Name="PromptVolumeValue" MinWidth="20" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="Controls_Capabilities" Text="Feature support" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock x:Uid="Controls_Capabilities_Note" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
+                               Text="Every feature follows the official HeyMelody implementation for this model and is confirmed by the earbuds before it is shown." />
+                    <StackPanel x:Name="CapabilityHost" Spacing="6" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

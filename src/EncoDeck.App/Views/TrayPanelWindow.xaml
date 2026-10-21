@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="EncoDeck.App.Views.TrayPanelWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls"
+    Title="EncoDeck">
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="Root" KeyDown="OnRootKeyDown">
+        <controls:DeviceQuickPanel x:Name="ContentPanel" VerticalAlignment="Top" />
+    </Grid>
+</Window>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="EncoDeck.App.Controls.DeviceQuickPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls"
+    xmlns:services="using:EncoDeck.App.Services">
+    <StackPanel Padding="16,14,16,12" Spacing="12">
+        <!-- Header -->
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <controls:DeviceImage Height="48" SourcePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ProgressRing Width="12" Height="12" IsActive="{x:Bind ViewModel.IsBusyConnecting, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsBusyConnecting, Mode=OneWay}" />
+                    <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <Button Grid.Column="2" x:Uid="Panel_OpenApp" Click="OnOpenApp" Style="{StaticResource SubtleButtonStyle}" Padding="8" VerticalAlignment="Top"
+                    ToolTipService.ToolTip="Open EncoDeck" AutomationProperties.Name="Open EncoDeck">
+                <FontIcon Glyph="&#xE8A7;" FontSize="14" />
+            </Button>
+        </Grid>
+
+        <!-- Battery -->
+        <Grid ColumnSpacing="8" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <controls:BatteryIndicator Grid.Column="0" Item="{x:Bind ViewModel.Left}" GlyphSize="20" LevelFontSize="16" />
+            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" GlyphSize="20" LevelFontSize="16" />
+            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" GlyphSize="20" LevelFontSize="16" />
+        </Grid>
+
+        <!-- Noise control -->
+        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+            <Grid>
+                <TextBlock x:Uid="Panel_Noise" Text="Noise control" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <ProgressRing HorizontalAlignment="Right" Width="12" Height="12" IsActive="{x:Bind ViewModel.IsNoisePending, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsNoisePending, Mode=OneWay}" />
+            </Grid>
+            <controls:NoiseControlSelector ViewModel="{x:Bind ViewModel}" />
+        </StackPanel>
+
+        <InfoBar IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}" Severity="Error" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                 CloseButtonCommand="{x:Bind ViewModel.DismissErrorCommand}" />
+
+        <TextBlock x:Uid="Panel_NoDevice" Text="No supported earbuds paired." Style="{StaticResource SecondaryTextStyle}"
+                   Visibility="{x:Bind services:Ui.Collapsed(ViewModel.HasDevice), Mode=OneWay}" />
+
+        <!-- Only when the control channel is unavailable. -->
+        <Button x:Uid="Panel_Reconnect" Content="Reconnect" HorizontalAlignment="Right" Command="{x:Bind ViewModel.ReconnectCommand}"
+                Visibility="{x:Bind ViewModel.IsControlUnavailable, Mode=OneWay}" />
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EncoDeck.App.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls"
+    xmlns:services="using:EncoDeck.App.Services">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
+        <Grid>
+        <StackPanel MaxWidth="{StaticResource PageMaxWidth}" Padding="32,8,32,32" Spacing="16">
+
+            <!-- General -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_General" Text="General" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow x:Uid="Settings_StartWithWindows" Header="Start with Windows">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.StartWithWindows, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_KeepInTray" Header="Keep running in the notification area when the window is closed">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.KeepRunningInTray, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_QuickSettingsPanel" Header="Show the earbuds panel on top of Quick Settings"
+                                         Description="Windows 11 only. Opens and closes with Quick Settings (Win+A).">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.ShowAboveQuickSettings, Mode=TwoWay}"
+                                      IsEnabled="{x:Bind ViewModel.IsQuickSettingsPanelSupported}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_Theme" Header="Theme">
+                        <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_Theme_System" Content="Use system setting" />
+                            <ComboBoxItem x:Uid="Settings_Theme_Light" Content="Light" />
+                            <ComboBoxItem x:Uid="Settings_Theme_Dark" Content="Dark" />
+                        </ComboBox>
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_Language" Header="Language" Description="Takes effect after restarting EncoDeck.">
+                        <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.LanguageIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_Language_System" Content="Use system language" />
+                            <ComboBoxItem Content="简体中文" />
+                            <ComboBoxItem Content="English" />
+                        </ComboBox>
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Connection popup -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Popup" Text="Connection popup" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow x:Uid="Settings_ShowPopup" Header="Show a popup when earbuds connect">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.ShowConnectionPopup, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_PopupPosition" Header="Position">
+                        <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.PopupPositionIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_NearTray" Content="Next to the notification area" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_BottomRight" Content="Bottom right" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_BottomCenter" Content="Bottom centre" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_BottomLeft" Content="Bottom left" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_TopLeft" Content="Top left" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_TopCenter" Content="Top centre" />
+                            <ComboBoxItem x:Uid="Settings_PopupPosition_TopRight" Content="Top right" />
+                        </ComboBox>
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_PopupScale" Header="Size">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Slider Width="{StaticResource RowSliderWidth}" Minimum="60" Maximum="160" StepFrequency="10" TickFrequency="10" TickPlacement="BottomRight"
+                                    VerticalAlignment="Center" Value="{x:Bind ViewModel.PopupScalePercent, Mode=TwoWay}" />
+                            <TextBlock MinWidth="40" VerticalAlignment="Center" Text="{x:Bind services:Ui.Percent(ViewModel.PopupScalePercent), Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_PopupPreview" Header="Preview" Description="Shows the connection popup once with the current position and size.">
+                        <Button x:Uid="Settings_PopupPreviewButton" Content="Show now" Click="OnPreviewPopup" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_PopupDuration" Header="Display time (seconds)"
+                                         Description="Animations with timing information use their own duration. This setting applies to other images and videos.">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Slider Width="{StaticResource RowSliderWidth}" Minimum="2" Maximum="15" StepFrequency="0.5" VerticalAlignment="Center"
+                                    Value="{x:Bind ViewModel.PopupDurationSeconds, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowConnectionPopup, Mode=OneWay}" />
+                            <TextBlock MinWidth="28" VerticalAlignment="Center" Text="{x:Bind services:Ui.Number(ViewModel.PopupDurationSeconds), Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_SuppressFullscreen" Header="Don't show while a fullscreen app or game is in front"
+                                         Description="When off, the popup appears over fullscreen apps and games as a click-through overlay: it never takes focus and every click goes to the game. It never appears over exclusive-fullscreen games.">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.SuppressPopupWhenFullscreen, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Notifications -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Notifications" Text="Notifications" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow x:Uid="Settings_LowBattery" Header="Notify when an earbud's battery is low">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.LowBatteryNotification, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_LowBatteryThreshold" Header="Low battery level (%)">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Slider Width="{StaticResource RowSliderWidth}" Minimum="5" Maximum="50" StepFrequency="5" VerticalAlignment="Center"
+                                    Value="{x:Bind ViewModel.LowBatteryThreshold, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.LowBatteryNotification, Mode=OneWay}" />
+                            <TextBlock MinWidth="28" VerticalAlignment="Center" Text="{x:Bind services:Ui.Number(ViewModel.LowBatteryThreshold), Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Device artwork: what EncoAPI download covers the connected earbuds, and a forced re-download. -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Artwork" Text="Device artwork" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow Header="{x:Bind ViewModel.ArtworkDevice, Mode=OneWay}" Description="{x:Bind ViewModel.ArtworkStatus, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Uid="Settings_ArtworkOpenFolder" Content="Open folder" Command="{x:Bind ViewModel.OpenArtworkFolderCommand}" />
+                            <Button x:Uid="Settings_ArtworkRedownload" Content="Download again" Command="{x:Bind ViewModel.RedownloadArtworkCommand}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                    <ProgressBar IsIndeterminate="{x:Bind ViewModel.IsArtworkProgressIndeterminate, Mode=OneWay}" Value="{x:Bind ViewModel.ArtworkProgress, Mode=OneWay}"
+                                 Visibility="{x:Bind services:Ui.Visible(ViewModel.IsArtworkRunning), Mode=OneWay}" />
+                    <controls:SettingRow x:Uid="Settings_ArtworkUpdated" Header="Last updated">
+                        <TextBlock Text="{x:Bind ViewModel.ArtworkUpdated, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_ArtworkCache" Header="Local cache">
+                        <TextBlock Text="{x:Bind ViewModel.ArtworkCache, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_ArtworkSource" Header="Source"
+                                         Description="A community service, not affiliated with OPPO. Only the product ID and color are sent.">
+                        <HyperlinkButton Content="EncoAPI" NavigateUri="https://encoapi.vercel.app/" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Advanced -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Advanced" Text="Advanced" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow x:Uid="Settings_RawLogging" Header="Log control-channel traffic (diagnostics)"
+                                         Description="Writes protocol frames to the log. Frames containing other devices' names or addresses are masked.">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.RawProtocolLogging, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- Updates (GitHub Releases) -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Uid="Settings_Updates" Text="Updates" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <controls:SettingRow Header="{x:Bind ViewModel.CurrentVersionText}" Description="{x:Bind ViewModel.UpdateStatus, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Uid="Settings_CheckUpdates" Content="Check for updates" Command="{x:Bind ViewModel.CheckForUpdatesCommand}" />
+                            <Button Style="{StaticResource AccentButtonStyle}" Content="{x:Bind ViewModel.UpdateActionText, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.RunUpdateActionCommand}" Visibility="{x:Bind services:Ui.Visible(ViewModel.IsUpdateActionVisible), Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingRow>
+                    <ProgressBar Value="{x:Bind ViewModel.UpdateProgress, Mode=OneWay}" Visibility="{x:Bind services:Ui.Visible(ViewModel.IsUpdateDownloading), Mode=OneWay}" />
+                    <HyperlinkButton x:Uid="Settings_ReleaseNotes" Content="Release notes" Padding="0" NavigateUri="{x:Bind ViewModel.ReleaseNotesUrl, Mode=OneWay}"
+                                     Visibility="{x:Bind services:Ui.Visible(ViewModel.HasReleaseNotes), Mode=OneWay}" />
+                    <controls:SettingRow x:Uid="Settings_AutoUpdate" Header="Check for updates automatically"
+                                         Description="Checks GitHub once a day and downloads new versions in the background. Nothing is installed until you choose to.">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.AutoCheckUpdates, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_Prerelease" Header="Receive preview versions" Description="Also offer pre-releases. They may be less stable.">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.IncludePrereleaseUpdates, Mode=TwoWay}" />
+                    </controls:SettingRow>
+                </StackPanel>
+            </Border>
+
+            <!-- About -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="Settings_About" Text="About" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Image Source="ms-appx:///Assets/EncoDeck-256.png" Width="44" Height="44" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="EncoDeck" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.Version}" Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <!-- Author -->
+                    <Grid ColumnSpacing="12" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Width="44" Height="44" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="ms-appx:///Assets/Author.png" Stretch="UniformToFill" />
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}"><Run x:Uid="Settings_AuthorLabel" Text="Author" /><Run Text=" · Tianli" /></TextBlock>
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <HyperlinkButton Content="wutianli@tianli0.top" NavigateUri="mailto:wutianli@tianli0.top" Padding="0" />
+                                <HyperlinkButton Content="GitHub · TIANLI0" NavigateUri="https://github.com/TIANLI0" Padding="0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock x:Uid="Settings_Disclaimer" TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"
+                               Text="EncoDeck is an unofficial, community project. It is not affiliated with, endorsed by or supported by OPPO, OnePlus or realme. Product names are used only to describe compatibility." />
+                    <TextBlock x:Uid="Settings_License" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
+                               Text="Licensed under the GNU General Public License v3.0 only (GPL-3.0-only). Third-party notices are included with the app." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <HyperlinkButton x:Uid="Settings_Source" Content="Source code" NavigateUri="https://github.com/TIANLI0/EncoDeck" />
+                        <HyperlinkButton x:Uid="Settings_Notices" Content="Third-party notices" Click="OnOpenNotices" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

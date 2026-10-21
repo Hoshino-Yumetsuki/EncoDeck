@@ -1,0 +1,82 @@
+# 测试（TESTING）
+
+## 1. 自动化测试
+
+```powershell
+dotnet test tests/EncoDeck.Tests -c Debug
+```
+
+覆盖范围（112 个测试，2026-10-20 全部通过）：
+
+| 领域 | 测试 |
+|---|---|
+| 帧编解码 | 布局、变长 LEN（127/128 边界）、分片与重组、非法帧拒绝 |
+| 流式分帧 | 半包、逐字节、粘包、粘包+半包、前置垃圾、伪 0xAA、负载内的 0xAA、大量数据跨缓冲区 |
+| 解析器 | **Enco X4 实测抓包**：电量（含不上报盒子）、降噪响应/事件、佩戴、功能、固件、EQ 列表/推送、事件码、确认 |
+| 会话 | 请求/响应关联、超时、取消、并发串行化、备用响应命令、远端关闭、写失败、订阅者异常隔离 |
+| 控制器 | 初始化、确认式命令、拒绝/未生效/超时回滚、实验性开关、未知选项、产品 ID 不符降级、能力位图门控、事件同步、盒子电量“上次读取”、设备切换隔离 |
+| 重连状态机 | 链路断开等待、链路循环、通道掉线重连、有界重试→不可用→手动重试、无服务不重试、释放 |
+| 其他 | 状态存储、能力过滤、弹窗冷却/全屏抑制、低电量迟滞、弹窗定位（四边/多屏/负坐标）、日志脱敏、设置持久化、缓存恢复、SDP 解析 |
+
+`FakeByteChannel` / `FakeOppoDevice` 只存在于测试项目中；应用本身没有任何模拟设备或 Demo 数据路径。
+
+## 2. 用 EncoDeck.Probe 验证真实耳机
+
+先在 Windows 蓝牙设置中连接耳机，然后：
+
+```powershell
+$probe = "tools\EncoDeck.Probe\bin\Debug\net10.0-windows10.0.26100.0\EncoDeck.Probe.exe"
+
+& $probe devices                         # 已配对设备（地址脱敏）
+& $probe services --device "Enco X4"     # SDP：应出现 0000079A-… "ELNK"
+& $probe query --device "Enco X4" --eq-list --report x4-query.json   # 只读查询
+& $probe watch --device "Enco X4" --seconds 120                      # 订阅事件 + 轮询，只打印变化
+& $probe monitor --seconds 30            # 运行与应用完全相同的设备运行时
+```
+
+### 预期输出（Enco X4）
+
+| 步骤 | 预期 |
+|---|---|
+| `services` | `0000079a-d102-11e1-9b23-00025b00a5a5 <-- OPPO control candidate`，`name: ELNK; rfcomm channel: 15` |
+| `query` | 所有项 `Success`；`product id 0x06EC10`；`battery left=…% …`；`noise-control bitmap …` |
+| `watch` | 在手机或耳机上切换降噪时出现 `EVENT DeviceEvent 03 01 01 …` |
+| `monitor` | 状态依次 `AudioConnected → ControlConnecting → ControlReady`，并带电量/降噪/固件 |
+
+### 写入验证（会改变耳机设置，会自动回读并恢复）
+
+```powershell
+& $probe set-anc --device "Enco X4" --index 1,2,0,4 --confirm-write
+& $probe set-eq  --device "Enco X4" --preset 7,2 --confirm-write
+```
+
+只接受该型号已记录的索引；不加 `--confirm-write` 会被拒绝。`get --cmd 0x01NN` 只允许查询组命令。
+
+### 需要反馈的字段
+
+提交兼容性报告时请包含：型号、产品 ID（`query` 输出）、固件（`query` 中 firmware）、Windows 版本、蓝牙适配器、`services` 输出，以及 `--report` 生成的 JSON（已脱敏：不含蓝牙地址和其他设备名称）。
+
+## 3. 手动 UI 检查清单
+
+| 项目 | 方法 | 状态 |
+|---|---|---|
+| 主窗口各页面渲染、浅/深色 | 启动应用，切换主题 | 待手测 |
+| 托盘左键面板：贴近托盘、不越界、再次点击关闭、点击外部关闭 | 多显示器 / 任务栏四边 | 待手测 |
+| 托盘右键菜单：降噪切换、弹窗开关、退出 | | 待手测 |
+| 连接弹窗：动画、悬停暂停、点击打开、减少动态效果 | 关闭再打开耳机盒 | 待手测 |
+| 全屏游戏时弹窗被抑制 | 全屏应用中连接耳机 | 待手测 |
+| DPI 100%/150%/200% | 显示设置 | 待手测 |
+| 讲述人朗读电量/连接状态 | Win+Ctrl+Enter | 待手测 |
+| 睡眠唤醒后自动恢复 | 睡眠 1 分钟后唤醒 | 待手测 |
+
+## 4. 性能测量方法
+
+```powershell
+$p = Start-Process EncoDeck.exe -ArgumentList '--background' -PassThru
+Start-Sleep 150; $c0 = (Get-Process -Id $p.Id).TotalProcessorTime
+Start-Sleep 180; $c1 = (Get-Process -Id $p.Id).TotalProcessorTime
+($c1 - $c0).TotalMilliseconds / 1800   # % of one core
+Start-Process EncoDeck.exe -ArgumentList '--exit'
+```
+
+实测结果记录在 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)。

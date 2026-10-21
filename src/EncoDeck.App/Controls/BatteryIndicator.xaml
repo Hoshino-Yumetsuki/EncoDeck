@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="EncoDeck.App.Controls.BatteryIndicator"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel
+        x:Name="Root"
+        HorizontalAlignment="Center"
+        Spacing="2"
+        AutomationProperties.Name="{x:Bind Item.AutomationText, Mode=OneWay}"
+        AutomationProperties.LiveSetting="Polite">
+        <FontIcon
+            HorizontalAlignment="Center"
+            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+            FontSize="{x:Bind GlyphSize, Mode=OneWay}"
+            Glyph="{x:Bind Item.Glyph, Mode=OneWay}"
+            Opacity="{x:Bind StaleOpacity(Item.IsStale), Mode=OneWay}" />
+        <TextBlock
+            HorizontalAlignment="Center"
+            Style="{StaticResource SubtitleTextBlockStyle}"
+            FontSize="{x:Bind LevelFontSize, Mode=OneWay}"
+            Text="{x:Bind Item.LevelText, Mode=OneWay}"
+            Opacity="{x:Bind StaleOpacity(Item.IsStale), Mode=OneWay}" />
+        <TextBlock
+            HorizontalAlignment="Center"
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="{x:Bind Item.Label, Mode=OneWay}" />
+        <TextBlock
+            HorizontalAlignment="Center"
+            MaxWidth="120"
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+            TextAlignment="Center"
+            TextWrapping="Wrap"
+            Text="{x:Bind Item.FreshnessText, Mode=OneWay}" />
+    </StackPanel>
+</UserControl>

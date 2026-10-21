@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Windows shell integration that is not UI-framework specific: single instance, startup, settings, logs, fullscreen detection. -->
+  <PropertyGroup>
+    <TargetFramework>$(EncoDeckWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(EncoDeckMinWindows)</SupportedOSPlatformVersion>
+    <RootNamespace>EncoDeck.Platform</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EncoDeck.Core\EncoDeck.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Vortice.Direct3D11" />
+    <PackageReference Include="Vortice.D3DCompiler" />
+    <PackageReference Include="Vortice.MediaFoundation" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EncoDeck.Tests" />
+  </ItemGroup>
+</Project>

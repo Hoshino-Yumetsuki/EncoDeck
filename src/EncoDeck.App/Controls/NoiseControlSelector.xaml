@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="EncoDeck.App.Controls.NoiseControlSelector"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Spacing="8">
+        <Grid x:Name="ModeGrid" ColumnSpacing="8">
+            <ToggleButton x:Name="AncButton" Style="{StaticResource SegmentToggleStyle}" Click="OnModeClick" Tag="NoiseCancellation">
+                <StackPanel Spacing="4">
+                    <FontIcon Glyph="&#xE7F6;" FontSize="18" />
+                    <TextBlock x:Uid="NoiseSelector_Anc" Text="Noise cancelling" HorizontalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </ToggleButton>
+            <ToggleButton x:Name="AdaptiveButton" Style="{StaticResource SegmentToggleStyle}" Click="OnModeClick" Tag="Adaptive">
+                <StackPanel Spacing="4">
+                    <FontIcon Glyph="&#xE945;" FontSize="18" />
+                    <TextBlock x:Uid="NoiseSelector_Adaptive" Text="Adaptive" HorizontalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </ToggleButton>
+            <ToggleButton x:Name="TransparencyButton" Style="{StaticResource SegmentToggleStyle}" Click="OnModeClick" Tag="Transparency">
+                <StackPanel Spacing="4">
+                    <FontIcon Glyph="&#xE767;" FontSize="18" />
+                    <TextBlock x:Uid="NoiseSelector_Transparency" Text="Transparency" HorizontalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </ToggleButton>
+            <ToggleButton x:Name="OffButton" Style="{StaticResource SegmentToggleStyle}" Click="OnModeClick" Tag="Off">
+                <StackPanel Spacing="4">
+                    <FontIcon Glyph="&#xE733;" FontSize="18" />
+                    <TextBlock x:Uid="NoiseSelector_Off" Text="Off" HorizontalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </ToggleButton>
+        </Grid>
+
+        <StackPanel x:Name="LevelsPanel" Spacing="6" Visibility="Collapsed">
+            <TextBlock x:Name="LevelsTitle" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <!-- One equal column per level, aligned with the mode buttons above. -->
+            <Grid x:Name="LevelsHost" ColumnSpacing="8" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

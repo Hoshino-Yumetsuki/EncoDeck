@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.App.Services;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
+
+namespace EncoDeck.App.Views;
+
+public sealed partial class MainWindow : Window
+{
+    private static readonly Dictionary<string, Type> Pages = new()
+    {
+        ["Home"] = typeof(HomePage),
+        ["Sound"] = typeof(SoundPage),
+        ["Controls"] = typeof(ControlsPage),
+        ["Devices"] = typeof(DevicesPage),
+        ["Settings"] = typeof(SettingsPage),
+    };
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+
+        var appWindow = WindowInterop.GetAppWindow(this);
+        appWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "EncoDeck.ico"));
+        appWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+        double scale = WindowInterop.GetScale(this);
+        // Landscape by default, so the home page shows the device stage and its controls side by side.
+        appWindow.Resize(new Windows.Graphics.SizeInt32((int)(1160 * scale), (int)(760 * scale)));
+        if (appWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.PreferredMinimumWidth = (int)(640 * scale);
+            presenter.PreferredMinimumHeight = (int)(480 * scale);
+        }
+        CenterOnScreen(appWindow);
+
+        Navigate("Home");
+    }
+
+    public void Navigate(string tag)
+    {
+        var item = Nav.MenuItems.Concat(Nav.FooterMenuItems).OfType<NavigationViewItem>().FirstOrDefault(i => (string)i.Tag == tag);
+        if (item is not null && !ReferenceEquals(Nav.SelectedItem, item))
+        {
+            Nav.SelectedItem = item;
+        }
+        else if (item is not null && ContentFrame.Content is null)
+        {
+            NavigateFrame(tag);
+        }
+    }
+
+    private void OnNavigationSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.SelectedItem is NavigationViewItem { Tag: string tag }) NavigateFrame(tag);
+    }
+
+    private void NavigateFrame(string tag)
+    {
+        if (Pages.TryGetValue(tag, out var page) && ContentFrame.CurrentSourcePageType != page)
+        {
+            ContentFrame.Navigate(page, null, new EntranceNavigationTransitionInfo());
+        }
+    }
+
+    /// <summary>Diagnostics (<see cref="UiSnapshot"/>): open or collapse the navigation pane.</summary>
+    internal void SetPaneOpenForDiagnostics(bool open) => Nav.IsPaneOpen = open;
+
+    private static void CenterOnScreen(AppWindow appWindow)
+    {
+        var area = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+        int x = area.X + Math.Max(0, (area.Width - appWindow.Size.Width) / 2);
+        int y = area.Y + Math.Max(0, (area.Height - appWindow.Size.Height) / 2);
+        appWindow.Move(new Windows.Graphics.PointInt32(x, y));
+    }
+}

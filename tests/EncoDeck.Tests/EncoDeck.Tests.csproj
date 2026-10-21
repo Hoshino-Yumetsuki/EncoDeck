@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(EncoDeckWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(EncoDeckMinWindows)</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>EncoDeck.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EncoDeck.Core\EncoDeck.Core.csproj" />
+    <ProjectReference Include="..\..\src\EncoDeck.Protocol\EncoDeck.Protocol.csproj" />
+    <ProjectReference Include="..\..\src\EncoDeck.Bluetooth\EncoDeck.Bluetooth.csproj" />
+    <ProjectReference Include="..\..\src\EncoDeck.Platform\EncoDeck.Platform.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

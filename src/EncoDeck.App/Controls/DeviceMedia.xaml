@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="EncoDeck.App.Controls.DeviceMedia"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls">
+    <Grid>
+        <!-- Silent video frames (SilentVideoPresenter): never a media player, so never media playback. -->
+        <Image x:Name="Video" Stretch="Uniform" Visibility="Collapsed" />
+        <controls:DeviceImage x:Name="Still" />
+    </Grid>
+</UserControl>

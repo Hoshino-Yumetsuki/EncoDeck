@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="EncoDeck.App.Views.QuickSettingsPanelWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EncoDeck.App.Controls"
+    Title="EncoDeck">
+    <Grid x:Name="Root">
+        <controls:DeviceQuickPanel x:Name="ContentPanel" VerticalAlignment="Top" />
+    </Grid>
+</Window>

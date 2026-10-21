@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: CI
+
+on:
+  push:
+    branches: [main, "dev/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore EncoDeck.slnx
+
+      - name: Build libraries, Probe and tests
+        run: dotnet build EncoDeck.slnx -c Release --no-restore
+
+      - name: Build app (x64)
+        run: dotnet build src/EncoDeck.App -c Release -p:Platform=x64
+
+      - name: Test
+        run: dotnet test tests/EncoDeck.Tests -c Release --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+  package:
+    needs: build-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish app (win-x64, self-contained, unpackaged)
+        shell: pwsh
+        run: |
+          $suffix = if ($env:GITHUB_REF_TYPE -eq 'tag') { '' } else { "ci.$env:GITHUB_RUN_NUMBER" }
+          dotnet publish src/EncoDeck.App -c Release -r win-x64 -p:Platform=x64 -p:VersionSuffix=$suffix -o artifacts/EncoDeck-win-x64
+          dotnet publish tools/EncoDeck.Probe -c Release -r win-x64 --self-contained -p:VersionSuffix=$suffix -o artifacts/EncoDeck.Probe-win-x64
+          Copy-Item LICENSE, THIRD_PARTY_NOTICES.md, README.md, README_EN.md artifacts/EncoDeck-win-x64/
+          Copy-Item LICENSE artifacts/EncoDeck.Probe-win-x64/
+          foreach ($f in 'EncoDeck.exe', 'EncoDeck.pri', 'Microsoft.WindowsAppRuntime.dll', 'Microsoft.ui.xaml.dll') {
+            if (-not (Test-Path "artifacts/EncoDeck-win-x64/$f")) { throw "Missing $f in publish output" }
+          }
+          Compress-Archive artifacts/EncoDeck-win-x64/* artifacts/EncoDeck-win-x64.zip
+          Compress-Archive artifacts/EncoDeck.Probe-win-x64/* artifacts/EncoDeck.Probe-win-x64.zip
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $props = Get-Content Directory.Build.props -Raw
+          $prefix = [regex]::Match($props, '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { "$prefix-ci.$env:GITHUB_RUN_NUMBER" }
+          ./build/build-installer.ps1 -SkipTests -Version $version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EncoDeck-win-x64
+          path: |
+            artifacts/EncoDeck-win-x64.zip
+            artifacts/EncoDeck.Probe-win-x64.zip
+            artifacts/installer/*.exe
+            artifacts/installer/*.sha256
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: EncoDeck-win-x64
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            EncoDeck-win-x64.zip
+            EncoDeck.Probe-win-x64.zip
+            installer/*.exe
+            installer/*.sha256

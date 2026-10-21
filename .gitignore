@@ -1,0 +1,55 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+publish/
+*.binlog
+
+## IDE
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+## Test results / coverage
+TestResults/
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+*.coverage
+*.trx
+
+## Packaging
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixbundle
+*.appx
+*.pfx
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+
+## Diagnostics produced locally by EncoDeck.Probe (may contain device identifiers)
+probe-reports/
+*.encodeck-diag.json
+*.encodeck-diag.zip
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Python resource research tools
+__pycache__/
+*.py[cod]
+
+## Local device-resource caches
+local-resources/
