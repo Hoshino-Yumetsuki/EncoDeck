@@ -106,7 +106,7 @@ jobs:
             installer/*.sha256
 
   # Microsoft Store: build the MSIX bundle and submit it to Partner Center (certification + publish).
-  # Needs the STORE_* secrets from a Microsoft Entra app added in Partner Center (Account settings →
+  # Uses build/submit-store.ps1 (Partner Center submission API). Needs the STORE_* secrets from a Microsoft Entra app added in Partner Center (Account settings →
   # User management → Microsoft Entra applications, role Manager). Without them the job is skipped.
   # Also runnable by hand (Actions → CI → Run workflow) to resubmit the version in Directory.Build.props.
   store:
@@ -132,21 +132,17 @@ jobs:
           $props = Get-Content Directory.Build.props -Raw
           $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { [regex]::Match($props, '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value }
           ./build/build-msix.ps1 -SkipTests -Version $version
-          # msstore takes the directory that holds the .msixupload.
+          # Keep the upload apart from the build output.
           New-Item -ItemType Directory -Force artifacts/store | Out-Null
           Move-Item artifacts/*.msixupload artifacts/store/
-
-      - uses: microsoft/setup-msstore-cli@v1
-        if: env.STORE_TENANT_ID != ''
 
       - name: Submit to Microsoft Store
         if: env.STORE_TENANT_ID != ''
         shell: pwsh
-        run: |
-          msstore reconfigure --tenantId "${{ secrets.STORE_TENANT_ID }}" --sellerId "${{ secrets.STORE_SELLER_ID }}" `
-            --clientId "${{ secrets.STORE_CLIENT_ID }}" --clientSecret "${{ secrets.STORE_CLIENT_SECRET }}"
-          msstore publish $PWD -i (Resolve-Path artifacts/store).Path -id 9PN6D8G1K9WZ
-          if ($LASTEXITCODE -ne 0) { throw "msstore publish failed." }
+        env:
+          STORE_CLIENT_ID: ${{ secrets.STORE_CLIENT_ID }}
+          STORE_CLIENT_SECRET: ${{ secrets.STORE_CLIENT_SECRET }}
+        run: ./build/submit-store.ps1 -Package (Get-ChildItem artifacts/store/*.msixupload | Select-Object -First 1).FullName
 
       - uses: actions/upload-artifact@v4
         if: env.STORE_TENANT_ID != ''
