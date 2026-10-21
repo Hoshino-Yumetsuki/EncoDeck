@@ -39,7 +39,7 @@ if ($app.pendingApplicationSubmission) {
     throw "Submission $($app.pendingApplicationSubmission.id) is still pending in Partner Center; finish or delete it first."
 }
 
-$submission = Invoke-RestMethod -Method Post "$api/submissions" -Headers $headers
+$submission = Invoke-RestMethod -Method Post "$api/submissions" -Headers $headers -ContentType "application/json" -Body "{}"
 Write-Host "Created submission $($submission.id)"
 
 foreach ($existing in $submission.applicationPackages) { $existing.fileStatus = "PendingDelete" }
@@ -60,7 +60,7 @@ Compress-Archive -LiteralPath $Package -DestinationPath $zip
 Invoke-RestMethod -Method Put $submission.fileUploadUrl -InFile $zip -Headers @{ "x-ms-blob-type" = "BlockBlob" } -ContentType "application/zip"
 Write-Host "Uploaded $fileName"
 
-Invoke-RestMethod -Method Post "$api/submissions/$($submission.id)/commit" -Headers $headers | Out-Null
+Invoke-RestMethod -Method Post "$api/submissions/$($submission.id)/commit" -Headers $headers -ContentType "application/json" -Body "{}" | Out-Null
 for ($i = 0; $i -lt 60; $i++) {
     $status = Invoke-RestMethod "$api/submissions/$($submission.id)/status" -Headers $headers
     if ($status.status -ne "CommitStarted") { break }
