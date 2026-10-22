@@ -301,13 +301,15 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
         var request = new OppoRequest(OppoCommand.SetEqualizer, [index]);
         return await ExecuteConfirmedAsync(
             "equalizer",
-            state => state with { Equalizer = Observed.From(new EqualizerState(presetId, index), _time.GetUtcNow(), StateSource.Optimistic) },
+            state => DeselectCustomEqualizer(state with { Equalizer = Observed.From(new EqualizerState(presetId, index), _time.GetUtcNow(), StateSource.Optimistic) }, _time.GetUtcNow(), StateSource.Optimistic),
             request,
             async ct =>
             {
                 var readBack = await _session.RequestAsync(new OppoRequest(OppoCommand.QueryEqualizer, []), CommandTimeout, ct).ConfigureAwait(false);
                 if (readBack.Response is not { } frame || !OppoParsers.TryParseEqualizer(frame, out byte actual)) return (false, readBack.Status);
                 ApplyEqualizer(actual, StateSource.CommandConfirmation);
+                if (actual == index)
+                    _store.TryUpdate(_identity.DeviceId, s => DeselectCustomEqualizer(s, _time.GetUtcNow(), StateSource.CommandConfirmation));
                 return (actual == index, RequestStatus.Success);
             },
             cancellationToken).ConfigureAwait(false);
@@ -759,6 +761,12 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
         var now = _time.GetUtcNow();
         _store.TryUpdate(_identity.DeviceId, state => state with { Equalizer = Observed.From(new EqualizerState(id, index), now, source), LastUpdateSource = source });
     }
+
+    /// <summary>A built-in preset replaces the active custom one; the device does not resend the custom list.</summary>
+    private static DeviceState DeselectCustomEqualizer(DeviceState state, DateTimeOffset now, StateSource source) =>
+        state.CustomEqualizers is { } list && list.Value.Any(p => p.IsSelected)
+            ? state with { CustomEqualizers = Observed.From<IReadOnlyList<CustomEqualizer>>(list.Value.Select(p => p with { IsSelected = false }).ToArray(), now, source) }
+            : state;
 
     private void ApplyFeatures(IReadOnlyList<OppoFeatureValue> values, StateSource source)
     {
