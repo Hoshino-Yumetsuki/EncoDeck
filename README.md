@@ -57,6 +57,12 @@
 
 ## 自己编译
 
+非商店 x64 版本可选接入 [LHDC-Win](https://github.com/Wayne-u/LHDC-Win)：
+普通安装包不捆绑组件，在音效页点击“下载 LHDC 组件”即可从 EncoDeck 的组件 Release 按需获取。
+离线捆绑可使用 `pwsh build/build-installer.ps1 -WithLhdc`，每次构建组件均重新拉取上游源码。
+音效页内置设备选择、播放参数、启用与恢复界面；需要测试签名驱动加载条件，商店版不支持。
+构建依赖、使用及恢复方法见 [LHDC 接入说明](docs/LHDC.md)。
+
 ```powershell
 git clone https://github.com/TIANLI0/EncoDeck
 cd EncoDeck

@@ -21,6 +21,7 @@ public enum DeviceResourceRole
     DeviceModel,
     /// <summary>Official product idle animation, separate from an interactive 3D model.</summary>
     DeviceAnimation,
+    DeviceAnimationDark,
 }
 
 public enum DeviceResourceKind

@@ -72,6 +72,7 @@ public sealed partial class DeviceModelView : UserControl
     private long _lastTick;
     public bool Loop { get; set; } = true;
     private double _playbackElapsed;
+    internal event EventHandler<bool>? ModelAvailabilityChanged;
     public void PauseAnimation() => _animation?.Stop();
     public void ResumeAnimation()
     {
@@ -183,6 +184,7 @@ public sealed partial class DeviceModelView : UserControl
         bool hasModel = _model is not null;
         ModelBox.Visibility = hasModel ? Visibility.Visible : Visibility.Collapsed;
         Still.Visibility = hasModel ? Visibility.Collapsed : Visibility.Visible;
+        ModelAvailabilityChanged?.Invoke(this, hasModel);
         ProtectedCursor = hasModel ? InputSystemCursor.Create(InputSystemCursorShape.SizeWestEast) : null;
         if (_model is null) return;
 

@@ -115,14 +115,16 @@
                     </StackPanel>
                 </StackPanel>
                 <Grid Margin="0,8,0,0">
-                <controls:DeviceModelView x:Name="Model" Height="280" Visibility="{x:Bind services:Ui.Collapsed(ViewModel.HasDeviceMotion), Mode=OneWay}"
+                <controls:DeviceModelView x:Name="Model" Height="280" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.DeviceModelPath), Mode=OneWay}"
                                           ModelPath="{x:Bind ViewModel.DeviceModelPath, Mode=OneWay}"
                                           ImagePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}"
                                           IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
                 <controls:DeviceMedia SourcePath="{x:Bind ViewModel.DeviceMotionPath, Mode=OneWay}"
+                                      DarkSourcePath="{x:Bind ViewModel.DeviceMotionDarkPath, Mode=OneWay}"
                                       Height="{Binding Height, ElementName=Model}"
                                       IsVideo="{x:Bind ViewModel.DeviceMotionIsVideo, Mode=OneWay}"
                                       FallbackPath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}"
+                                      IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}"
                                       Visibility="{x:Bind ViewModel.HasDeviceMotion, Mode=OneWay}" />
                 </Grid>
                 <TextBlock x:Uid="Home_DragHint" Text="Drag to rotate" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
@@ -134,15 +136,15 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24" Margin="0,12,0,4"
                             Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}">
                     <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.LeftArtworkPath), Mode=OneWay}">
-                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.LeftArtworkPath, Mode=OneWay}" />
+                        <controls:DeviceMedia Width="72" Height="64" SourcePath="{x:Bind ViewModel.LeftArtworkPath, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}" />
                         <TextBlock x:Uid="Artwork_Left" Text="Left earbud" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                     <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.RightArtworkPath), Mode=OneWay}">
-                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.RightArtworkPath, Mode=OneWay}" />
+                        <controls:DeviceMedia Width="72" Height="64" SourcePath="{x:Bind ViewModel.RightArtworkPath, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}" />
                         <TextBlock x:Uid="Artwork_Right" Text="Right earbud" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                     <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.CaseArtworkPath), Mode=OneWay}">
-                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.CaseArtworkPath, Mode=OneWay}" />
+                        <controls:DeviceMedia Width="72" Height="64" SourcePath="{x:Bind ViewModel.CaseArtworkPath, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}" />
                         <TextBlock x:Uid="Artwork_Case" Text="Charging case" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                 </StackPanel>

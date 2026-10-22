@@ -142,7 +142,12 @@ jobs:
         env:
           STORE_CLIENT_ID: ${{ secrets.STORE_CLIENT_ID }}
           STORE_CLIENT_SECRET: ${{ secrets.STORE_CLIENT_SECRET }}
-        run: ./build/submit-store.ps1 -Package (Get-ChildItem artifacts/store/*.msixupload | Select-Object -First 1).FullName
+        run: |
+          $version = [regex]::Match((Get-Content Directory.Build.props -Raw), '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value
+          $pattern = '(?ms)^## \[' + [regex]::Escape($version) + '\][^\r\n]*\r?\n(.*?)(?=^## |\z)'
+          $notes = [regex]::Match((Get-Content CHANGELOG.md -Raw), $pattern).Groups[1].Value.Trim()
+          if (-not $notes) { throw "Release notes missing for $version." }
+          ./build/submit-store.ps1 -Package (Get-ChildItem artifacts/store/*.msixupload | Select-Object -First 1).FullName -ReleaseNotes $notes
 
       - uses: actions/upload-artifact@v4
         if: env.STORE_TENANT_ID != ''

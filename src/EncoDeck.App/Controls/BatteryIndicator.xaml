@@ -25,7 +25,7 @@
             HorizontalAlignment="Center"
             Style="{StaticResource CaptionTextBlockStyle}"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-            Text="{x:Bind Item.Label, Mode=OneWay}" />
+            Text="{x:Bind DisplayLabel(Item.Label, LabelOverride), Mode=OneWay}" />
         <TextBlock
             HorizontalAlignment="Center"
             MaxWidth="120"

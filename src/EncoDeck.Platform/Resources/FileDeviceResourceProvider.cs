@@ -239,6 +239,7 @@ public sealed class FileDeviceResourceProvider : IDeviceResourceProvider, IDispo
         DeviceResourceRole.PopupAnimationDark => "popupAnimationDark",
         DeviceResourceRole.DeviceModel => "deviceModel",
         DeviceResourceRole.DeviceAnimation => "deviceAnimation",
+        DeviceResourceRole.DeviceAnimationDark => "deviceAnimationDark",
         _ => "popupAnimation",
     };
 

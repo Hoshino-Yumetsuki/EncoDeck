@@ -16,7 +16,9 @@
 param(
     [string] $Configuration = "Release",
     [string] $Version,
-    [switch] $SkipTests
+    [switch] $SkipTests,
+    [switch] $WithLhdc,
+    [string] $LhdcPowerShellDirectory
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,6 +55,11 @@ foreach ($required in "EncoDeck.exe", "EncoDeck.pri", "Microsoft.WindowsAppRunti
     if (-not (Test-Path (Join-Path $publish $required))) { throw "Publish output is missing $required." }
 }
 Copy-Item README.md, README_EN.md $publish -ErrorAction SilentlyContinue
+
+if ($WithLhdc) {
+    & (Join-Path $PSScriptRoot 'build-lhdc.ps1') -Destination (Join-Path $publish 'LHDC') -PowerShellDirectory $LhdcPowerShellDirectory
+    if (-not $?) { throw 'LHDC component build failed.' }
+}
 
 dotnet restore installer/InnoSetup.Tool.csproj --nologo -v q
 if ($LASTEXITCODE -ne 0) { throw "Could not download the Inno Setup compiler." }

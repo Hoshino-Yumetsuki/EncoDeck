@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="EncoDeck.App.Controls.LhdcSettings"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Border Style="{StaticResource CardStyle}">
+  <StackPanel Spacing="10">
+   <TextBlock x:Uid="Lhdc_Title" Style="{StaticResource BodyStrongTextBlockStyle}" />
+   <TextBlock x:Name="Status" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+   <HyperlinkButton x:Name="StandaloneLink" x:Uid="Lhdc_StandaloneLink" NavigateUri="https://github.com/TIANLI0/EncoDeck/releases" Visibility="Collapsed" Padding="0" />
+   <ProgressBar x:Name="Progress" Visibility="Collapsed" Maximum="100" />
+   <StackPanel Orientation="Horizontal" Spacing="8">
+    <Button x:Name="Download" Click="OnDownload" />
+    <Button x:Name="Cancel" Click="OnCancel" Visibility="Collapsed" />
+   </StackPanel>
+   <StackPanel x:Name="Editor" Spacing="10" Visibility="Collapsed">
+    <ComboBox x:Name="Devices" HorizontalAlignment="Stretch" DisplayMemberPath="Label" SelectionChanged="OnDeviceChanged" />
+    <Grid ColumnSpacing="10">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+     <ComboBox x:Name="Rate" DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
+     <ComboBox x:Name="Depth" Grid.Column="1" DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
+     <ComboBox x:Name="Bitrate" Grid.Column="2" DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
+    </Grid>
+    <CheckBox x:Name="Adaptive" />
+    <TextBlock x:Name="Observed" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+     <Button x:Name="Apply" Click="OnApply" />
+     <Button x:Name="Restore" Click="OnRestore" />
+     <Button x:Name="Refresh" Click="OnRefresh" />
+    </StackPanel>
+   </StackPanel>
+   <Expander x:Uid="Lhdc_Help" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <StackPanel Spacing="10">
+     <TextBlock x:Uid="Lhdc_HelpRequirements" TextWrapping="Wrap" />
+     <TextBlock x:Uid="Lhdc_HelpDownload" TextWrapping="Wrap" />
+     <TextBlock x:Uid="Lhdc_HelpApply" TextWrapping="Wrap" />
+     <TextBlock x:Uid="Lhdc_HelpQuality" TextWrapping="Wrap" />
+     <TextBlock x:Uid="Lhdc_HelpRestore" TextWrapping="Wrap" />
+    </StackPanel>
+   </Expander>
+  </StackPanel>
+ </Border>
+</UserControl>

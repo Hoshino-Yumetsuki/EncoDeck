@@ -22,7 +22,7 @@ namespace EncoDeck.App.Services;
 internal sealed class BrandDemo
 {
     internal sealed record Entry(string Brand, string Name, string Directory, string? ProfileId = null,
-        string? Popup = null, string? PopupDark = null, string? Model = null, string? Motion = null);
+        string? Popup = null, string? PopupDark = null, string? Model = null, string? Motion = null, string? MotionDark = null);
     private readonly App _app;
     private readonly Entry[] _entries;
     private readonly Window _picker = new() { Title = "EncoDeck · 多品牌手动演示" };
@@ -112,8 +112,8 @@ internal sealed class BrandDemo
         await Task.Delay(150);
         if (_current != entry || _exiting) return;
         ApplyArtwork(entry);
-        _status.Text = $"当前：{entry.Name}\n首页：{(entry.Model is null ? entry.Motion is null ? "产品图" : "官方循环产品动画" : Path.GetExtension(entry.Model) == ".vfxms" ? "官方 3D 场景，可拖动旋转" : "官方动态转盘，可拖动旋转")}；弹窗："
-            + (Path.GetExtension(entry.Popup) == ".json" ? "官方 Lottie 动画" : Path.GetExtension(entry.Popup) == ".webp" ? "官方逐帧开盖动画" : IsVideo(entry.Popup) ? "官方连接视频" : "静态产品素材过渡")
+        _status.Text = $"当前：{entry.Name}\n首页：{(entry.Model is null ? entry.Motion is null ? "通用产品悬浮动效（非原厂开盖）" : entry.Motion.EndsWith(".device-once.mp4", StringComparison.OrdinalIgnoreCase) ? "官方首页动画（播放一次，保留末帧）" : "官方循环产品动画" : Path.GetExtension(entry.Model) == ".vfxms" ? "官方 3D 场景，可拖动旋转" : "官方动态转盘，可拖动旋转")}；弹窗："
+            + (Path.GetExtension(entry.Popup) == ".json" ? "官方 Lottie 动画" : Path.GetExtension(entry.Popup) == ".webp" ? "官方逐帧开盖动画" : IsVideo(entry.Popup) ? "官方连接视频" : "通用产品入场动效（非原厂开盖）")
             + "。可重复打开弹窗；托盘图标提示当前型号。基础降噪、EQ 与开关操作只修改演示状态。";
         if (show)
         {
@@ -129,6 +129,7 @@ internal sealed class BrandDemo
         _app.Device.DeviceModelPath = entry.Model;
         _app.Device.DeviceMotionIsVideo = IsVideo(entry.Motion);
         _app.Device.DeviceMotionPath = entry.Motion;
+        _app.Device.DeviceMotionDarkPath = entry.MotionDark;
         if (entry.Model is not null || entry.Motion is not null) _app.Device.HasComponentArtwork = false;
         _app.Device.PopupMediaPath = entry.Popup ?? _app.Device.DeviceImagePath;
         _app.Device.PopupMediaDarkPath = entry.PopupDark ?? _app.Device.PopupMediaPath;
@@ -154,12 +155,24 @@ internal sealed class BrandDemo
                 WindowInterop.GetAppWindow(main).Show(activateWindow: false);
                 main.Navigate("Home");
                 await Task.Delay(900);
+                string[] mediaBefore = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceMedia>().Select(m => m.DiagnosticState).ToArray();
                 string[] modelBefore = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceModelView>().Select(m => m.DiagnosticState).ToArray();
                 await UiSnapshot.CaptureAsync(main, Path.Combine(output, entry.Brand + "-home.png"));
-                if (entry.Model is not null || entry.Motion is not null) await Task.Delay(1300);
+                await Task.Delay(1300);
                 string[] modelAfter = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceModelView>().Select(m => m.DiagnosticState).ToArray();
                 string[] homeMedia = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceMedia>().Select(m => m.DiagnosticState).ToArray();
-                if (entry.Model is not null || entry.Motion is not null) await UiSnapshot.CaptureAsync(main, Path.Combine(output, entry.Brand + "-home-motion.png"));
+                await UiSnapshot.CaptureAsync(main, Path.Combine(output, entry.Brand + "-home-motion.png"));
+                string[] themeMedia = [];
+                if (entry.MotionDark is not null && main.Content is FrameworkElement themed)
+                {
+                    themed.RequestedTheme = ElementTheme.Light;
+                    await Task.Delay(700);
+                    await UiSnapshot.CaptureAsync(main, Path.Combine(output, entry.Brand + "-home-light.png"));
+                    themed.RequestedTheme = ElementTheme.Dark;
+                    await Task.Delay(700);
+                    await UiSnapshot.CaptureAsync(main, Path.Combine(output, entry.Brand + "-home-dark.png"));
+                    themeMedia = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceMedia>().Select(m => m.DiagnosticState).ToArray();
+                }
                 main.Close();
                 var popup = _app.Windows.ShowConnectionPopup(TimeSpan.FromSeconds(8), placement: new PixelRect(-24000, -24000, 500, 500));
                 await Task.Delay(1500);
@@ -173,7 +186,7 @@ internal sealed class BrandDemo
                 await Task.Delay(400);
                 await UiSnapshot.CaptureAsync(panel, Path.Combine(output, entry.Brand + "-tray.png"));
                 panel.Close();
-                results.Add(new { entry.Brand, entry.Name, Profile = _app.Host.Store.Current.Profile?.ModelId, Ok = true, ModelBefore = modelBefore, ModelAfter = modelAfter, HomeMedia = homeMedia, Popup = state });
+                results.Add(new { entry.Brand, entry.Name, Profile = _app.Host.Store.Current.Profile?.ModelId, Ok = true, ModelBefore = modelBefore, ModelAfter = modelAfter, HomeMediaBefore = mediaBefore, HomeMedia = homeMedia, ThemeMedia = themeMedia, Popup = state });
             }
             catch (Exception ex)
             {

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using System.ComponentModel;
 using System.Numerics;
+using System.Text.Json;
+using System.Globalization;
 using EncoDeck.App.Controls;
 using EncoDeck.App.Services;
 using EncoDeck.App.ViewModels;
@@ -68,6 +70,10 @@ public sealed partial class ConnectionPopupWindow : Window
     private bool _hovered;
     private bool _closing;
     private bool _finished;
+    private bool _huawei;
+    private bool _huaweiPick;
+    private double _huaweiHeight;
+    private double _huaweiTextDelay;
 
     /// <param name="fallbackDuration">How long to show when the media has no official timeline.</param>
     /// <param name="passThrough">Start click-through (a fullscreen app or game is in front).</param>
@@ -115,7 +121,7 @@ public sealed partial class ConnectionPopupWindow : Window
     internal string DiagnosticState =>
         $"video={_videoPath is not null} pipeline={_video?.Player?.Pipeline} size={_video?.Player?.Width}x{_video?.Player?.Height} " +
         $"frames={_video?.Player?.FramesPublished} last={_video?.Player?.LastFrameTime?.TotalMilliseconds} holding={_video?.Player?.IsHolding} " +
-        $"style={_layout.BatteryStyle} videoVisible={_arrangement?.VideoVisible} images={_arrangement?.ImagesVisible} " +
+        $"huawei={_huawei} pick={_huaweiPick} huaweiMedia=[{HuaweiPicture.DiagnosticState}] style={_layout.BatteryStyle} videoVisible={_arrangement?.VideoVisible} images={_arrangement?.ImagesVisible} " +
         $"groups=[{string.Join("; ", _arrangement?.Groups.Select(g => $"{g.Group}:{g.Image}:{string.Join(",", g.Slots.Select(x => $"{x.Slot}={x.Battery}"))}") ?? [])}] " +
         $"column=[{string.Join(",", _arrangement?.Column ?? [])}] title={(TitleText.Visibility == Visibility.Visible ? TitleText.Text : "-")} shown={_shown:0.##} dialog={Scaled.Height:0.#} compact={Picture.DiagnosticState} topmost={WindowInterop.IsTopmost(this)} bounds={_bounds}";
 
@@ -143,6 +149,7 @@ public sealed partial class ConnectionPopupWindow : Window
         double dialogHeight = _timeline is null ? PopupLayout.Height : FitOfficialHeight();
         (double width, double height) = _timeline is null ? (CardWidth, CardHeight) : (VideoWidth, VideoWidth * dialogHeight / PopupLayout.Width);
         (Scaled.Width, Scaled.Height) = _timeline is null ? (CardWidth, CardHeight) : (PopupLayout.Width, dialogHeight);
+        if (_huawei) { width = CardWidth; height = _huaweiHeight; Scaled.Width = width; Scaled.Height = height; }
         int pixelWidth = (int)Math.Ceiling(width * scale);
         int pixelHeight = (int)Math.Ceiling(height * scale);
         // An explicit placement (diagnostics) gives the position; the size is always the layout's.
@@ -240,7 +247,9 @@ public sealed partial class ConnectionPopupWindow : Window
             ? string.Equals(Path.GetExtension(MediaOverride), ".mp4", StringComparison.OrdinalIgnoreCase)
             : dark ? ViewModel.PopupMediaDarkIsVideo : ViewModel.PopupMediaIsVideo;
 
-        if (isVideo && path is not null && File.Exists(path) && !path.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase))
+        if (isVideo && path is not null && path.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) && ConfigureHuawei(path)) return;
+
+        if (isVideo && path is not null && File.Exists(path) && !path.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) && !path.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase))
         {
             _timeline = PopupTimeline.TryReadFor(path) ?? PopupTimeline.Default with { CloseDelay = _fallbackDuration };
             _layout = PopupLayout.TryReadFor(path) ?? PopupLayout.Default;
@@ -268,13 +277,62 @@ public sealed partial class ConnectionPopupWindow : Window
         Picture.IsHeadphones = ViewModel.IsHeadphones;
         Picture.FallbackPath = ViewModel.DeviceImagePath;
         Picture.SourcePath = path;
-        bool components = !Picture.IsVideo && Path.GetExtension(path ?? string.Empty).ToLowerInvariant() is not (".json" or ".webp") && !ViewModel.IsHeadphones
+        bool components = ViewModel.DeviceImagePath is null && !Picture.IsVideo && Path.GetExtension(path ?? string.Empty).ToLowerInvariant() is not (".json" or ".webp") && !ViewModel.IsHeadphones
             && ViewModel.LeftArtworkPath is not null && ViewModel.RightArtworkPath is not null && ViewModel.CaseArtworkPath is not null;
         ComponentArt.Visibility = components ? Visibility.Visible : Visibility.Collapsed;
         Picture.Visibility = components ? Visibility.Collapsed : Visibility.Visible;
         LeftArt.SourcePath = ViewModel.LeftArtworkPath;
         RightArt.SourcePath = ViewModel.RightArtworkPath;
         CaseArt.SourcePath = ViewModel.CaseArtworkPath;
+    }
+
+    private bool ConfigureHuawei(string path)
+    {
+        try
+        {
+            string? config = null;
+            string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+            for (int i = 0; directory is not null && i < 5; i++, directory = Path.GetDirectoryName(directory))
+            {
+                string candidate = Path.Combine(directory, "config.json");
+                if (!File.Exists(candidate) || new FileInfo(candidate).Length > 1024 * 1024) continue;
+                using var probe = JsonDocument.Parse(File.ReadAllText(candidate));
+                if (probe.RootElement.TryGetProperty("huaweiReconnect", out _)) { config = candidate; break; }
+            }
+            if (config is null) return false;
+            using var document = JsonDocument.Parse(File.ReadAllText(config));
+            if (!document.RootElement.TryGetProperty("huaweiReconnect", out var layout)) return false;
+            double Number(JsonElement item, string key, double fallback, double min, double max)
+                => item.TryGetProperty(key, out var value) && double.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double number)
+                    && double.IsFinite(number) && number >= min && number <= max ? number : fallback;
+            string[] ratio = layout.GetProperty("ratio").GetString()!.Split(':');
+            if (ratio.Length != 2 || !double.TryParse(ratio[0], CultureInfo.InvariantCulture, out double rw) || !double.TryParse(ratio[1], CultureInfo.InvariantCulture, out double rh) || rw <= 0 || rh / rw is < .5 or > 2) return false;
+            _huaweiHeight = CardWidth * rh / rw;
+            _huaweiTextDelay = Number(layout, "firstTextTime", 1000, 0, 10000);
+            _huaweiPick = layout.GetProperty("typeId").GetInt32() == 9;
+            var param = layout.GetProperty("videoParam");
+            double y = Number(param, "reconnectBatteryVerticalBias", .72, 0, 1) * (_huaweiHeight - 56);
+            bool merged = ViewModel.Left.HasValue && ViewModel.Right.HasValue && Number(param, "singleBatteryHorizontalBias", .25, 0, 1) != 0 && Math.Abs(ViewModel.Left.Percent - ViewModel.Right.Percent) <= 15;
+            HuaweiLeft.Item = merged && ViewModel.Right.Percent < ViewModel.Left.Percent ? ViewModel.Right : ViewModel.Left;
+            HuaweiLeft.LabelOverride = merged ? Loc.Get("Battery_Headphones") : null;
+            HuaweiRight.Visibility = merged ? Visibility.Collapsed : Visibility.Visible;
+            Canvas.SetLeft(HuaweiLeft, Number(param, merged ? "singleBatteryHorizontalBias" : "leftBatteryHorizontalBias", .25, 0, 1) * (CardWidth - 52));
+            Canvas.SetLeft(HuaweiRight, Number(param, "rightBatteryHorizontalBias", .4, 0, 1) * (CardWidth - 52));
+            Canvas.SetLeft(HuaweiCase, Number(param, "boxBatteryHorizontalBias", .72, 0, 1) * (CardWidth - 52));
+            foreach (var element in new FrameworkElement[] { HuaweiLeft, HuaweiRight, HuaweiCase }) Canvas.SetTop(element, y);
+            HuaweiTitle.Width = CardWidth - 32;
+            Canvas.SetLeft(HuaweiTitle, 16);
+            Canvas.SetTop(HuaweiTitle, Number(param, "reconnectTextVerticalBias", .92, 0, 1) * (_huaweiHeight - 30));
+            HuaweiLayout.Width = CardWidth; HuaweiLayout.Height = _huaweiHeight;
+            HuaweiPicture.LoopVideo = false; HuaweiPicture.IsVideo = true;
+            HuaweiPicture.FallbackPath = ViewModel.DeviceImagePath; HuaweiPicture.SourcePath = path;
+            HuaweiLevels.Opacity = _animate ? 0 : 1;
+            HuaweiLayout.Visibility = Visibility.Visible;
+            Card.Visibility = OfficialLayout.Visibility = Visibility.Collapsed;
+            _huawei = true;
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException or KeyNotFoundException or FormatException or UnauthorizedAccessException) { return false; }
     }
 
     private void OnArtworkChanged(object? sender, PropertyChangedEventArgs e)
@@ -287,7 +345,7 @@ public sealed partial class ConnectionPopupWindow : Window
         // video layouts with their own timing are selected on the next connection.
         var path = IsDark ? ViewModel.PopupMediaDarkPath : ViewModel.PopupMediaPath;
         bool video = IsDark ? ViewModel.PopupMediaDarkIsVideo : ViewModel.PopupMediaIsVideo;
-        ConfigureCompactArtwork(video && !(path?.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase) ?? false) ? ViewModel.DeviceImagePath : path);
+        ConfigureCompactArtwork(video && !(path?.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) ?? false) && !(path?.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase) ?? false) ? ViewModel.DeviceImagePath : path);
     }
 
     private void AnimateCompactArtwork(bool components)
@@ -550,6 +608,7 @@ public sealed partial class ConnectionPopupWindow : Window
     /// <summary>Title, battery levels and pictures appear on HeyMelody's timeline.</summary>
     private void StartReveals()
     {
+        if (_huawei) { After(TimeSpan.FromMilliseconds(_huaweiTextDelay), () => Reveal(HuaweiLevels, 300)); return; }
         if (_timeline is not { } timeline) return;
         // Title: 200 ms fade (DiscoveryAnimUtils.setVisibility); levels: 300 ms fade (alpha_show_anim).
         After(timeline.TitleDelay, () => Reveal(TitleText, 200));
@@ -627,6 +686,7 @@ public sealed partial class ConnectionPopupWindow : Window
     /// <summary>Re-checked while visible: a game started now must never be blocked by the pop-up.</summary>
     private void Guard()
     {
+        if (_huawei && HuaweiPicture.IsVideoHolding && !_closing) { Dismiss(); return; }
         if (_closing || SuspendGuardForDiagnostics) return;
         // Seen dropping out of the topmost band while another app is in the foreground: put it back.
         if (!WindowInterop.IsTopmost(this)) _ = WindowInterop.EnsureTopmost(this);
@@ -764,7 +824,7 @@ public sealed partial class ConnectionPopupWindow : Window
     private void StartCloseTimer()
     {
         _closeTimer ??= DispatcherQueue.CreateTimer();
-        _closeTimer.Interval = _timeline?.CloseDelay ?? _fallbackDuration;
+        _closeTimer.Interval = _huawei ? TimeSpan.FromSeconds(30) : _timeline?.CloseDelay ?? _fallbackDuration;
         _closeTimer.IsRepeating = false;
         _closeTimer.Tick -= OnCloseTick;
         _closeTimer.Tick += OnCloseTick;
@@ -793,6 +853,7 @@ public sealed partial class ConnectionPopupWindow : Window
         _video?.Stop();
         _video = null;
         Picture.Stop();
+        HuaweiPicture.Stop();
     }
 
     // ---- interaction (only when not click-through) -------------------------------------------------

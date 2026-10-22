@@ -108,13 +108,15 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial string? LeftArtworkPath { get; set; }
     [ObservableProperty] public partial string? RightArtworkPath { get; set; }
     [ObservableProperty] public partial string? CaseArtworkPath { get; set; }
-    [ObservableProperty] public partial bool HasComponentArtwork { get; set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial bool HasComponentArtwork { get; set; }
     [ObservableProperty] public partial bool IsRepresentativeArtwork { get; set; }
     /// <summary>HeyMelody's 360° device model (turntable WebP) for the home page, when available.</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial string? DeviceModelPath { get; set; }
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial string? DeviceMotionPath { get; set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion)), NotifyPropertyChangedFor(nameof(IsGenericMotion))] public partial string? DeviceModelPath { get; set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion)), NotifyPropertyChangedFor(nameof(IsGenericMotion))] public partial string? DeviceMotionPath { get; set; }
     [ObservableProperty] public partial bool DeviceMotionIsVideo { get; set; }
-    public bool HasDeviceMotion => DeviceModelPath is null && DeviceMotionPath is not null;
+    [ObservableProperty] public partial string? DeviceMotionDarkPath { get; set; }
+    public bool HasDeviceMotion => DeviceModelPath is null && !HasComponentArtwork;
+    public bool IsGenericMotion => DeviceModelPath is null && DeviceMotionPath is null;
     [ObservableProperty] public partial bool HasDeviceImage { get; set; }
 
     /// <summary>Selects the headphones illustration when no product image is available.</summary>
@@ -286,15 +288,21 @@ public sealed partial class DeviceViewModel : ObservableObject
             CaseArtworkPath = ResourceKey is { } kc ? _resources.Resolve(kc, DeviceResourceRole.Case)?.Path : null;
             DeviceModelPath = ResourceKey is { } km ? _resources.Resolve(km, DeviceResourceRole.DeviceModel)?.Path : null;
             var motion = ResourceKey is { } ka ? _resources.Resolve(ka, DeviceResourceRole.DeviceAnimation) : null;
+            if (ResourceKey?.Brand == "huawei") motion = HuaweiArtworkPolicy.ForRole(motion, DeviceResourceRole.DeviceAnimation);
             DeviceMotionIsVideo = motion?.Kind == DeviceResourceKind.Video;
             DeviceMotionPath = motion?.Path;
+            var motionDark = ResourceKey is { } kmd ? _resources.Resolve(kmd, DeviceResourceRole.DeviceAnimationDark) : null;
+            if (ResourceKey?.Brand == "huawei") motionDark = HuaweiArtworkPolicy.ForRole(motionDark, DeviceResourceRole.DeviceAnimationDark);
+            DeviceMotionDarkPath = motionDark?.Path;
             HasComponentArtwork = DeviceImagePath is null && DeviceModelPath is null && DeviceMotionPath is null &&
                 (LeftArtworkPath is not null || RightArtworkPath is not null || CaseArtworkPath is not null);
             HasDeviceImage = DeviceImagePath is not null;
             var popup = ResourceKey is { } k ? _resources.Resolve(k, DeviceResourceRole.PopupAnimation) : null;
+            if (ResourceKey?.Brand == "huawei") popup = HuaweiArtworkPolicy.ForRole(popup, DeviceResourceRole.PopupAnimation);
             PopupMediaPath = popup?.Path ?? DeviceImagePath;
             PopupMediaIsVideo = popup?.Kind == DeviceResourceKind.Video;
             var popupDark = ResourceKey is { } kd ? _resources.Resolve(kd, DeviceResourceRole.PopupAnimationDark) : null;
+            if (ResourceKey?.Brand == "huawei") popupDark = HuaweiArtworkPolicy.ForRole(popupDark, DeviceResourceRole.PopupAnimationDark);
             PopupMediaDarkPath = popupDark?.Path ?? PopupMediaPath;
             PopupMediaDarkIsVideo = popupDark is not null ? popupDark.Kind == DeviceResourceKind.Video : PopupMediaIsVideo;
         }

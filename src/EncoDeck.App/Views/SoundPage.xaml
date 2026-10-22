@@ -2,6 +2,7 @@
 <Page
     x:Class="EncoDeck.App.Views.SoundPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:controls="using:EncoDeck.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
@@ -88,6 +89,7 @@
             </Border>
             </StackPanel>
             </Grid>
+            <controls:LhdcSettings />
         </StackPanel>
         </Grid>
     </ScrollViewer>

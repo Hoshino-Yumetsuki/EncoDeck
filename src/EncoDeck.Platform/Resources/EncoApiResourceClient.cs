@@ -98,6 +98,8 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
                     if (!AddRole(roles, folder, pack, "popupAnimation", Descriptor(config.RootElement, "animationRes"), false))
                         AddRole(roles, folder, pack, "popupAnimation", Descriptor(config.RootElement, "lottieRes"), false);
                     AddRole(roles, folder, pack, "deviceAnimation", Descriptor(config.RootElement, "homeAnimationRes"), false);
+                    AddRole(roles, folder, pack, "deviceAnimationDark", Descriptor(config.RootElement, "homeAnimationDarkRes"), false);
+                    AddRole(roles, folder, pack, "popupAnimationDark", Descriptor(config.RootElement, "animationDarkRes"), false);
                 }
                 else if (kind == "model")
                 {

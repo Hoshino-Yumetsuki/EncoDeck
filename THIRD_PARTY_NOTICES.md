@@ -78,3 +78,13 @@ Device images and animations are obtained through EncoAPI (https://encoapi.verce
 
 CommunityToolkit.WinUI.Lottie（MIT）用于本地渲染官方 Lottie JSON；间接依赖 Microsoft.Graphics.Win2D（MIT）。
 型号与素材映射由 EncoAPI 的官方 App 目录生成，仅包含互操作事实；OPPO、OnePlus、realme、DIZO、vivo、iQOO、HUAWEI、Xiaomi、Redmi、EDIFIER 素材仍属于各自权利人，不随客户端安装包分发。
+
+## 6. Optional LHDC companion
+
+Non-Store x64 installers built with `-WithLhdc` include [LHDC-Win](https://github.com/Wayne-u/LHDC-Win)
+(MIT) and its dependencies. Each component build fetches a fresh upstream checkout.
+Standard installers omit this component. Users can explicitly download the EncoDeck source-built runtime from its dedicated
+GitHub Release in the app; its licenses and source revision are retained in the user component cache.
+The complete upstream LICENSE, NOTICE.md and licenses directory are retained under LHDC/;
+release.json identifies the upstream source commit. EncoDeck provides its own WinUI controls; the upstream WPF panel is not included. Dependencies include the Apache-2.0
+LHDC V5 encoder, MS-PL Windows driver samples, and the bundled .NET and PowerShell runtimes.

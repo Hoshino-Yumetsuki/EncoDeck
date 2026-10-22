@@ -19,6 +19,15 @@
         <!-- The whole pop-up scales with the user's size setting. -->
         <Viewbox Stretch="Fill">
             <Grid x:Name="Scaled">
+                <Grid x:Name="HuaweiLayout" Visibility="Collapsed">
+                    <controls:DeviceMedia x:Name="HuaweiPicture" IsHitTestVisible="False" />
+                    <Canvas x:Name="HuaweiLevels" IsHitTestVisible="False">
+                        <controls:BatteryIndicator x:Name="HuaweiLeft" Width="52" Item="{x:Bind ViewModel.Left}" GlyphSize="18" LevelFontSize="15" />
+                        <controls:BatteryIndicator x:Name="HuaweiRight" Width="52" Item="{x:Bind ViewModel.Right}" GlyphSize="18" LevelFontSize="15" />
+                        <controls:BatteryIndicator x:Name="HuaweiCase" Width="52" Item="{x:Bind ViewModel.Case}" GlyphSize="18" LevelFontSize="15" />
+                        <TextBlock x:Name="HuaweiTitle" Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    </Canvas>
+                </Grid>
                 <!-- Official layout (HeyMelody pack): HeyMelody's 320 × 347 dp connection dialog, scaled to
                      the pop-up. The video fills it (centre-crop); the battery levels, pictures and title
                      go where PopupLayout says, built in code. -->

@@ -8,6 +8,10 @@ namespace EncoDeck.App.Controls;
 /// <summary>Battery glyph, level, label and "last read" freshness for one component.</summary>
 public sealed partial class BatteryIndicator : UserControl
 {
+    public static readonly DependencyProperty LabelOverrideProperty = DependencyProperty.Register(
+        nameof(LabelOverride), typeof(string), typeof(BatteryIndicator), new PropertyMetadata(null));
+    public string? LabelOverride { get => (string?)GetValue(LabelOverrideProperty); set => SetValue(LabelOverrideProperty, value); }
+    public string DisplayLabel(string label, string? replacement) => string.IsNullOrEmpty(replacement) ? label : replacement;
     public static readonly DependencyProperty ItemProperty = DependencyProperty.Register(
         nameof(Item), typeof(BatteryItemViewModel), typeof(BatteryIndicator), new PropertyMetadata(null));
 
