@@ -6,8 +6,8 @@ using EncoDeck.Core.Connection;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Core.State;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo;
-using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -169,10 +169,9 @@ public sealed class DeviceManager : IDeviceManager
             // The device cache has now restored what these earbuds reported last time: show the
             // same model and settings as then, before the control channel even opens.
             var profile = choice.Profile;
-            if (profile is OppoDeviceProfile matched)
+            if (profile is IControllableProfile matched)
             {
-                var known = _store.Current;
-                var remembered = OppoDeviceProfile.Remembered(matched, known.ProductId, known.ControlCapabilities, known.BudFirmware);
+                var remembered = matched.Remember(_store.Current);
                 if (!ReferenceEquals(remembered, matched))
                 {
                     profile = remembered;
@@ -188,13 +187,13 @@ public sealed class DeviceManager : IDeviceManager
                 return;
             }
 
-            if (profile is not OppoDeviceProfile oppoProfile)
+            if (profile is not IControllableProfile controllable)
             {
                 link.Dispose();
                 return;
             }
 
-            var supervisor = new ControlChannelSupervisor(choice.Identity, oppoProfile, link, _connector, _store, _policy, _allowExperimental, _loggers, trace: _trace);
+            var supervisor = new ControlChannelSupervisor(choice.Identity, controllable, link, _connector, _store, _policy, _allowExperimental, _loggers, trace: _trace);
             var identity = choice.Identity;
             supervisor.LinkConnected += (_, _) => ActiveDeviceLinkConnected?.Invoke(this, identity);
             supervisor.CaseLidOpened += (_, _) => ActiveDeviceCaseLidOpened?.Invoke(this, identity);
@@ -215,9 +214,9 @@ public sealed class DeviceManager : IDeviceManager
         }
     }
 
-    private static bool IsGeneric(IDeviceProfile profile) => profile is OppoDeviceProfile { Definition.IsGeneric: true };
+    private static bool IsGeneric(IDeviceProfile profile) => profile is IControllableProfile { IsGeneric: true };
 
-    private OppoDeviceController? Controller => _active?.Supervisor.Controller;
+    private IDeviceController? Controller => _active?.Supervisor.Controller;
 
     public Task<CommandResult> SetNoiseControlAsync(NoiseControlState target, CancellationToken cancellationToken = default) =>
         Controller is { } c ? c.SetNoiseControlAsync(target, cancellationToken) : Task.FromResult(CommandResult.NotConnected);
@@ -231,7 +230,7 @@ public sealed class DeviceManager : IDeviceManager
     public Task<CommandResult> RefreshAsync(CancellationToken cancellationToken = default) =>
         Controller is { } c ? c.RefreshAsync(cancellationToken) : Task.FromResult(CommandResult.NotConnected);
 
-    private Task<CommandResult> WithController(Func<OppoDeviceController, Task<CommandResult>> action) =>
+    private Task<CommandResult> WithController(Func<IDeviceController, Task<CommandResult>> action) =>
         Controller is { } c ? action(c) : Task.FromResult(CommandResult.NotConnected);
 
     public Task<CommandResult> SetSpatialAudioAsync(SpatialAudioMode mode, CancellationToken cancellationToken = default) => WithController(c => c.SetSpatialAudioAsync(mode, cancellationToken));

@@ -15,7 +15,7 @@ namespace EncoDeck.Protocol.Oppo;
 /// device events into <see cref="IDeviceStateStore"/> updates, and executes commands with
 /// device confirmation (and rollback of optimistic UI state on failure).
 /// </summary>
-public sealed partial class OppoDeviceController : IAsyncDisposable
+public sealed partial class OppoDeviceController : IDeviceController
 {
     private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(5);
@@ -40,6 +40,7 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
     private OppoModelDefinition _baseModel;
     private int? _firmware;
     private int _unknownFrames;
+    private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public OppoDeviceController(
         OppoSession session,
@@ -59,11 +60,20 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
         _logger = logger ?? NullLogger.Instance;
         _time = time ?? TimeProvider.System;
         _session.UnsolicitedFrame += OnUnsolicitedFrame;
+        _session.Closed += OnSessionClosed;
+        if (!_session.IsOpen) _closed.TrySetResult();
         // What these earbuds reported last time decides the settings until they report again.
         if (store.Current.Device?.DeviceId == identity.DeviceId) _firmware = store.Current.BudFirmware;
     }
 
     public OppoDeviceProfile Profile { get; private set; }
+
+    /// <summary>When set, <see cref="DisposeAsync"/> also disposes the session (and its channel).</summary>
+    internal bool OwnsSession { get; init; }
+
+    public Task Closed => _closed.Task;
+
+    private void OnSessionClosed(object? sender, SessionClosedEventArgs e) => _closed.TrySetResult();
 
     public uint? ProductId { get; private set; }
 
@@ -827,9 +837,10 @@ public sealed partial class OppoDeviceController : IAsyncDisposable
         _ => CommandResult.NotConnected,
     };
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _session.UnsolicitedFrame -= OnUnsolicitedFrame;
-        return ValueTask.CompletedTask;
+        _session.Closed -= OnSessionClosed;
+        if (OwnsSession) await _session.DisposeAsync().ConfigureAwait(false);
     }
 }

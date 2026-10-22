@@ -4,7 +4,7 @@ using EncoDeck.Core.Connection;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo;
-using EncoDeck.Protocol.Oppo.Models;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,7 +29,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     public static readonly TimeSpan DefaultLinkSettleDelay = TimeSpan.FromSeconds(1);
 
     private readonly DeviceIdentity _identity;
-    private readonly OppoDeviceProfile _profile;
+    private readonly IControllableProfile _profile;
     private readonly ILinkStateSource _link;
     private readonly IChannelConnector _connector;
     private readonly IDeviceStateStore _store;
@@ -45,11 +45,11 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     private TaskCompletionSource _wake = NewWake();
     private bool _manualRetry;
     private Task? _loop;
-    private OppoDeviceController? _controller;
+    private IDeviceController? _controller;
 
     public ControlChannelSupervisor(
         DeviceIdentity identity,
-        OppoDeviceProfile profile,
+        IControllableProfile profile,
         ILinkStateSource link,
         IChannelConnector connector,
         IDeviceStateStore store,
@@ -76,7 +76,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     }
 
     /// <summary>The controller while the channel is ready; null otherwise.</summary>
-    public OppoDeviceController? Controller
+    public IDeviceController? Controller
     {
         get { lock (_gate) return _controller; }
     }
@@ -226,14 +226,10 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied ? ServeOutcome.Permanent : ServeOutcome.Failed;
         }
 
-        var session = new OppoSession(open.Channel, _loggers.CreateLogger<OppoSession>(), _time, _trace);
-        var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        session.Closed += (_, _) => closed.TrySetResult();
-        session.Start();
-
         // Reconnecting: start from the model and settings the earbuds had (the UI keeps showing them).
-        var profile = _store.Current is { Profile: OppoDeviceProfile current } state && state.Device?.DeviceId == _identity.DeviceId ? current : _profile;
-        var controller = new OppoDeviceController(session, profile, _identity, _store, _allowExperimental, _loggers.CreateLogger<OppoDeviceController>(), _time);
+        var profile = _store.Current is { Profile: IControllableProfile current } state && state.Device?.DeviceId == _identity.DeviceId && current.Brand == _profile.Brand ? current : _profile;
+        var controller = profile.CreateController(open.Channel, new ControllerContext(_identity, _store, _allowExperimental, _loggers, _time, _trace));
+        var closed = controller.Closed;
         controller.CaseLidOpened += (_, _) => CaseLidOpened?.Invoke(this, EventArgs.Empty);
         try
         {
@@ -260,9 +256,9 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             while (true)
             {
                 var wake = CurrentWake();
-                await Task.WhenAny(closed.Task, wake.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+                await Task.WhenAny(closed, wake.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
                 if (ct.IsCancellationRequested) return ServeOutcome.EndedByLinkOrUser;
-                if (closed.Task.IsCompleted)
+                if (closed.IsCompleted)
                 {
                     _logger.LogInformation("Control channel closed while the link is {Link}", _link.IsConnected ? "up" : "down");
                     return _link.IsConnected ? ServeOutcome.Failed : ServeOutcome.EndedByLinkOrUser;
@@ -276,7 +272,6 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         {
             lock (_gate) _controller = null;
             await controller.DisposeAsync().ConfigureAwait(false);
-            await session.DisposeAsync().ConfigureAwait(false);
         }
     }
 
