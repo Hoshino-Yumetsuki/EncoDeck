@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     IsTabStop="True"
     UseSystemFocusVisuals="True">
-    <!-- HeyMelody's 3D model (.vfxms), drawn with Direct3D into a transparent swap chain. -->
+    <!-- HeyMelody's 3D model (.vfxms), drawn with Direct3D and shown as a transparent bitmap. -->
     <Grid x:Name="Surface"
           Background="Transparent"
           PointerPressed="OnPointerPressed"
@@ -15,6 +15,6 @@
           PointerCaptureLost="OnPointerReleased"
           PointerWheelChanged="OnPointerWheelChanged"
           DoubleTapped="OnDoubleTapped">
-        <SwapChainPanel x:Name="Panel" IsHitTestVisible="False" />
+        <Image x:Name="Frame" Stretch="Fill" IsHitTestVisible="False" />
     </Grid>
 </UserControl>

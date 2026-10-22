@@ -186,7 +186,8 @@ public sealed partial class DeviceModelView : UserControl
         Release();
         ModelBox.Visibility = Visibility.Collapsed;
         ProtectedCursor = null;
-        Still.Visibility = Visibility.Visible;
+        // No placeholder while the scene loads: the model fades in on its own (the still returns on failure).
+        Still.Visibility = Visibility.Collapsed;
         Still.Opacity = 1;
         Scene.Opacity = 0;
         Scene.Visibility = Visibility.Visible;

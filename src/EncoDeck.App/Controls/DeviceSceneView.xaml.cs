@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using EncoDeck.Platform.Media.Scene3D;
 using EncoDeck.Platform.Shell;
 using Microsoft.UI.Input;
@@ -8,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace EncoDeck.App.Controls;
 
@@ -18,7 +20,7 @@ namespace EncoDeck.App.Controls;
 /// to reset; arrow keys turn it too. It turns slowly on its own unless Windows animations are off.
 /// <para>
 /// Frames are drawn only while the view moves and the window is visible. Everything (device,
-/// textures, swap chain) is released when the control unloads.
+/// textures, bitmap) is released when the control unloads.
 /// </para>
 /// </summary>
 public sealed partial class DeviceSceneView : UserControl
@@ -29,7 +31,9 @@ public sealed partial class DeviceSceneView : UserControl
     private readonly OrbitCamera _camera = new();
     private readonly Stopwatch _clock = new();
     private SceneRenderer? _renderer;
-    private SwapChainTarget? _target;
+    private BitmapTarget? _target;
+    private WriteableBitmap? _bitmap;
+    private byte[] _pixels = [];
     private string? _loadedPath;
     private int _loadVersion;
     private bool _rendering;
@@ -47,8 +51,6 @@ public sealed partial class DeviceSceneView : UserControl
             if (_renderer is null && ScenePath is { Length: > 0 }) OnScenePathChanged();
         };
         Unloaded += (_, _) => Release();
-        Panel.SizeChanged += (_, _) => ResizeTarget();
-        Panel.CompositionScaleChanged += (_, _) => ResizeTarget();
         KeyDown += OnKeyDown;
         ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeAll);
     }
@@ -132,51 +134,34 @@ public sealed partial class DeviceSceneView : UserControl
     private static bool IsSceneError(Exception ex) => ex is IOException or InvalidDataException or UnauthorizedAccessException
         or InvalidOperationException or COMException or SharpGen.Runtime.SharpGenException or System.Text.Json.JsonException or ArgumentException;
 
-    // ---- swap chain ------------------------------------------------------------------------------
+    // ---- bitmap ----------------------------------------------------------------------------------
 
-    private (int Width, int Height) PixelSize() =>
-        ((int)Math.Ceiling(Panel.ActualWidth * Panel.CompositionScaleX), (int)Math.Ceiling(Panel.ActualHeight * Panel.CompositionScaleY));
+    // A bitmap rather than a SwapChainPanel: a swap chain's transparent pixels show the window's Mica
+    // backdrop instead of the page beneath, which leaves a visibly darker box around the model.
+    private (int Width, int Height) PixelSize()
+    {
+        double scale = XamlRoot?.RasterizationScale ?? 1;
+        return ((int)Math.Ceiling(Surface.ActualWidth * scale), (int)Math.Ceiling(Surface.ActualHeight * scale));
+    }
 
     private void CreateTarget()
     {
         if (_renderer is null) return;
         var (width, height) = PixelSize();
-        _target = new SwapChainTarget(_renderer, width, height);
-        _target.Resize(width, height, Panel.CompositionScaleX, Panel.CompositionScaleY);
-        SetSwapChain(Panel, _target.SwapChain.NativePointer);
+        _target = new BitmapTarget(_renderer, width, height);
         _dirty = true;
     }
 
-    private void ResizeTarget()
+    /// <summary>Follows the control's size and the display scale; a new bitmap is made when they change.</summary>
+    private void EnsureBitmap()
     {
-        if (_target is null) return;
         var (width, height) = PixelSize();
-        try
-        {
-            _target.Resize(width, height, Panel.CompositionScaleX, Panel.CompositionScaleY);
-            _dirty = true;
-        }
-        catch (Exception ex) when (ex is COMException or SharpGen.Runtime.SharpGenException)
-        {
-            RecoverDevice();
-        }
-    }
-
-    /// <summary><c>ISwapChainPanelNative::SetSwapChain</c> (vtable slot 3).</summary>
-    private static unsafe void SetSwapChain(SwapChainPanel panel, nint swapChain)
-    {
-        nint unknown = ((WinRT.IWinRTObject)panel).NativeObject.ThisPtr;
-        var iid = new Guid("63aad0b8-7c24-40ff-85a8-640d944cc325");
-        Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknown, in iid, out nint native));
-        try
-        {
-            var setSwapChain = (delegate* unmanaged[Stdcall]<nint, nint, int>)(*(nint**)native)[3];
-            Marshal.ThrowExceptionForHR(setSwapChain(native, swapChain));
-        }
-        finally
-        {
-            Marshal.Release(native);
-        }
+        _target!.Resize(width, height);
+        if (_bitmap is not null && _bitmap.PixelWidth == _target.Width && _bitmap.PixelHeight == _target.Height) return;
+        _bitmap = new WriteableBitmap(_target.Width, _target.Height);
+        _pixels = new byte[_target.Width * _target.Height * 4];
+        Frame.Source = _bitmap;
+        _dirty = true;
     }
 
     // ---- frames ----------------------------------------------------------------------------------
@@ -209,10 +194,13 @@ public sealed partial class DeviceSceneView : UserControl
         if (XamlRoot?.IsHostVisible == false) return;
         _camera.AutoRotate = ShellEnvironment.AnimationsEnabled();
         _camera.Update(dt);
-        if (!_camera.IsMoving && !_dirty) return;
         try
         {
-            _target.Present(_camera);
+            EnsureBitmap();
+            if (!_camera.IsMoving && !_dirty) return;
+            _target.Render(_camera, _pixels);
+            using (var stream = _bitmap!.PixelBuffer.AsStream()) stream.Write(_pixels);
+            _bitmap.Invalidate();
             _dirty = false;
             if (!_announced)
             {
@@ -365,12 +353,11 @@ public sealed partial class DeviceSceneView : UserControl
         StopRendering();
         _pointerId = null;
         Surface.ReleasePointerCaptures();
-        if (_target is not null)
-        {
-            try { SetSwapChain(Panel, 0); } catch (COMException) { }
-            _target.Dispose();
-            _target = null;
-        }
+        Frame.Source = null;
+        _bitmap = null;
+        _pixels = [];
+        _target?.Dispose();
+        _target = null;
         _renderer?.Dispose();
         _renderer = null;
         _loadedPath = null;

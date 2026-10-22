@@ -12,7 +12,7 @@ namespace EncoDeck.Platform.Media.Scene3D;
 /// <summary>
 /// Draws a <see cref="SceneAssets"/> scene with Direct3D 11 the way HeyMelody's Filament viewer does
 /// (see <see cref="SceneShaders"/> and <see cref="OrbitCamera"/>): MSAA, transparent background,
-/// camera exposure f/16, 1/125 s, ISO 100. Targets are a composition swap chain (<see cref="SwapChainTarget"/>)
+/// camera exposure f/16, 1/125 s, ISO 100. Targets are a bitmap for XAML (<see cref="BitmapTarget"/>)
 /// or an off-screen texture (<see cref="RenderToPixels"/>, for diagnostics and tests).
 /// <para>Not thread-safe: create, draw and dispose on one thread.</para>
 /// </summary>

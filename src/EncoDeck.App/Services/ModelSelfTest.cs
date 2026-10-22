@@ -9,6 +9,34 @@ namespace EncoDeck.App.Services;
 internal static class ModelSelfTest
 {
     public const string Argument = "--model-selftest";
+    public const string PreviewArgument = "--model-preview";
+
+    /// <summary>
+    /// <c>--model-preview &lt;model&gt; &lt;productId hex&gt; &lt;colorId&gt; &lt;name&gt;</c>: the main window's home page
+    /// with sample state for that model, for manual testing; no Bluetooth runtime, settings untouched.
+    /// </summary>
+    public static async Task<Window> ShowPreviewAsync(App app, string[] args, int at, Microsoft.UI.Dispatching.DispatcherQueue dispatcher)
+    {
+        string modelPath = Path.GetFullPath(args[at + 1]);
+        uint productId = Convert.ToUInt32(args[at + 2], 16);
+        var host = AppHost.Create(Path.Combine(Path.GetTempPath(), "EncoDeck-model-preview", "logs"));
+        app.SetHostForDiagnostics(host);
+        var model = Protocol.Oppo.Models.OppoModels.FindByProductId(productId) ?? Protocol.Oppo.Models.OppoModels.EncoX4;
+        host.Store.Reset(UiSnapshot.SampleState(DateTimeOffset.UtcNow) with
+        {
+            Device = new Core.Devices.DeviceIdentity("preview", args[at + 4], new Core.Privacy.BluetoothAddress(0)),
+            Profile = new Protocol.Oppo.Models.OppoDeviceProfile(model),
+            ProductId = productId,
+            ColorId = int.Parse(args[at + 3], System.Globalization.CultureInfo.InvariantCulture),
+        });
+        app.CreateViewModelsForDiagnostics(dispatcher);
+        await Task.Delay(300);
+        app.Device.DeviceModelPath = modelPath;
+        var main = new Views.MainWindow { Title = "EncoDeck preview - " + args[at + 4] };
+        main.Activate();
+        main.Navigate("Home");
+        return main;
+    }
 
     public static async Task RunAsync(string output, string modelPath)
     {

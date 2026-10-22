@@ -93,6 +93,15 @@ public partial class App : Application
             return;
         }
 
+        int modelPreview = Array.FindIndex(commandLine, a => string.Equals(a, ModelSelfTest.PreviewArgument, StringComparison.OrdinalIgnoreCase));
+        if (modelPreview >= 0 && modelPreview + 4 < commandLine.Length)
+        {
+            _ = ModelSelfTest.ShowPreviewAsync(this, commandLine, modelPreview, _dispatcher).ContinueWith(
+                t => t.Result.Closed += (_, _) => { Host?.Loggers.Dispose(); Host?.FileLog.Dispose(); Exit(); },
+                TaskScheduler.FromCurrentSynchronizationContext());
+            return;
+        }
+
         // Diagnostics: off-screen pop-up check; never touches a running instance or the Bluetooth runtime.
         int selfTest = Array.FindIndex(commandLine, a => string.Equals(a, PopupSelfTest.Argument, StringComparison.OrdinalIgnoreCase));
         if (selfTest >= 0)
