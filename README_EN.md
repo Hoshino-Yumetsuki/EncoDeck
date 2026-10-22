@@ -1,122 +1,167 @@
-<p align="center"><img src="src/EncoDeck.App/Assets/EncoDeck-256.png" width="96" alt="EncoDeck" /></p>
+<p align="center">
+  <img src="src/EncoDeck.App/Assets/EncoDeck-256.png" width="88" alt="EncoDeck" />
+</p>
 
-# EncoDeck
+<h1 align="center">EncoDeck</h1>
 
-**A native, multi-brand Windows control center for earbuds** — OPPO / OnePlus / realme, vivo / iQOO, HUAWEI, Xiaomi / Redmi,
-EDIFIER and more: check battery, switch noise control and adjust sound from your PC instead of reaching for your phone.
+<p align="center">Manage your earbuds on Windows — no more reaching for your phone just to switch noise cancelling.</p>
+
+<p align="center">
+  <a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="190" alt="Get it from Microsoft Store" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/TIANLI0/EncoDeck/releases">Download installer</a> ·
+  <a href="README.md">简体中文</a> ·
+  <a href="docs/COMPATIBILITY.md">Compatibility</a> ·
+  <a href="docs/DEVELOPMENT.md">Development</a>
+</p>
 
 > 🍎 **On a Mac?** We recommend [HeyBuds](https://github.com/abaichuan1017/HeyBuds).
 
-> ⚠️ **Unofficial project.** EncoDeck is community-built open-source software. It is not affiliated
-> with, endorsed by or supported by OPPO, OnePlus, realme, vivo, HUAWEI, Xiaomi, EDIFIER or any other manufacturer. Product names are used only to describe
-> compatibility.
+EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings the everyday settings from HeyMelody to your PC: battery levels for the left and right earbuds and the case, noise control, EQ and spatial audio, touch controls and more. Most of the time it can live as just a tray icon, without keeping the main window open.
 
-[简体中文](README.md) · [Compatibility](docs/COMPATIBILITY.md) · [Protocol findings](docs/PROTOCOL_FINDINGS.md) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
+
+## Screenshots
 
 <p align="center">
-  <img src="docs/images/popup-demo.gif" width="300" alt="Lid-open animation and battery levels next to the taskbar when the earbuds connect" />
+  <img src="docs/images/popup-demo.gif" width="300" alt="Connection popup" />
 </p>
 
-| Home | Tray quick panel (above Windows Quick Settings) |
-|---|---|
-| <img src="docs/images/home.png" alt="Home: 3D device model, battery, noise control and device management" /> | <img src="docs/images/quick-panel.png" width="320" alt="Quick panel: battery and noise control" /> |
+| Main window | Tray quick panel |
+| :---: | :---: |
+| <img src="docs/images/home.png" alt="Main window" /> | <img src="docs/images/quick-panel.png" alt="Tray quick panel" /> |
 
 ## Features
 
-- **Multiple brands**: besides the OPPO family, vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER
-  (protocols ported from OppoPodsManager, with some device connections from
-  [HeyBuds](https://github.com/abaichuan1017/HeyBuds); not yet verified on hardware; see
-  [Compatibility](docs/COMPATIBILITY.md)).
-- **Lives in the notification area**: left click opens a quick panel (battery + noise control), right
-  click opens a native menu; near-zero CPU while idle.
-- **Connection popup** near the taskbar when the earbuds connect, with the model's lid-open animation
-  and battery levels (Composition animations, pauses on hover, suppressed while a fullscreen game is
-  running). Only the video is decoded: it never opens an audio stream, never shows up in the system
-  media controls and cannot be paused by an earbud tap or a media key.
-- **3D device model** on the home page, as in HeyMelody: pre-rendered turntables rotate left/right;
-  `.vfxms` 3D models (e.g. Enco X3, Free4) are rendered live — drag in any direction, zoom with the
-  wheel, double-click to reset.
-- **Battery**: left / right / case with charging state and live updates; the case shows "last read"
-  when it is not reporting.
-- **Noise control**: noise cancelling (high / moderate / low / auto), adaptive, transparency, off —
-  stays in sync when you change it on the earbuds or your phone.
-- **Global hotkeys**: switch between noise cancelling and transparency, step through the modes or
-  jump to one from any app (fullscreen games included); bind them in Settings › Hotkeys.
-- **Real device communication**: every change is sent over Bluetooth RFCOMM, acknowledged and read
-  back from the earbuds; failures roll back. EncoDeck never shows simulated state.
-- **Fluent Design**: WinUI 3, Mica / Acrylic, light & dark, system accent colour, Chinese / English.
+### Battery and connection status
 
-## Tested hardware
+Once your earbuds connect, the main window and tray panel show battery level and charging state for the **left earbud, right earbud and charging case**. Supported models also show wear state, in-case state and firmware version.
 
-| Model | Firmware | Status |
-|---|---|---|
-| OPPO Enco X4 | L 116 / R 116 / case 100 | Battery, wear state, all noise-control modes and firmware info verified; see the [compatibility table](docs/COMPATIBILITY.md) |
+The case usually stops reporting battery once the earbuds leave it, so EncoDeck keeps the last reading and labels it as "last read" instead of passing stale data off as live. You also get a low-battery reminder.
 
-Other OPPO / OnePlus earbuds are detected as "unverified model" and shown read-only; EncoDeck sends no
-settings to them.
+### Noise control
 
-## Known limitations
+Switch right from the tray, without opening the main window:
 
-- Pair and connect the earbuds in Windows Bluetooth settings first; EncoDeck never pages a
-  disconnected device.
-- Not implemented yet: BLE lid-open popup, custom EQ editing, touch-control remapping, firmware
-  updates (OTA is out of scope for v1).
-- Some features are "experimental" and must be enabled in **Settings → Advanced**.
-- The self-contained build is large (≈50 MB installer, ≈180 MB installed) because it bundles the .NET
-  and Windows App SDK runtimes, so nothing else needs to be installed.
+- **Noise cancelling / Transparency / Off / Adaptive** (depending on the model);
+- Noise cancelling strength: **Deep, Moderate, Light, Smart**;
+- Adaptive-mode noise preference (where supported).
 
-## Download & install
+If you change noise control with an earbud gesture or from your phone, EncoDeck reads the state reported by the earbuds and updates the UI. Commands are sent over Bluetooth, then confirmed and read back from the earbuds; if one fails, the button won't stay stuck in the wrong state.
 
-### Microsoft Store (recommended)
+You can also bind global hotkeys under Settings → Hotkeys, e.g. to toggle between noise cancelling and transparency or jump straight to a specific mode. They work in full-screen games too.
 
-<a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft" /></a>
+### Sound
 
-[Open in the Microsoft Store](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) · x64 and ARM64, updated automatically by the Store;
-Settings › Updates can also check for and install Store updates. Start with Windows uses a startup task you can manage
-under Task Manager › Startup apps.
+Sound options follow each model's configuration and actual capabilities.
 
-### Installer
+| Setting | What it does |
+| --- | --- |
+| **EQ** | Switch the earbuds' built-in presets, such as Dynaudio-related presets, Vocal, Treble, Bass (names vary by model) |
+| **Custom EQ** | Edit, save, switch and delete EQ on supported OPPO models; the Enco X4 supports up to 3 profiles of 10 bands each |
+| **BassWave** | Toggle dynamic bass and adjust its strength |
+| **Spatial audio** | Switch between off, fixed spatial audio and head tracking (if supported) |
+| **Game mode** | Toggle low-latency mode and game sound enhancement; conflicts with other sound settings follow the earbuds' own rules |
 
-Run `EncoDeck-Setup-<version>-win-x64.exe` from [Releases](https://github.com/TIANLI0/EncoDeck/releases).
-It installs per user into `%LOCALAPPDATA%\Programs\EncoDeck` without administrator rights.
-**Installing a newer version over an existing one upgrades it in place**, keeping settings, cache and
-custom resources. Uninstalling asks whether to delete user data (`%LOCALAPPDATA%\EncoDeck`).
+Some of these settings can already be read from real hardware, but writes are still mostly implemented from the HeyMelody protocol and haven't all been verified on hardware yet. See the [compatibility table](docs/COMPATIBILITY.md) for per-item details.
 
-**In-app updates:** Settings › Updates checks GitHub Releases for a newer version (by default once a day,
-downloading it in the background; can be turned off, and preview versions are opt-in). The installer's
-size and SHA-256 are verified, nothing is installed until you click "Restart and update now", and
-EncoDeck starts again after the update.
+### Earbud controls and device management
 
-Requirements: Windows 10 19041 or later (Windows 11 recommended); the installer is x64, the Store version supports x64 and ARM64.
+On supported models you can also change these earbud-side settings:
+
+- **Touch gestures**: set pinch, long pinch, swipe and call gestures separately for each earbud; choose which noise modes a long pinch cycles through.
+- **Wear-related settings**: wear detection, pause when asleep, and on supported models nod to answer / shake to decline.
+- **Find my earbuds / fit test**: trigger the earbuds' built-in features; you'll get a volume warning before finding your earbuds.
+- **Prompt tones**: adjust the earbuds' prompt tone volume.
+- **Dual-device connection**: view remembered devices and, depending on the model, connect, disconnect, remove them or set a preferred device. Disconnecting this Windows PC itself is still handled in the system Bluetooth settings.
+
+This is the *range of implemented features*: not every earbud supports all of them, and not every action has been tested on real hardware.
+
+### Windows desktop experience
+
+**Tray and Quick Settings**
+
+- Left-click the tray icon for a quick panel with battery and noise control; right-click for a native system menu.
+- On supported Windows 11 setups, when you open Quick Settings with **Win + A**, the EncoDeck panel can attach above the Quick Settings flyout; this can be turned off in Settings.
+- Background running, launch at startup, global hotkeys and light / dark themes.
+
+**Connection popup and device model**
+
+- When your earbuds connect to the PC, a popup near the taskbar shows the device name, battery levels and that model's connection animation; it stays out of the way while you're in full screen.
+- The popup animation doesn't open an audio output or show up in Windows media controls, so it won't pull your earbuds' audio away from your phone to the PC.
+- The home page shows a picture or model of your device. Pre-rendered models can be dragged left and right; models with `.vfxms` support can be rotated, zoomed and reset in real time.
+- Device artwork is fetched per model and color, then cached locally for reuse. Models without an official animation get a generic one.
+
+*The connection popup fires when the earbuds establish a Bluetooth connection; BLE lid-open detection (popping up when you open the case nearby) is not implemented yet.*
+
+## Compatibility
+
+Support currently falls into two groups: models with configuration data from the official app to work from, and models ported from open-source protocol implementations. **A model being in the code does not mean those earbuds have been tested on real hardware.**
+
+| Brand / model | Current support | Verification |
+| --- | --- | --- |
+| **OPPO Enco X4** | Battery, wear state, noise control and levels, plus EQ, spatial audio, gestures, dual connection and more | Battery and some noise control actions read/written on hardware; many advanced settings read on hardware, writes still being verified item by item |
+| **Other OPPO / OnePlus** | ~85 built-in model configurations; noise control, sound and touch settings per model capabilities | Mostly based on HeyMelody configuration and protocol; not yet tested on hardware |
+| **realme / DIZO and some older OPPO / OnePlus** | ~50 more models, mainly battery, charging, wear state and firmware info | Not yet tested on hardware |
+| **vivo / iQOO** | ~43 models; battery and status, plus noise control, EQ, find earbuds and game mode on some models | Protocol port, not verified on hardware |
+| **HUAWEI** | ~24 models; battery, plus noise control, EQ, wear detection, low latency and dual-device toggle on some models | Protocol port, not verified on hardware |
+| **Xiaomi / Redmi** | Recognized by series name; mainly battery, game mode on some models | Protocol port, not verified on hardware |
+| **EDIFIER** | W820NB, W200BT and generic detection; battery, noise cancelling / transparency on some models | Protocol port, not verified on hardware |
+
+For more models, per-feature details and verification records, see the **[device compatibility list](docs/COMPATIBILITY.md)**. If your earbuds aren't on the tested list but work fine, please share the model, firmware and your results.
+
+## Download
+
+| | Microsoft Store | GitHub installer |
+| --- | --- | --- |
+| Platform | x64 / ARM64 | x64 |
+| Updates | Automatic via Microsoft Store; can also check in-app | Checks GitHub Releases in-app; installs after you confirm |
+| Install | [Open Store](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) | [Download from Releases](https://github.com/TIANLI0/EncoDeck/releases) |
+
+**Requirements: Windows 10 19041+, Windows 11 recommended.**
+
+The standalone installer is named `EncoDeck-Setup-<version>-win-x64.exe`. It installs to `%LOCALAPPDATA%\Programs\EncoDeck` by default and usually doesn't need admin rights; to upgrade, just install the new version over the old one — settings and cache are kept.
+
+Before using it, **pair and connect your earbuds in Windows Bluetooth settings**, then start EncoDeck. Device artwork and animations for some models need an internet connection the first time.
+
+### LHDC V5 (optional / experimental)
+
+The non-Store x64 build can optionally integrate [LHDC-Win](https://github.com/Wayne-u/LHDC-Win). After downloading the separate component from the Sound page, you can pick an audio device, set playback parameters, and try enabling LHDC or restoring the original Windows audio configuration.
+
+This is not a regular earbud control feature: it involves test-signed drivers, admin rights and system audio configuration, and requires Windows 11 22H2+, x64 and earbuds that support LHDC V5. **The Store version doesn't support it, and real-world playback compatibility is still unverified on hardware.** EncoDeck never changes Secure Boot or system test mode on its own. Read the [LHDC guide and recovery steps](docs/LHDC.md) before trying it.
 
 ## Building
 
+Requires .NET SDK 10.0.100 or later. Visual Studio is not needed for a regular build.
+
 ```powershell
-git clone https://github.com/TIANLI0/EncoDeck
+git clone https://github.com/TIANLI0/EncoDeck.git
 cd EncoDeck
+
 dotnet test tests/EncoDeck.Tests
-pwsh build/build-installer.ps1      # installer in artifacts\installer
+pwsh build/build-installer.ps1
 ```
 
-Requires the .NET SDK 10.0.100+; Visual Studio is not needed. See [DEVELOPMENT.md](docs/DEVELOPMENT.md).
+The installer is written to `artifacts/installer`. See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for the dev environment, project layout and other build commands.
 
-## Diagnostics
+The repo also ships a command-line diagnostic tool, **EncoDeck.Probe**, for inspecting Bluetooth devices and SDP services, reading earbud state and listening to protocol events. Bluetooth addresses are redacted by default; see [TESTING.md](docs/TESTING.md) for usage.
 
-`EncoDeck.Probe` inspects earbuds without the UI (devices, SDP, read-only queries, event watch) and
-redacts Bluetooth addresses by default. See [TESTING.md](docs/TESTING.md).
+## Reporting issues
 
-## Contributing
+If your earbuds won't connect, a setting doesn't take effect or the model is misidentified, please open an [issue](https://github.com/TIANLI0/EncoDeck/issues). Include the earbud model, firmware version, Windows version and steps to reproduce, plus a Probe report if you can.
 
-Compatibility reports, protocol findings and code are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md).
+Protocol research, device testing and code contributions are all welcome. Before contributing, have a look at [CONTRIBUTING.md](CONTRIBUTING.md) and the [protocol findings](docs/PROTOCOL_FINDINGS.md).
 
 ## Acknowledgements
 
-Protocol research by [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows),
-[OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager) and
-[OppoPods](https://github.com/Leaf-lsgtky/OppoPods); some device connections come from
-[HeyBuds](https://github.com/abaichuan1017/HeyBuds); tray icon by
-[H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Earbud protocol and device support draw on [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows), [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager), [OppoPods](https://github.com/Leaf-lsgtky/OppoPods) and [HeyBuds](https://github.com/abaichuan1017/HeyBuds); the tray uses [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon). Other third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License
 
 [GPL-3.0-only](LICENSE).
+
+EncoDeck is an unofficial open-source project with no affiliation, partnership or endorsement from the brands above or their manufacturers. Brand and product names are used only to describe compatibility.

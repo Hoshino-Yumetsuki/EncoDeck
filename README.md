@@ -1,89 +1,166 @@
-<p align="center"><img src="src/EncoDeck.App/Assets/EncoDeck-256.png" width="96" alt="EncoDeck" /></p>
+<p align="center">
+  <img src="src/EncoDeck.App/Assets/EncoDeck-256.png" width="88" alt="EncoDeck" />
+</p>
 
-# EncoDeck
+<h1 align="center">EncoDeck</h1>
 
-**Windows 原生的多品牌耳机控制中心**——支持 OPPO / 一加 / realme、vivo / iQOO、华为、小米 / Redmi、漫步者等品牌，在电脑上查看电量、切换降噪、调整音效，不用每次都拿起手机。
+<p align="center">在 Windows 上轻松管理你的耳机，不用为了切个降噪再拿起手机。</p>
+
+<p align="center">
+  <a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct">
+    <img src="https://get.microsoft.com/images/zh-cn%20dark.svg" width="190" alt="从 Microsoft Store 获取" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/TIANLI0/EncoDeck/releases">下载安装包</a> ·
+  <a href="README_EN.md">English</a> ·
+  <a href="docs/COMPATIBILITY.md">设备兼容性</a> ·
+  <a href="docs/DEVELOPMENT.md">开发文档</a>
+</p>
 
 > 🍎 **Mac 用户**推荐使用 [HeyBuds](https://github.com/abaichuan1017/HeyBuds)。
 
-> ⚠️ **非官方项目。** EncoDeck 是社区开发的开源软件，与 OPPO、OnePlus、realme、vivo、华为、小米、漫步者等厂商没有任何官方关系，未获得其认可或支持。产品名称仅用于说明兼容性。
+EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把欢律（HeyMelody）里常用的耳机设置搬到了电脑上：查看左右耳和充电盒电量、切换降噪、调整 EQ 和空间音频，以及管理耳机触控等功能。平时可以只留一个托盘图标，不需要一直开着主窗口。
 
-[English](README_EN.md) · [兼容性](docs/COMPATIBILITY.md) · [协议记录](docs/PROTOCOL_FINDINGS.md) · [实现状态](docs/IMPLEMENTATION_STATUS.md)
+目前以 **OPPO / 一加** 耳机为主要适配对象，也支持部分 **realme / DIZO、vivo / iQOO、华为、小米 / Redmi 和漫步者** 耳机。不同型号可用的设置不一样；**目前主要使用 OPPO Enco X4 进行真机验证**，其他型号主要依据协议和型号配置实现，欢迎反馈测试结果。
+
+## 界面
 
 <p align="center">
-  <img src="docs/images/popup-demo.gif" width="300" alt="耳机连接时在任务栏旁弹出的开盖动画与电量" />
+  <img src="docs/images/popup-demo.gif" width="300" alt="耳机连接弹窗" />
 </p>
 
-| 首页 | 托盘快捷面板（叠在系统快速设置上方） |
-|---|---|
-| <img src="docs/images/home.png" alt="首页：设备 3D 模型、电量、降噪与设备管理" /> | <img src="docs/images/quick-panel.png" width="320" alt="快捷面板：电量与降噪" /> |
+| 主界面 | 托盘快捷面板 |
+| :---: | :---: |
+| <img src="docs/images/home.png" alt="主界面" /> | <img src="docs/images/quick-panel.png" alt="托盘快捷面板" /> |
 
 ## 功能
 
-- **托盘常驻**：左键弹出快捷面板（电量 + 降噪），右键原生菜单；空闲时几乎不占 CPU。
-- **连接弹窗**：耳机连接时在任务栏旁播放该型号的开盖动画并显示电量（Composition 动画，悬停暂停，全屏游戏时自动不弹）。动画只解码画面：不占用音频输出、不出现在系统媒体控件里，耳机点按或媒体键也不会把它暂停。
-- **设备 3D 模型**：首页显示与欢律一致的设备模型——预渲染转盘可左右拖动；`.vfxms` 3D 模型（如 Enco X3、Free4）实时渲染，可任意方向拖动旋转、滚轮缩放、双击复位。
-- **电量**：左耳 / 右耳 / 充电盒，充电状态，主动上报；盒子不在线时显示“上次读取”。
-- **降噪**：降噪（深度 / 中度 / 轻度 / 智能切换）、自适应、通透、关闭；耳机触控或手机切换后自动同步。
-- **多品牌**：除 OPPO 系外，还支持 vivo / iQOO、华为、小米 / Redmi、漫步者（协议移植自 OppoPodsManager，部分设备连接来自 [HeyBuds](https://github.com/abaichuan1017/HeyBuds)，尚未真机验证，功能范围见 [兼容性表](docs/COMPATIBILITY.md#其他品牌)）。
-- **全局快捷键**：在任何程序里（包括全屏游戏）一键切换降噪 / 通透、轮换模式或直接切到某个模式，在设置 › 快捷键中绑定。
-- **真实通信**：所有控制都通过蓝牙 RFCOMM 发给耳机，并等待耳机确认、回读；失败自动回滚，绝不显示伪造状态。
-- **Fluent Design**：WinUI 3、Mica / Acrylic、深浅色、系统强调色、简体中文 / English。
+### 电量与连接状态
 
-## 已实测型号
+连接耳机后，主界面和托盘面板会显示**左耳、右耳、充电盒**的电量与充电状态；支持的型号还会显示佩戴、入盒状态和固件版本。
 
-| 型号 | 固件 | 状态 |
-|---|---|---|
-| OPPO Enco X4 | 左 116 / 右 116 / 盒 100 | 电量、佩戴状态、降噪全部模式、固件信息已验证；EQ 等见 [兼容性表](docs/COMPATIBILITY.md) |
+充电盒离开耳机后通常不会继续上报电量，因此 EncoDeck 会保留最近一次读数，并标明是「上次读取」，而不是把旧数据当作实时电量。电量过低时还会提醒。
 
-## 下载与安装
+### 降噪控制
 
-### Microsoft Store（推荐）
+不用打开主窗口，在托盘就能切换：
 
-<a href="https://apps.microsoft.com/detail/9PN6D8G1K9WZ?mode=direct"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" width="200" alt="从 Microsoft 获取" /></a>
+- **降噪 / 通透 / 关闭 / 自适应**（具体取决于耳机型号）；
+- 降噪强度：**深度、中度、轻度、智能切换**；
+- 自适应模式下的降噪偏好（耳机支持时）。
 
-[在 Microsoft Store 中打开](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) · 支持 x64 / ARM64，由商店自动更新；设置 › 更新 也可手动检查并安装商店更新。开机自启使用系统启动任务，可在任务管理器“启动应用”中管理。
+用耳机手势或者手机调整了降噪，EncoDeck 也会读取耳机上报的状态并更新界面。控制命令通过蓝牙发送，等待耳机确认并回读；失败时不会把按钮一直停留在错误状态。
 
-### 安装包
+还可以在「设置 → 快捷键」中绑定全局快捷键，比如一键在降噪和通透之间切换，或者直接切到指定模式。全屏游戏时同样可以使用。
 
-从 [Releases](https://github.com/TIANLI0/EncoDeck/releases) 下载 `EncoDeck-Setup-<版本>-win-x64.exe` 运行即可：
+### 音效
 
-- 默认按用户安装到 `%LOCALAPPDATA%\Programs\EncoDeck`，无需管理员权限；
-- **新版本直接覆盖安装即可升级**，设置、缓存和自定义资源保留；
-- 卸载时会询问是否删除用户数据（`%LOCALAPPDATA%\EncoDeck`）；
-- **应用内更新**：设置 › 更新 可检查 GitHub Releases 上的新版本（默认每天自动检查并在后台下载，可关闭；可选择接收预览版）。安装包下载后会校验大小与 SHA-256，只有点击“立即重启并更新”才会安装，完成后自动重新启动 EncoDeck。
+音效选项按照耳机的型号配置和实际能力显示。
 
-系统要求：Windows 10 19041 及以上（推荐 Windows 11）；安装包为 x64，商店版支持 x64 / ARM64。
+| 设置 | 可以做什么 |
+| --- | --- |
+| **EQ** | 切换耳机内置的音效预设，如丹拿相关预设、人声、高音、低音等（名称因型号而异） |
+| **自定义 EQ** | 在支持的 OPPO 型号上编辑、保存、切换和删除 EQ；Enco X4 对应最多 3 组、每组 10 段 |
+| **BassWave** | 开关动态低音并调整强度 |
+| **空间音频** | 切换关闭、固定空间音频和头部跟踪（需要耳机支持） |
+| **游戏模式** | 开关低延迟模式及游戏音效强化，按耳机自身规则处理与其他音效设置的冲突 |
 
-## 自己编译
+部分设置目前已能从真机读取，但写入仍主要依据欢律协议实现，尚未逐项完成真机验证。详细情况在[兼容性表](docs/COMPATIBILITY.md)中逐项标注。
 
-非商店 x64 版本可选接入 [LHDC-Win](https://github.com/Wayne-u/LHDC-Win)：
-普通安装包不捆绑组件，在音效页点击“下载 LHDC 组件”即可从当前应用版本的 Release 按需获取。
-离线捆绑可使用 `pwsh build/build-installer.ps1 -WithLhdc`，每次构建组件均重新拉取上游源码。
-音效页内置设备选择、播放参数、启用与恢复界面；需要测试签名驱动加载条件，商店版不支持。
-构建依赖、使用及恢复方法见 [LHDC 接入说明](docs/LHDC.md)。
+### 耳机控制与设备管理
+
+在支持的型号上，还可以修改这些耳机端设置：
+
+- **触控手势**：分别设置左右耳的捏合、长捏、滑动等操作及通话手势；可调整长捏时循环的降噪模式。
+- **佩戴相关设置**：佩戴检测、入睡暂停，以及支持型号的点头接听、摇头拒接。
+- **查找耳机 / 贴合度检测**：调用耳机提供的功能；查找耳机前会提示音量风险。
+- **提示音**：调整耳机提示音音量。
+- **双设备连接**：查看已记录的设备，按型号支持连接、断开、移除和设置优先设备。当前这台 Windows 电脑的蓝牙断开操作仍由系统蓝牙设置处理。
+
+以上是*已接入的功能范围*，不是所有耳机都支持，也不代表每项操作都已经在真机上测试通过。
+
+### Windows 桌面体验
+
+**托盘和快速设置**
+
+- 左键托盘图标打开电量、降噪快捷面板；右键使用系统原生菜单。
+- 在支持的 Windows 11 环境中，按 **Win + A** 打开系统快速设置时，EncoDeck 的耳机面板可以贴在快速设置卡片上方；可在设置中关闭。
+- 支持后台运行、开机启动、全局快捷键和浅色 / 深色主题。
+
+**连接弹窗与设备模型**
+
+- 耳机连接电脑时，在任务栏附近显示设备名称、电量和该型号的连接动画；全屏使用时不打扰。
+- 弹窗播放动画不会打开音频输出，也不会出现在 Windows 媒体控制里，避免动画把蓝牙耳机的音频从手机抢到电脑。
+- 首页按型号显示设备图片或模型。预渲染模型可以左右拖动；支持 `.vfxms` 的型号可实时旋转、缩放和复位。
+- 设备素材按型号和颜色获取并缓存在本地，之后可复用。没有对应官方动画时使用通用动效。
+
+*连接弹窗在耳机建立蓝牙连接时触发；目前没有实现靠近耳机或打开盒盖就弹出的 BLE 开盒检测。*
+
+## 兼容性
+
+目前的适配主要分为两类：一类有官方应用的型号配置可供参考，另一类根据开源协议实现移植。**代码里有某个型号，不等于这款耳机已经过真机测试。**
+
+| 品牌 / 型号 | 当前支持范围 | 验证情况 |
+| --- | --- | --- |
+| **OPPO Enco X4** | 电量、佩戴、降噪与档位，以及 EQ、空间音频、手势、双连等功能 | 电量及部分降噪操作已真机读写；不少高级设置已真机读取，写入仍待逐项验证 |
+| **其他 OPPO / 一加** | 内置约 85 款型号配置；按型号能力提供降噪、音效、触控等设置 | 主要依据欢律配置与协议实现，尚缺真机测试 |
+| **realme / DIZO 与部分旧款 OPPO / 一加** | 补充约 50 款，主要提供电量、充电、佩戴状态和固件信息 | 尚缺真机测试 |
+| **vivo / iQOO** | 约 43 款；电量等状态，以及部分型号的降噪、EQ、查找耳机、游戏模式 | 协议移植，未真机验证 |
+| **华为** | 约 24 款；电量及部分型号的降噪、EQ、佩戴检测、低延迟、双设备开关 | 协议移植，未真机验证 |
+| **小米 / Redmi** | 按系列名称识别，主要为电量、部分型号的游戏模式 | 协议移植，未真机验证 |
+| **漫步者** | W820NB、W200BT 及通用识别；电量、部分型号的降噪 / 通透 | 协议移植，未真机验证 |
+
+更多型号、具体功能和验证记录见 **[设备兼容性列表](docs/COMPATIBILITY.md)**。如果你的耳机没在已测试列表里，但可以正常使用，欢迎提交型号、固件和测试结果。
+
+## 下载
+
+| | Microsoft Store | GitHub 安装包 |
+| --- | --- | --- |
+| 平台 | x64 / ARM64 | x64 |
+| 更新 | Microsoft Store 自动更新；应用内也可检查 | 应用内检查 GitHub Releases，下载后由你确认安装 |
+| 安装 | [打开商店](https://apps.microsoft.com/detail/9PN6D8G1K9WZ) | [下载 Releases](https://github.com/TIANLI0/EncoDeck/releases) |
+
+**系统要求：Windows 10 19041+，推荐 Windows 11。**
+
+独立安装包名称为 `EncoDeck-Setup-<版本>-win-x64.exe`。默认安装到 `%LOCALAPPDATA%\Programs\EncoDeck`，通常不需要管理员权限；安装新版本可以直接覆盖升级，设置和缓存会保留。
+
+使用前先在 **Windows 蓝牙设置中完成耳机配对并连接**，然后启动 EncoDeck。部分型号的设备图片和动画需要首次联网获取。
+
+### LHDC V5（可选 / 实验性）
+
+非商店 x64 版可按需接入 [LHDC-Win](https://github.com/Wayne-u/LHDC-Win)。在音效页面下载独立组件后，可以选择音频设备、设置播放参数，并尝试启用 LHDC 或恢复 Windows 原有音频配置。
+
+这不是普通耳机控制功能：它涉及测试签名驱动、管理员权限和系统音频配置，要求 Windows 11 22H2+、x64 及支持 LHDC V5 的耳机。**商店版不支持，实际播放兼容性仍待真机验证。** EncoDeck 不会自动修改 Secure Boot 或系统测试模式。操作前请先阅读 [LHDC 说明与恢复方法](docs/LHDC.md)。
+
+## 编译
+
+需要 .NET SDK 10.0.100 或更新版本。普通构建不需要安装 Visual Studio。
 
 ```powershell
-git clone https://github.com/TIANLI0/EncoDeck
+git clone https://github.com/TIANLI0/EncoDeck.git
 cd EncoDeck
-dotnet test tests/EncoDeck.Tests                      # 单元测试
-pwsh build/build-installer.ps1                        # 生成安装包到 artifacts\installer
+
+dotnet test tests/EncoDeck.Tests
+pwsh build/build-installer.ps1
 ```
 
-需要 .NET SDK 10.0.100+，不需要 Visual Studio。详见 [开发指南](docs/DEVELOPMENT.md)。
+安装包输出到 `artifacts/installer`。开发环境、项目结构及其他构建命令见 [DEVELOPMENT.md](docs/DEVELOPMENT.md)。
 
-## 诊断工具
+仓库还附带命令行诊断工具 **EncoDeck.Probe**，可用于检查蓝牙设备、SDP 服务、读取耳机状态和监听协议事件。诊断信息默认会对蓝牙地址脱敏，使用方法见 [TESTING.md](docs/TESTING.md)。
 
-`EncoDeck.Probe` 可在不打开界面的情况下检查耳机（列设备、SDP、只读查询、事件监听），默认对蓝牙地址脱敏。用法见 [测试文档](docs/TESTING.md)。
+## 反馈问题
 
-## 参与贡献
+如果遇到连不上、某项设置不生效或者型号识别错误，可以开一个 [Issue](https://github.com/TIANLI0/EncoDeck/issues)。请尽量写明耳机型号、固件版本、Windows 版本、操作步骤；有条件的话可以附上 Probe 报告。
 
-欢迎提交兼容性报告、协议发现和代码，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+协议研究、设备测试和代码贡献都欢迎。参与开发前可以看看 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [协议记录](docs/PROTOCOL_FINDINGS.md)。
 
 ## 致谢
 
-协议研究参考了 [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows)、[OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)、[OppoPods](https://github.com/Leaf-lsgtky/OppoPods)，部分设备连接来自 [HeyBuds](https://github.com/abaichuan1017/HeyBuds)；托盘使用 [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon)。完整列表见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
+耳机协议与设备适配参考了 [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows)、[OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)、[OppoPods](https://github.com/Leaf-lsgtky/OppoPods) 和 [HeyBuds](https://github.com/abaichuan1017/HeyBuds)；托盘功能使用 [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon)。其他第三方组件见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 ## 许可证
 
 [GPL-3.0-only](LICENSE)。
+
+EncoDeck 是非官方开源项目，与上述耳机品牌及其所属厂商无隶属、合作或背书关系。品牌和产品名称仅用于说明兼容性。
