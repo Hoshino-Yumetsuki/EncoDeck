@@ -5,7 +5,7 @@ EncoDeck 使用自己的 WinUI 设置界面：选择配对耳机、采样率、�
 状态由后台工具读取，Hi-Res 开关不等于 Windows 已使用 LHDC。
 
 普通安装包不捆绑 LHDC。用户点击下载后，从 EncoDeck 仓库的专用
-`lhdc-runtime` Release 获取 `EncoDeck-LHDC-runtime-win-x64.zip`，
+与应用版本相同的 Release（例如 `v1.2.0`）获取 `EncoDeck-LHDC-1.2.0-win-x64.zip`，
 校验 GitHub SHA-256、大小、组件标识和上游提交号后解压到
 `%LOCALAPPDATA%/EncoDeck/Components/LHDC`。显示进度，支持取消与重试。
 下载本身不安装驱动；安装及恢复仅在点击对应按钮、确认系统管理员授权后执行。
@@ -25,13 +25,13 @@ EncoDeck 使用自己的 WinUI 设置界面：选择配对耳机、采样率、�
 pwsh build/build-installer.ps1
 # 构建独立组件和 ZIP；每次都重新拉取源码
 pwsh build/publish-lhdc-runtime.ps1 -PowerShellDirectory 'C:/Program Files/PowerShell/7'
-# 构建后上传至组件 Release（需要 gh 登录对应仓库账户）
+# 手动构建后上传至已存在的同版本应用 Release（需要 gh 登录）
 pwsh build/publish-lhdc-runtime.ps1 -PowerShellDirectory 'C:/Program Files/PowerShell/7' -Publish
 # 可选：离线捆绑安装包
 pwsh build/build-installer.ps1 -WithLhdc -LhdcPowerShellDirectory 'C:/Program Files/PowerShell/7'
 ```
 
-组件 Release 独立于应用更新，不标记为 Latest。发布新版本前审查源码提交和构建结果。
+每次应用发版由 CI 在全新 VS2026 构建机通过微软 WinGet 安装匹配 SDK/WDK、拉取上游并编译组件。组件与应用附件上传到同一个版本 Release；组件失败则阻止发布草稿生成。缓存按应用版本隔离，客户端拒绝其他版本的 Release 或组件清单。发布新版本前审查源码提交和构建结果。
 构建依赖以上游为准，目前包括 MSVC x64、SDK/WDK 28000、KMDF 1.33、
 CMake、Ninja、.NET 10、PowerShell 7 x64，以及 Visual Studio 驱动组件和 Spectre 库。
 

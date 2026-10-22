@@ -83,7 +83,7 @@ CommunityToolkit.WinUI.Lottie（MIT）用于本地渲染官方 Lottie JSON；间
 
 Non-Store x64 installers built with `-WithLhdc` include [LHDC-Win](https://github.com/Wayne-u/LHDC-Win)
 (MIT) and its dependencies. Each component build fetches a fresh upstream checkout.
-Standard installers omit this component. Users can explicitly download the EncoDeck source-built runtime from its dedicated
+Standard installers omit this component. Users can explicitly download the EncoDeck source-built runtime from the matching application version
 GitHub Release in the app; its licenses and source revision are retained in the user component cache.
 The complete upstream LICENSE, NOTICE.md and licenses directory are retained under LHDC/;
 release.json identifies the upstream source commit. EncoDeck provides its own WinUI controls; the upstream WPF panel is not included. Dependencies include the Apache-2.0

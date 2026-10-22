@@ -18,7 +18,7 @@ public sealed class LhdcDownloadTests : IDisposable
         byte[] zip = Package();
         int requests = 0;
         using var http = Client(zip, () => requests++);
-        var service = new LhdcDownloadService(http, _root);
+        var service = new LhdcDownloadService(http, _root, "1.2.0");
         Assert.Null(service.InstalledDirectory);
         Assert.Equal(0, requests);
         await service.DownloadAsync(ct: TestContext.Current.CancellationToken);
@@ -32,7 +32,7 @@ public sealed class LhdcDownloadTests : IDisposable
     public async Task RejectsCorruptDownloadWithoutActivatingIt()
     {
         using var http = Client(Package(), digest: new string('0', 64));
-        var service = new LhdcDownloadService(http, _root);
+        var service = new LhdcDownloadService(http, _root, "1.2.0");
         await Assert.ThrowsAsync<UpdateVerificationException>(() => service.DownloadAsync(ct: TestContext.Current.CancellationToken));
         Assert.Null(service.InstalledDirectory);
         Assert.Empty(Directory.GetFiles(_root, "*.partial", SearchOption.AllDirectories));
@@ -42,11 +42,32 @@ public sealed class LhdcDownloadTests : IDisposable
     public async Task RejectsIncompletePackageAndCanRetry()
     {
         using var http = Client(Package(incomplete: true));
-        var service = new LhdcDownloadService(http, _root);
+        var service = new LhdcDownloadService(http, _root, "1.2.0");
         await Assert.ThrowsAsync<InvalidDataException>(() => service.DownloadAsync(ct: TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<InvalidDataException>(() => service.DownloadAsync(ct: TestContext.Current.CancellationToken));
         Assert.Null(service.InstalledDirectory);
-        Assert.Empty(Directory.GetDirectories(_root, ".install-*"));
+        Assert.Empty(Directory.GetDirectories(_root, ".install-*", SearchOption.AllDirectories));
+    }
+
+    [Fact]
+    public async Task NewAppVersionCannotReuseOrDownloadAnOlderRelease()
+    {
+        using var http = Client(Package());
+        await new LhdcDownloadService(http, _root, "1.2.0").DownloadAsync(ct: TestContext.Current.CancellationToken);
+        var upgraded = new LhdcDownloadService(http, _root, "1.3.0");
+        Assert.Null(upgraded.InstalledDirectory);
+        Assert.EndsWith("/releases/tags/v1.3.0", upgraded.ReleasesApi.AbsoluteUri);
+        await Assert.ThrowsAsync<InvalidDataException>(() => upgraded.DownloadAsync(ct: TestContext.Current.CancellationToken));
+        Assert.Null(upgraded.InstalledDirectory);
+    }
+
+    [Fact]
+    public async Task RejectsPackageManifestFromAnotherAppVersion()
+    {
+        using var http = Client(Package(componentVersion: "1.1.0"));
+        var service = new LhdcDownloadService(http, _root, "1.2.0");
+        await Assert.ThrowsAsync<InvalidDataException>(() => service.DownloadAsync(ct: TestContext.Current.CancellationToken));
+        Assert.Null(service.InstalledDirectory);
     }
 
     [Theory]
@@ -67,7 +88,7 @@ public sealed class LhdcDownloadTests : IDisposable
     public async Task CancellationDoesNotActivatePackage()
     {
         using var http = Client(Package());
-        var service = new LhdcDownloadService(http, _root);
+        var service = new LhdcDownloadService(http, _root, "1.2.0");
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.DownloadAsync(ct: cancellation.Token));
@@ -81,15 +102,15 @@ public sealed class LhdcDownloadTests : IDisposable
         {
             Content = request.RequestUri!.Host == "api.github.com" ? new StringContent(JsonSerializer.Serialize(new
             {
-                draft = false, prerelease = false, tag_name = "lhdc-runtime",
-                assets = new[] { new { name = "EncoDeck-LHDC-runtime-win-x64.zip", size = zip.Length,
+                draft = false, prerelease = false, tag_name = "v1.2.0",
+                assets = new[] { new { name = "EncoDeck-LHDC-1.2.0-win-x64.zip", size = zip.Length,
                     digest = "sha256:" + (digest ?? Convert.ToHexStringLower(SHA256.HashData(zip))),
-                    browser_download_url = "https://github.com/TIANLI0/EncoDeck/releases/download/lhdc-runtime/EncoDeck-LHDC-runtime-win-x64.zip" } },
+                    browser_download_url = "https://github.com/TIANLI0/EncoDeck/releases/download/v1.2.0/EncoDeck-LHDC-1.2.0-win-x64.zip" } },
             })) : new ByteArrayContent(zip),
         };
     }));
 
-    private static byte[] Package(bool incomplete = false)
+    private static byte[] Package(bool incomplete = false, string componentVersion = "1.2.0")
     {
         using var memory = new MemoryStream();
         using (var archive = new ZipArchive(memory, ZipArchiveMode.Create, leaveOpen: true))
@@ -97,7 +118,7 @@ public sealed class LhdcDownloadTests : IDisposable
             string[] files = ["backend/lhdc-host.exe", "backend/lhdc-service.exe", "backend/lhdc-device.exe", "backend/lhdc-audio-device.exe", "checksums.json", "scripts/Set-AudioMode.ps1", "runtime/powershell/pwsh.exe",
                 "drivers/lhdc-test.cer", "drivers/audio/lhdc-audio.sys", "drivers/transport/lhdc-transport.sys"];
             foreach (string file in files) { using var writer = new StreamWriter(archive.CreateEntry(file).Open()); writer.Write("fixture"); }
-            using (var runtime = new StreamWriter(archive.CreateEntry("runtime.json").Open())) runtime.Write(JsonSerializer.Serialize(new { Schema = 1, SourceRepository = LhdcDownloadService.Repository, Architecture = "x64" }));
+            using (var runtime = new StreamWriter(archive.CreateEntry("runtime.json").Open())) runtime.Write(JsonSerializer.Serialize(new { Schema = 1, EncoDeckVersion = componentVersion, SourceRepository = LhdcDownloadService.Repository, Architecture = "x64" }));
             if (!incomplete)
             {
                 using var writer = new StreamWriter(archive.CreateEntry("release.json").Open());

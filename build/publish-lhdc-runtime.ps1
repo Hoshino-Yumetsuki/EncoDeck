@@ -1,20 +1,19 @@
 # SPDX-License-Identifier: GPL-3.0-only
 [CmdletBinding()]
-param([string]$PowerShellDirectory, [switch]$Publish)
+param([string]$PowerShellDirectory, [string]$Version, [string]$OutputDirectory, [switch]$Publish)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$output = Join-Path $root ('artifacts/lhdc-runtime/' + [guid]::NewGuid().ToString('N'))
-$archive = Join-Path $output 'EncoDeck-LHDC-runtime-win-x64.zip'
-& (Join-Path $PSScriptRoot 'build-lhdc.ps1') -Destination (Join-Path $output 'runtime') -ArchivePath $archive -PowerShellDirectory $PowerShellDirectory
+if (-not $Version) { $Version = [regex]::Match((Get-Content (Join-Path $root 'Directory.Build.props') -Raw), '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value }
+if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'A stable EncoDeck version is required.' }
+$output = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $root ('artifacts/lhdc-runtime/' + [guid]::NewGuid().ToString('N')) }
+$archive = Join-Path $output "EncoDeck-LHDC-$Version-win-x64.zip"
+& (Join-Path $PSScriptRoot 'build-lhdc.ps1') -Destination (Join-Path $output 'runtime') -ArchivePath $archive -PowerShellDirectory $PowerShellDirectory -Version $Version
 if (-not $?) { throw 'LHDC runtime build failed.' }
 if ($Publish) {
-    # The application consumes this dedicated release, independent of the EncoDeck version.
-    & gh release view lhdc-runtime --repo TIANLI0/EncoDeck *> $null
-    if ($LASTEXITCODE -ne 0) {
-        & gh release create lhdc-runtime --repo TIANLI0/EncoDeck --title 'EncoDeck LHDC runtime' --notes 'Optional source-built LHDC backend and test-signed drivers. Upstream source revision is recorded in release.json.' --latest=false
-        if ($LASTEXITCODE -ne 0) { throw 'Could not create runtime release.' }
-    }
-    & gh release upload lhdc-runtime $archive ($archive+'.sha256') --repo TIANLI0/EncoDeck --clobber
-    if ($LASTEXITCODE -ne 0) { throw 'Could not publish runtime assets.' }
+    # Require the app release; never create an independent component release or overwrite existing assets.
+    & gh release view "v$Version" --repo TIANLI0/EncoDeck *> $null
+    if ($LASTEXITCODE -ne 0) { throw "Create the application release v$Version first." }
+    & gh release upload "v$Version" $archive ($archive+'.sha256') --repo TIANLI0/EncoDeck
+    if ($LASTEXITCODE -ne 0) { throw 'Could not publish versioned runtime assets.' }
 }
 Write-Host "Source-built runtime archive: $archive"

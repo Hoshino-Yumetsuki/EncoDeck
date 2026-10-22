@@ -57,7 +57,7 @@ foreach ($required in "EncoDeck.exe", "EncoDeck.pri", "Microsoft.WindowsAppRunti
 Copy-Item README.md, README_EN.md $publish -ErrorAction SilentlyContinue
 
 if ($WithLhdc) {
-    & (Join-Path $PSScriptRoot 'build-lhdc.ps1') -Destination (Join-Path $publish 'LHDC') -PowerShellDirectory $LhdcPowerShellDirectory
+    & (Join-Path $PSScriptRoot 'build-lhdc.ps1') -Destination (Join-Path $publish 'LHDC') -PowerShellDirectory $LhdcPowerShellDirectory -Version (($Version -split '[-+]')[0])
     if (-not $?) { throw 'LHDC component build failed.' }
 }
 

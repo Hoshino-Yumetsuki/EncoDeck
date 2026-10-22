@@ -5,11 +5,14 @@
 param(
     [Parameter(Mandatory)][string] $Destination,
     [string] $PowerShellDirectory,
-    [string] $ArchivePath
+    [string] $ArchivePath,
+    [string] $Version
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
+if (-not $Version) { $Version = [regex]::Match((Get-Content (Join-Path $root 'Directory.Build.props') -Raw), '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value }
+if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'A stable EncoDeck version is required.' }
 $destinationPath = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationPath) { throw "Destination must not already exist: $destinationPath" }
 $repository = 'https://github.com/Wayne-u/LHDC-Win.git'
@@ -75,7 +78,7 @@ Copy-Item -LiteralPath (Join-Path $source 'LICENSE'),(Join-Path $source 'NOTICE.
 Get-ChildItem -LiteralPath (Join-Path $source 'licenses') -File | Copy-Item -Destination (Join-Path $package 'licenses')
 Copy-Item -LiteralPath (Join-Path $PowerShellDirectory 'LICENSE.txt') -Destination (Join-Path $package 'licenses/PowerShell-LICENSE.txt')
 Copy-Item -LiteralPath (Join-Path $PowerShellDirectory 'ThirdPartyNotices.txt') -Destination (Join-Path $package 'licenses/PowerShell-ThirdPartyNotices.txt')
-[ordered]@{Schema=1;SourceRepository='https://github.com/Wayne-u/LHDC-Win';Architecture='x64';Interface='EncoDeck-native';SourceCommit=$commit} | ConvertTo-Json | Set-Content (Join-Path $package 'runtime.json') -Encoding UTF8
+[ordered]@{Schema=1;EncoDeckVersion=$Version;SourceRepository='https://github.com/Wayne-u/LHDC-Win';Architecture='x64';Interface='EncoDeck-native';SourceCommit=$commit} | ConvertTo-Json | Set-Content (Join-Path $package 'runtime.json') -Encoding UTF8
 [ordered]@{SourceCommit=$commit;SourceTreeDirty=$false;BuiltAt=Get-Date -Format o;Architecture='x64';MinimumWindowsBuild=22621;DriverSigning='Test';PowerShellVersion=$runtimeInfo[0];SelfContainedUI=$false} | ConvertTo-Json | Set-Content (Join-Path $package 'release.json') -Encoding UTF8
 $hashes = foreach ($file in Get-ChildItem -LiteralPath $package -Recurse -File) {
     [pscustomobject]@{Path=[IO.Path]::GetRelativePath($package,$file.FullName).Replace('\','/');SHA256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash}

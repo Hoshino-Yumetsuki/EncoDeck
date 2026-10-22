@@ -6,10 +6,13 @@ using EncoDeck.Platform.Updates;
 namespace EncoDeck.Platform.Lhdc;
 
 /// <summary>Installs the official upstream release only when explicitly requested.</summary>
-public sealed class LhdcDownloadService(HttpClient http, string root)
+public sealed class LhdcDownloadService(HttpClient http, string cacheRoot, string? appVersion = null)
 {
     public const string Repository = "https://github.com/Wayne-u/LHDC-Win";
-    public static Uri ReleasesApi { get; } = new("https://api.github.com/repos/TIANLI0/EncoDeck/releases/tags/lhdc-runtime");
+    public static string ApplicationVersion => typeof(LhdcDownloadService).Assembly.GetName().Version!.ToString(3);
+    private readonly SemanticVersion _version = SemanticVersion.Parse(appVersion ?? ApplicationVersion);
+    private readonly string root = Path.Combine(cacheRoot, SemanticVersion.Parse(appVersion ?? ApplicationVersion).ToString());
+    public Uri ReleasesApi => new($"https://api.github.com/repos/TIANLI0/EncoDeck/releases/tags/v{_version}");
     private readonly SemaphoreSlim _gate = new(1, 1);
     private static readonly string[] Required = ["runtime.json", "release.json", "checksums.json",
         "backend/lhdc-host.exe", "backend/lhdc-service.exe", "backend/lhdc-device.exe", "backend/lhdc-audio-device.exe",
@@ -25,10 +28,11 @@ public sealed class LhdcDownloadService(HttpClient http, string root)
                 string digest = File.ReadAllText(Path.Combine(root, "current.txt")).Trim();
                 if (digest.Length != 64 || !digest.All(Uri.IsHexDigit)) return null;
                 string directory = Path.Combine(root, digest);
-                return Required.All(p => File.Exists(Path.Combine(directory, p)))
-                    ? directory : null;
+                if (!Required.All(p => File.Exists(Path.Combine(directory, p)))) return null;
+                using var runtime = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, "runtime.json")));
+                return runtime.RootElement.GetProperty("EncoDeckVersion").GetString() == _version.ToString() ? directory : null;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or KeyNotFoundException) { return null; }
         }
     }
 
@@ -61,9 +65,9 @@ public sealed class LhdcDownloadService(HttpClient http, string root)
             if (release.GetProperty("draft").GetBoolean() || release.GetProperty("prerelease").GetBoolean())
                 throw new InvalidDataException("No stable LHDC release is available.");
             string tag = release.GetProperty("tag_name").GetString()!;
-            if (tag != "lhdc-runtime") throw new InvalidDataException("Invalid LHDC runtime release.");
-            if (!SemanticVersion.TryParse("1.0.0", out var version)) throw new InvalidOperationException();
-            string name = "EncoDeck-LHDC-runtime-win-x64.zip";
+            if (tag != $"v{_version}") throw new InvalidDataException("LHDC runtime release does not match this app version.");
+            var version = _version;
+            string name = $"EncoDeck-LHDC-{version}-win-x64.zip";
             var asset = release.GetProperty("assets").EnumerateArray().FirstOrDefault(a => a.GetProperty("name").GetString() == name);
             if (asset.ValueKind == JsonValueKind.Undefined) throw new InvalidDataException("No x64 LHDC package is available.");
             string digestText = asset.GetProperty("digest").GetString() ?? "";
@@ -71,13 +75,13 @@ public sealed class LhdcDownloadService(HttpClient http, string root)
                 throw new InvalidDataException("LHDC release has no SHA-256 digest.");
             string digest = digestText[7..].ToLowerInvariant();
             var url = new Uri(asset.GetProperty("browser_download_url").GetString()!);
-            if (url.Scheme != "https" || url.Host != "github.com" || !url.AbsolutePath.StartsWith("/TIANLI0/EncoDeck/releases/download/lhdc-runtime/", StringComparison.Ordinal))
+            if (url.Scheme != "https" || url.Host != "github.com" || !url.AbsolutePath.StartsWith($"/TIANLI0/EncoDeck/releases/download/v{version}/", StringComparison.Ordinal))
                 throw new InvalidDataException("LHDC download is outside the EncoDeck runtime release.");
             var download = new UpdateAsset(name, asset.GetProperty("size").GetInt64(), url, digest);
             var client = new GitHubUpdateClient(http, Path.Combine(root, "downloads"), version);
             string zip = await client.DownloadAsync(new UpdateRelease(version, tag, null, null, null, false, download, null), progress, timeout.Token).ConfigureAwait(false);
             staging = Path.Combine(root, ".install-" + Guid.NewGuid().ToString("N"));
-            await Task.Run(() => ExtractPackage(zip, staging, timeout.Token), timeout.Token).ConfigureAwait(false);
+            await Task.Run(() => ExtractPackage(zip, staging, timeout.Token, version.ToString()), timeout.Token).ConfigureAwait(false);
             string destination = Path.Combine(root, digest);
             if (Directory.Exists(destination)) Directory.Delete(destination, recursive: true);
             Directory.Move(staging, destination);
@@ -98,7 +102,7 @@ public sealed class LhdcDownloadService(HttpClient http, string root)
         }
     }
 
-    internal static void ExtractPackage(string zip, string destination, CancellationToken ct)
+    internal static void ExtractPackage(string zip, string destination, CancellationToken ct, string? expectedVersion = null)
     {
         Directory.CreateDirectory(destination);
         string prefix = Path.GetFullPath(destination) + Path.DirectorySeparatorChar;
@@ -124,6 +128,8 @@ public sealed class LhdcDownloadService(HttpClient http, string root)
         if (runtime.RootElement.GetProperty("Schema").GetInt32() != 1
             || runtime.RootElement.GetProperty("SourceRepository").GetString() != Repository
             || runtime.RootElement.GetProperty("Architecture").GetString() != "x64") throw new InvalidDataException("Invalid LHDC runtime identity.");
+        if (expectedVersion is not null && runtime.RootElement.GetProperty("EncoDeckVersion").GetString() != expectedVersion)
+            throw new InvalidDataException("LHDC component version does not match this app.");
         using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(destination, "release.json")));
         var source = manifest.RootElement.GetProperty("SourceCommit").GetString();
         if (source is null || source.Length != 40 || !source.All(Uri.IsHexDigit)
