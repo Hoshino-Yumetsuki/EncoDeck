@@ -26,6 +26,15 @@ public sealed record NoiseControlOption(
 /// <summary>A device-side EQ preset.</summary>
 public sealed record EqualizerPreset(string Id, string DisplayName, string ResourceKey, CapabilitySupport Support);
 
+/// <summary>Physical form, used to pick the generic illustration when a model has no product image.</summary>
+public enum DeviceForm
+{
+    /// <summary>True wireless earbuds with a charging case.</summary>
+    Earbuds,
+    /// <summary>Over-ear headphones and neckbands (no charging case).</summary>
+    Headphones,
+}
+
 /// <summary>
 /// Static description of a device model: how to recognize it and what it can do.
 /// Protocol details live in the protocol adapter, not here.
@@ -39,6 +48,8 @@ public interface IDeviceProfile
 
     /// <summary>Key used by the app's image resolver; a generic illustration is used when missing.</summary>
     string ImageKey { get; }
+
+    DeviceForm Form => DeviceForm.Earbuds;
 
     IDeviceCapabilities Capabilities { get; }
 

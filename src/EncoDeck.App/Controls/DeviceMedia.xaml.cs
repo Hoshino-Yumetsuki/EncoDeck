@@ -12,6 +12,16 @@ namespace EncoDeck.App.Controls;
 /// </summary>
 public sealed partial class DeviceMedia : UserControl
 {
+    public static readonly DependencyProperty IsHeadphonesProperty = DependencyProperty.Register(
+        nameof(IsHeadphones), typeof(bool), typeof(DeviceMedia), new PropertyMetadata(false, (d, e) => ((DeviceMedia)d).Still.IsHeadphones = (bool)e.NewValue));
+
+    /// <summary>Selects the headphones illustration when no product image is available.</summary>
+    public bool IsHeadphones
+    {
+        get => (bool)GetValue(IsHeadphonesProperty);
+        set => SetValue(IsHeadphonesProperty, value);
+    }
+
     public static readonly DependencyProperty SourcePathProperty = DependencyProperty.Register(
         nameof(SourcePath), typeof(string), typeof(DeviceMedia), new PropertyMetadata(null, (d, _) => ((DeviceMedia)d).Update()));
 

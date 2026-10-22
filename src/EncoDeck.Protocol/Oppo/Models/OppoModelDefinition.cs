@@ -61,6 +61,8 @@ public sealed record OppoModelDefinition
 
     public required string ImageKey { get; init; }
 
+    public DeviceForm Form { get; init; }
+
     /// <summary>24-bit product ids reported by <c>0x0103</c>.</summary>
     public IReadOnlyList<uint> ProductIds { get; init; } = [];
 

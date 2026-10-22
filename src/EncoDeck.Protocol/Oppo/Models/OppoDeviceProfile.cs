@@ -27,6 +27,8 @@ public sealed class OppoDeviceProfile(OppoModelDefinition definition) : IControl
 
     public string ImageKey => Definition.ImageKey;
 
+    public DeviceForm Form => Definition.Form;
+
     public IDeviceCapabilities Capabilities => Definition.Capabilities;
 
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions { get; } = definition.NoiseModes.Select(m => m.Option).ToArray();

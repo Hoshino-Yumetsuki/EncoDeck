@@ -107,6 +107,9 @@ public sealed partial class DeviceViewModel : ObservableObject
     /// <summary>HeyMelody's 360° device model (turntable WebP) for the home page, when available.</summary>
     [ObservableProperty] public partial string? DeviceModelPath { get; set; }
     [ObservableProperty] public partial bool HasDeviceImage { get; set; }
+
+    /// <summary>Selects the headphones illustration when no product image is available.</summary>
+    [ObservableProperty] public partial bool IsHeadphones { get; set; }
     [ObservableProperty] public partial string? PopupMediaPath { get; set; }
     [ObservableProperty] public partial bool PopupMediaIsVideo { get; set; }
     /// <summary>Night variant of the pop-up media (HeyMelody ships one per theme); falls back to the day one.</summary>
@@ -263,6 +266,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         DeviceImagePath = image?.Path ?? DeviceImages.Resolve(profile?.ImageKey);
         DeviceModelPath = ResourceKey is { } km ? _resources.Resolve(km, DeviceResourceRole.DeviceModel)?.Path : null;
         HasDeviceImage = DeviceImagePath is not null;
+        IsHeadphones = profile?.Form == DeviceForm.Headphones;
         var popup = ResourceKey is { } k ? _resources.Resolve(k, DeviceResourceRole.PopupAnimation) : null;
         PopupMediaPath = popup?.Path ?? DeviceImagePath;
         PopupMediaIsVideo = popup?.Kind == DeviceResourceKind.Video;

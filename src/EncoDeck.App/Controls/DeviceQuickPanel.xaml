@@ -13,7 +13,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <controls:DeviceImage Height="48" SourcePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" />
+            <controls:DeviceImage Height="48" SourcePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                 <StackPanel Orientation="Horizontal" Spacing="6">

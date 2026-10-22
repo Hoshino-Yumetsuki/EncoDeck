@@ -36,7 +36,7 @@ internal static partial class OppoCatalog
     /// <summary>Config actions whose row edits the long-press noise cycle.</summary>
     private static readonly HashSet<int> NoiseCycleActions = [11, 20, 25, 27];
 
-    private static readonly Lazy<OppoModelDefinition[]> LazyDefinitions = new(() => [.. Models.Select(ToDefinition)]);
+    private static readonly Lazy<OppoModelDefinition[]> LazyDefinitions = new(() => [.. Models.Concat(SupplementModels).Select(ToDefinition)]);
 
     // Lazy: the generated Models list lives in another part of this class, whose static
     // initializers may run after this one.
@@ -135,6 +135,8 @@ internal static partial class OppoCatalog
             ModelId = "oppo-" + model.ProductId.ToLowerInvariant(),
             DisplayName = model.Name,
             ImageKey = "generic",
+            // "N" is the official configuration's neckband type.
+            Form = model.Type == "N" ? DeviceForm.Headphones : DeviceForm.Earbuds,
             ProductIds = [model.ProductIdValue],
             BluetoothNames = model.Names,
             // The official client uses the configured UUID, 00001107-… when none is set.

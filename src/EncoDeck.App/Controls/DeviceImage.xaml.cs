@@ -11,6 +11,9 @@ public sealed partial class DeviceImage : UserControl
     public static readonly DependencyProperty SourcePathProperty = DependencyProperty.Register(
         nameof(SourcePath), typeof(string), typeof(DeviceImage), new PropertyMetadata(null, (d, _) => ((DeviceImage)d).Update()));
 
+    public static readonly DependencyProperty IsHeadphonesProperty = DependencyProperty.Register(
+        nameof(IsHeadphones), typeof(bool), typeof(DeviceImage), new PropertyMetadata(false, (d, e) => ((DeviceImage)d).Illustration.IsHeadphones = (bool)e.NewValue));
+
     public DeviceImage()
     {
         InitializeComponent();
@@ -20,6 +23,12 @@ public sealed partial class DeviceImage : UserControl
     {
         get => (string?)GetValue(SourcePathProperty);
         set => SetValue(SourcePathProperty, value);
+    }
+
+    public bool IsHeadphones
+    {
+        get => (bool)GetValue(IsHeadphonesProperty);
+        set => SetValue(IsHeadphonesProperty, value);
     }
 
     private void Update()

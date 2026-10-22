@@ -115,7 +115,8 @@
                 </StackPanel>
                 <controls:DeviceModelView x:Name="Model" Height="320" Margin="0,8,0,0"
                                           ModelPath="{x:Bind ViewModel.DeviceModelPath, Mode=OneWay}"
-                                          ImagePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" />
+                                          ImagePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}"
+                                          IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
                 <TextBlock x:Uid="Home_DragHint" Text="Drag to rotate" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
                            Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.DeviceModelPath), Mode=OneWay}" />
                 <TextBlock Text="{x:Bind ViewModel.FirmwareText, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" />

@@ -254,6 +254,7 @@ public sealed partial class ConnectionPopupWindow : Window
         {
             _timeline = null;
             Picture.IsVideo = false;
+            Picture.IsHeadphones = ViewModel.IsHeadphones;
             Picture.SourcePath = path;
             Card.Visibility = Visibility.Visible;
             OfficialLayout.Visibility = Visibility.Collapsed;
