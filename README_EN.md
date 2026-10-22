@@ -2,11 +2,11 @@
 
 # EncoDeck
 
-**A native Windows control center for OPPO earbuds** — check battery, switch noise control and adjust
+**A native Windows control center for earbuds** (OPPO / OnePlus / realme, plus vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER) — check battery, switch noise control and adjust
 sound from your PC instead of reaching for your phone.
 
 > ⚠️ **Unofficial project.** EncoDeck is community-built open-source software. It is not affiliated
-> with, endorsed by or supported by OPPO, OnePlus or realme. Product names are used only to describe
+> with, endorsed by or supported by OPPO, OnePlus, realme, vivo, HUAWEI, Xiaomi, EDIFIER or any other manufacturer. Product names are used only to describe
 > compatibility.
 
 [简体中文](README.md) · [Compatibility](docs/COMPATIBILITY.md) · [Protocol findings](docs/PROTOCOL_FINDINGS.md) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)
@@ -21,6 +21,9 @@ sound from your PC instead of reaching for your phone.
 
 ## Features
 
+- **Multiple brands**: besides the OPPO family, vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER
+  (protocols ported from OppoPodsManager, not yet verified on hardware; see
+  [Compatibility](docs/COMPATIBILITY.md)).
 - **Lives in the notification area**: left click opens a quick panel (battery + noise control), right
   click opens a native menu; near-zero CPU while idle.
 - **Connection popup** near the taskbar when the earbuds connect, with the model's lid-open animation

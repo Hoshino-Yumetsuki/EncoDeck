@@ -33,6 +33,15 @@ public sealed class HuaweiDeviceProfile : IControllableProfile
 
     public string ImageKey => Model.ModelId;
 
+    public DeviceForm Form => Model.HasChargingCase ? DeviceForm.Earbuds : DeviceForm.Headphones;
+
+    public IReadOnlyCollection<DeviceToggle> Toggles =>
+    [
+        .. Model.WearDetection ? [DeviceToggle.InEarDetection] : Array.Empty<DeviceToggle>(),
+        .. Model.LowLatency ? [DeviceToggle.GamingMode] : Array.Empty<DeviceToggle>(),
+        .. Model.DualConnect ? [DeviceToggle.DualDeviceConnection] : Array.Empty<DeviceToggle>(),
+    ];
+
     public IDeviceCapabilities Capabilities { get; }
 
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions { get; }

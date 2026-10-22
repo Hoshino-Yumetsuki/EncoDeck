@@ -473,4 +473,12 @@
   <data name="Vivo_Eq_Immersive" xml:space="preserve"><value>Immersive audio</value></data>
   <data name="Vivo_Eq_Audiobooks" xml:space="preserve"><value>Audiobooks</value></data>
   <data name="Vivo_Eq_UltimateMaster" xml:space="preserve"><value>Ultimate master</value></data>
+  <data name="Huawei_NoiseLevel_Dynamic" xml:space="preserve"><value>Dynamic</value></data>
+  <data name="Huawei_NoiseLevel_Cozy" xml:space="preserve"><value>Cozy</value></data>
+  <data name="Huawei_NoiseLevel_General" xml:space="preserve"><value>General</value></data>
+  <data name="Huawei_NoiseLevel_Ultra" xml:space="preserve"><value>Ultra</value></data>
+  <data name="Huawei_Eq_Default" xml:space="preserve"><value>Default</value></data>
+  <data name="Huawei_Eq_Bass" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="Huawei_Eq_Treble" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="Huawei_Eq_Voices" xml:space="preserve"><value>Vocals</value></data>
 </root>

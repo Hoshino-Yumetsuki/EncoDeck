@@ -2,9 +2,9 @@
 
 # EncoDeck
 
-**Windows 原生的 OPPO 耳机控制中心**——在电脑上查看电量、切换降噪、调整音效，不用每次都拿起手机。
+**Windows 原生的耳机控制中心**（OPPO / 一加 / realme，以及 vivo / iQOO、华为、小米 / Redmi、漫步者）——在电脑上查看电量、切换降噪、调整音效，不用每次都拿起手机。
 
-> ⚠️ **非官方项目。** EncoDeck 是社区开发的开源软件，与 OPPO、OnePlus、realme 没有任何官方关系，未获得其认可或支持。产品名称仅用于说明兼容性。
+> ⚠️ **非官方项目。** EncoDeck 是社区开发的开源软件，与 OPPO、OnePlus、realme、vivo、华为、小米、漫步者等厂商没有任何官方关系，未获得其认可或支持。产品名称仅用于说明兼容性。
 
 [English](README_EN.md) · [兼容性](docs/COMPATIBILITY.md) · [协议记录](docs/PROTOCOL_FINDINGS.md) · [实现状态](docs/IMPLEMENTATION_STATUS.md)
 
@@ -23,6 +23,7 @@
 - **设备 3D 模型**：首页显示与欢律一致的设备模型——预渲染转盘可左右拖动；`.vfxms` 3D 模型（如 Enco X3、Free4）实时渲染，可任意方向拖动旋转、滚轮缩放、双击复位。
 - **电量**：左耳 / 右耳 / 充电盒，充电状态，主动上报；盒子不在线时显示“上次读取”。
 - **降噪**：降噪（深度 / 中度 / 轻度 / 智能切换）、自适应、通透、关闭；耳机触控或手机切换后自动同步。
+- **多品牌**：除 OPPO 系外，还支持 vivo / iQOO、华为、小米 / Redmi、漫步者（协议移植自 OppoPodsManager，尚未真机验证，功能范围见 [兼容性表](docs/COMPATIBILITY.md#其他品牌)）。
 - **全局快捷键**：在任何程序里（包括全屏游戏）一键切换降噪 / 通透、轮换模式或直接切到某个模式，在设置 › 快捷键中绑定。
 - **真实通信**：所有控制都通过蓝牙 RFCOMM 发给耳机，并等待耳机确认、回读；失败自动回滚，绝不显示伪造状态。
 - **Fluent Design**：WinUI 3、Mica / Acrylic、深浅色、系统强调色、简体中文 / English。

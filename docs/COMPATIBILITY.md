@@ -16,7 +16,7 @@ EncoDeck 为每个型号提供的功能都按欢律对该型号的官方实现�
 
 ## 其他型号（按欢律型号配置）
 
-欢律为每个型号保存一份配置（降噪模式树、EQ 预设、手势、功能开关等）。EncoDeck 内置了这份配置中的 **85 个 OPPO / 一加型号**（`OppoCatalog.g.cs`，由 `tools/assets/make_models.py` 生成，只含互操作所需的事实），并按欢律读取配置的方式把它们变成型号定义（`OppoCatalog.cs`，规则见 [PROTOCOL_FINDINGS.md](PROTOCOL_FINDINGS.md) §9）。这些型号可以直接使用全部对应功能：降噪、EQ、自定义 EQ、手势、长按降噪循环、游戏模式、双设备连接、空间音频、BassWave、查找耳机、贴合度检测、提示音音量、佩戴检测等。
+欢律为每个型号保存一份配置（降噪模式树、EQ 预设、手势、功能开关等）。EncoDeck 内置了这份配置中的 **85 个 OPPO / 一加型号**（`OppoCatalog.g.cs`，由 `tools/assets/make_models.py` 生成，只含互操作所需的事实），另从 OppoPodsManager 的型号表补充了 **50 个 realme / DIZO / 老款 OPPO、一加型号**（`OppoCatalog.Supplement.g.cs`，`make_models.py --supplement` 生成），并按欢律读取配置的方式把它们变成型号定义（`OppoCatalog.cs`，规则见 [PROTOCOL_FINDINGS.md](PROTOCOL_FINDINGS.md) §9）。这些型号可以直接使用全部对应功能：降噪、EQ、自定义 EQ、手势、长按降噪循环、游戏模式、双设备连接、空间音频、BassWave、查找耳机、贴合度检测、提示音音量、佩戴检测等。
 
 - 证据等级为 **官方实现**：与欢律的配置和代码路径一致，有单元测试；除 X4 外尚未在真机上测试。由配置生成的 X4 定义与真机验证过的 X4 定义逐项一致（`OppoCatalogTests`）。
 - 连接后按耳机的能力位图决定运行时差异，与欢律相同：空间音频 V2（`0x0422`）或 V1（功能 27）、带游戏音效时游戏模式主开关为 40、只有耳机支持 `0x0418` 时提供自定义 EQ、按固件版本开放的 EQ 预设。
@@ -24,6 +24,21 @@ EncoDeck 为每个型号提供的功能都按欢律对该型号的官方实现�
 - 只有欢律型号列表中也没有的产品 ID 才显示“未识别的型号”，此时只读取电量与固件信息。
 
 欢迎按 [TESTING.md](TESTING.md) 提交其他型号的 Probe 报告，把证据从“官方实现”提升为“真机读写”。
+
+### 补充型号（realme / DIZO / 老款 OPPO、一加）
+
+与 OPPO 走同一套协议和控制服务，但型号表里没有降噪、EQ 等配置，因此只提供电量、充电、佩戴状态和固件信息；连接后按耳机上报的产品 ID 识别。Enco Quiet、W11、W31 Lite、O-Free、M32、Bullets Wireless Z2 这 6 款在官方配置中没有 SPP 控制通道，未收录。realme Buds T500 Pro 的降噪写入方式（不回 ACK、不能查询）与 OPPO 不同，暂未提供降噪。
+
+## 其他品牌
+
+以下协议移植自 [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)（GPL-3.0-or-later），并参考 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 交叉核对。证据等级均为 **参考实现**：协议帧有单元测试（使用参考项目公开的抓包向量），**尚未在真机上验证**。所有写入都在耳机回读确认后才显示为成功。没有产品图的型号显示 EncoDeck 自绘的通用插画（真无线耳机或头戴 / 颈挂两种）。
+
+| 品牌 | 型号 | 已实现 | 未实现 / 说明 |
+|---|---|---|---|
+| vivo / iQOO | 43 款（TWS、TWS Air、TWS Neo、Headphones 等）+ 通用识别 | 电量、充电、佩戴状态、固件；按型号：降噪 / 通透 / 关闭、内置 EQ、查找耳机、游戏模式 | 降噪档位、自定义 EQ、手势等。除 TWS 4、TWS 3e、Air3 Pro 外，协议版本按参考实现推定 |
+| HUAWEI | 24 款（FreeBuds、FreeClip、FreeArc、FreeLace、Eyewear）+ 通用识别 | 电量、充电；按型号：降噪及档位（动态 / 舒适 / 均衡 / 深度）、通透、内置 EQ、佩戴检测、低延迟、双设备开关 | 自定义 EQ、查找耳机、固件信息。参考实现中部分型号固定使用 RFCOMM 通道 1，EncoDeck 按 SDP 服务查找，若连不上请提交 Probe 报告 |
+| Xiaomi / Redmi | 按名称识别系列（无逐型号表） | 鉴权、左右耳与充电盒电量、游戏模式（耳机支持时） | 降噪、EQ：参考实现未确认取值，未提供 |
+| EDIFIER | W820NB、W200BT + 通用识别 | 电量、降噪 / 通透 / 关闭（30 秒轮询） | 充电状态、EQ |
 
 ## OPPO Enco X4 功能表
 
