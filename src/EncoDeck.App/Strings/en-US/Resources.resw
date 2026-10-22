@@ -396,7 +396,12 @@
   <data name="Eq_Mode35" xml:space="preserve"><value>Default</value></data>
   <data name="Eq_Mode40" xml:space="preserve"><value>Dynaudio vocal</value></data>
   <data name="Eq_Mode41" xml:space="preserve"><value>Clear &amp; crisp</value></data>
-  <data name="Settings_AuthorLabel.Text" xml:space="preserve"><value>Author</value></data>
+  <data name="Settings_DeveloperLabel.Text" xml:space="preserve"><value>Developer</value></data>
+  <data name="Settings_SponsorText.Text" xml:space="preserve"><value>EncoDeck is free and open source. If it helps you, consider sponsoring its development.</value></data>
+  <data name="Settings_SponsorButton.Text" xml:space="preserve"><value>Sponsor</value></data>
+  <data name="Settings_SponsorTitle.Text" xml:space="preserve"><value>Support the developer</value></data>
+  <data name="Settings_SponsorAlipay.Text" xml:space="preserve"><value>Alipay</value></data>
+  <data name="Settings_SponsorWeChat.Text" xml:space="preserve"><value>WeChat Pay</value></data>
   <data name="Home_DeviceThisPc" xml:space="preserve"><value>This PC</value></data>
   <data name="Home_DeviceBusy" xml:space="preserve"><value>Working…</value></data>
   <data name="Home_DeviceConnected" xml:space="preserve"><value>Connected · tap to disconnect</value></data>

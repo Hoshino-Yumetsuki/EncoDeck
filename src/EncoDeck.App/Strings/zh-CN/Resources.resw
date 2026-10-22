@@ -396,7 +396,12 @@
   <data name="Eq_Mode35" xml:space="preserve"><value>默认</value></data>
   <data name="Eq_Mode40" xml:space="preserve"><value>丹拿人声</value></data>
   <data name="Eq_Mode41" xml:space="preserve"><value>清晰通透</value></data>
-  <data name="Settings_AuthorLabel.Text" xml:space="preserve"><value>作者</value></data>
+  <data name="Settings_DeveloperLabel.Text" xml:space="preserve"><value>开发者</value></data>
+  <data name="Settings_SponsorText.Text" xml:space="preserve"><value>EncoDeck 免费开源。如果它对你有帮助，欢迎赞助支持开发。</value></data>
+  <data name="Settings_SponsorButton.Text" xml:space="preserve"><value>赞助</value></data>
+  <data name="Settings_SponsorTitle.Text" xml:space="preserve"><value>赞助支持</value></data>
+  <data name="Settings_SponsorAlipay.Text" xml:space="preserve"><value>支付宝</value></data>
+  <data name="Settings_SponsorWeChat.Text" xml:space="preserve"><value>微信</value></data>
   <data name="Home_DeviceThisPc" xml:space="preserve"><value>本机</value></data>
   <data name="Home_DeviceBusy" xml:space="preserve"><value>正在处理…</value></data>
   <data name="Home_DeviceConnected" xml:space="preserve"><value>已连接 · 点按断开</value></data>

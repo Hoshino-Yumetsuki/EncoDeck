@@ -221,7 +221,7 @@
                             <TextBlock Text="{x:Bind ViewModel.Version}" Style="{StaticResource SecondaryTextStyle}" />
                         </StackPanel>
                     </StackPanel>
-                    <!-- Author -->
+                    <!-- Developer -->
                     <Grid ColumnSpacing="12" Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -233,12 +233,45 @@
                             </Ellipse.Fill>
                         </Ellipse>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}"><Run x:Uid="Settings_AuthorLabel" Text="Author" /><Run Text=" · Tianli" /></TextBlock>
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}"><Run x:Uid="Settings_DeveloperLabel" Text="Developer" /><Run Text=" · Tianli" /></TextBlock>
                             <StackPanel Orientation="Horizontal" Spacing="16">
                                 <HyperlinkButton Content="wutianli@tianli0.top" NavigateUri="mailto:wutianli@tianli0.top" Padding="0" />
                                 <HyperlinkButton Content="GitHub · TIANLI0" NavigateUri="https://github.com/TIANLI0" Padding="0" />
+                                <HyperlinkButton Content="tianli0.top" NavigateUri="https://tianli0.top" Padding="0" />
                             </StackPanel>
                         </StackPanel>
+                    </Grid>
+                    <!-- Sponsor -->
+                    <Grid ColumnSpacing="12" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Settings_SponsorText" VerticalAlignment="Center" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
+                                   Text="EncoDeck is free and open source. If it helps you, consider sponsoring its development." />
+                        <Button Grid.Column="1" Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xEB51;" FontSize="14" />
+                                <TextBlock x:Uid="Settings_SponsorButton" Text="Sponsor" />
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout Placement="Bottom">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock x:Uid="Settings_SponsorTitle" Text="Support the developer" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <StackPanel Spacing="4">
+                                                <Image Source="ms-appx:///Assets/Support/alipay.png" Width="160" Height="240" Stretch="Uniform" />
+                                                <TextBlock x:Uid="Settings_SponsorAlipay" Text="Alipay" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <Image Source="ms-appx:///Assets/Support/wechat.png" Width="176" Height="240" Stretch="Uniform" />
+                                                <TextBlock x:Uid="Settings_SponsorWeChat" Text="WeChat Pay" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                     </Grid>
                     <TextBlock x:Uid="Settings_Disclaimer" TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"
                                Text="EncoDeck is an unofficial, community project. It is not affiliated with, endorsed by or supported by OPPO, OnePlus or realme. Product names are used only to describe compatibility." />
