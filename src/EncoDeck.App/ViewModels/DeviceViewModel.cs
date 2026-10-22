@@ -274,6 +274,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         PopupMediaDarkPath = popupDark?.Path ?? PopupMediaPath;
         PopupMediaDarkIsVideo = popupDark is not null ? popupDark.Kind == DeviceResourceKind.Video : PopupMediaIsVideo;
 
+        foreach (var item in new[] { Left, Right, Case }) item.SetSingleBattery(IsHeadphones);
         Left.Apply(state.Battery.Left, IsReady, now);
         Right.Apply(state.Battery.Right, IsReady, now);
         Case.Apply(state.Battery.Case, IsReady, now);
@@ -415,7 +416,11 @@ public sealed partial class DeviceViewModel : ObservableObject
     {
         if (!HasDevice) return "EncoDeck";
         var parts = new List<string> { $"{DeviceName} · {ConnectionText}" };
-        if (Left.HasValue || Right.HasValue)
+        if (IsHeadphones)
+        {
+            if (Left.HasValue) parts.Add($"{Left.Label} {Left.LevelText}");
+        }
+        else if (Left.HasValue || Right.HasValue)
         {
             parts.Add($"{Left.Label} {Left.LevelText} · {Right.Label} {Right.LevelText}" + (Case.HasValue ? $" · {Case.Label} {Case.LevelText}" : string.Empty));
         }

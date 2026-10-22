@@ -13,12 +13,24 @@ public sealed partial class BatteryItemViewModel(BatteryComponent component) : O
 
     public BatteryComponent Component { get; } = component;
 
-    public string Label { get; } = component switch
+    [ObservableProperty]
+    public partial string Label { get; set; } = component switch
     {
         BatteryComponent.Left => Loc.Get("Battery_Left"),
         BatteryComponent.Right => Loc.Get("Battery_Right"),
         _ => Loc.Get("Battery_Case"),
     };
+
+    /// <summary>False for the right earbud and case of headphones, which report a single battery.</summary>
+    [ObservableProperty]
+    public partial bool IsVisible { get; set; } = true;
+
+    /// <summary>Headphones report one battery, carried in the left reading.</summary>
+    public void SetSingleBattery(bool single)
+    {
+        if (Component == BatteryComponent.Left) Label = Loc.Get(single ? "Battery_Headphones" : "Battery_Left");
+        else IsVisible = !single;
+    }
 
     [ObservableProperty]
     public partial bool HasValue { get; set; }

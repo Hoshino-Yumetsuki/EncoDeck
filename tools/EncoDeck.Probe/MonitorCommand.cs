@@ -3,6 +3,7 @@ using EncoDeck.Bluetooth;
 using EncoDeck.Bluetooth.Rfcomm;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Core.State;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +22,7 @@ internal static class MonitorCommand
             .SetMinimumLevel(options.Has("verbose") ? LogLevel.Debug : LogLevel.Information));
 
         var store = new DeviceStateStore();
-        var registry = new DeviceProfileRegistry(OppoDeviceProfile.CreateBuiltIn());
+        var registry = new DeviceProfileRegistry(BuiltInProfiles.Create());
         await using var manager = new DeviceManager(
             registry,
             store,

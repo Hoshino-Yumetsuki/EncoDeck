@@ -87,8 +87,8 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <controls:BatteryIndicator Grid.Column="0" Item="{x:Bind ViewModel.Left}" GlyphSize="18" LevelFontSize="15" />
-                            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" GlyphSize="18" LevelFontSize="15" />
-                            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" GlyphSize="18" LevelFontSize="15" />
+                            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" Visibility="{x:Bind ViewModel.Right.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
+                            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" Visibility="{x:Bind ViewModel.Case.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
                         </Grid>
                     </Grid>
                 </Grid>

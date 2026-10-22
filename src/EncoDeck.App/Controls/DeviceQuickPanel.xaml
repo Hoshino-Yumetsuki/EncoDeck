@@ -35,8 +35,8 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <controls:BatteryIndicator Grid.Column="0" Item="{x:Bind ViewModel.Left}" GlyphSize="20" LevelFontSize="16" />
-            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" GlyphSize="20" LevelFontSize="16" />
-            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" GlyphSize="20" LevelFontSize="16" />
+            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" Visibility="{x:Bind ViewModel.Right.IsVisible, Mode=OneWay}" GlyphSize="20" LevelFontSize="16" />
+            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" Visibility="{x:Bind ViewModel.Case.IsVisible, Mode=OneWay}" GlyphSize="20" LevelFontSize="16" />
         </Grid>
 
         <!-- Noise control -->

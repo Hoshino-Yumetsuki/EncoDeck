@@ -33,6 +33,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Battery_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Battery_Headphones" xml:space="preserve"><value>Headphones</value></data>
   <data name="Battery_Right" xml:space="preserve"><value>Right</value></data>
   <data name="Battery_Case" xml:space="preserve"><value>Case</value></data>
   <data name="Battery_Unknown" xml:space="preserve"><value>Unknown</value></data>

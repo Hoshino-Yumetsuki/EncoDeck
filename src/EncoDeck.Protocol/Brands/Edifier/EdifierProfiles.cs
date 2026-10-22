@@ -57,6 +57,8 @@ public sealed class EdifierProfile : IControllableProfile
 
     public string ImageKey => ModelId;
 
+    public DeviceForm Form => DeviceForm.Headphones;
+
     public IDeviceCapabilities Capabilities { get; } = DeviceCapabilities.CreateBuilder()
         .Set(DeviceCapability.BatteryLevel, CapabilitySupport.Supported, Evidence)
         .Set(DeviceCapability.NoiseCancellation, CapabilitySupport.Supported, Evidence)

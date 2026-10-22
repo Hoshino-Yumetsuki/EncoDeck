@@ -12,6 +12,7 @@ using EncoDeck.Platform.Resources;
 using EncoDeck.Platform.Settings;
 using EncoDeck.Platform.Startup;
 using EncoDeck.Platform.Updates;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.Extensions.Logging;
 
@@ -89,7 +90,7 @@ public sealed class AppHost : IAsyncDisposable
         var settings = new JsonSettingsStore(paths.SettingsFile, loggers.CreateLogger<JsonSettingsStore>());
         var store = new DeviceStateStore();
         var cache = new DeviceStateCache(paths.DeviceCacheFile, store, loggers.CreateLogger<DeviceStateCache>());
-        var registry = new DeviceProfileRegistry(OppoDeviceProfile.CreateBuiltIn());
+        var registry = new DeviceProfileRegistry(BuiltInProfiles.Create());
         var devices = new DeviceManager(
             registry,
             store,
