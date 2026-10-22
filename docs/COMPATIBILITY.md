@@ -31,7 +31,7 @@ EncoDeck 为每个型号提供的功能都按欢律对该型号的官方实现�
 
 ## 其他品牌
 
-以下协议移植自 [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)（GPL-3.0-or-later），并参考 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 交叉核对。证据等级均为 **参考实现**：协议帧有单元测试（使用参考项目公开的抓包向量），**尚未在真机上验证**。所有写入都在耳机回读确认后才显示为成功。没有产品图的型号显示 EncoDeck 自绘的通用插画（真无线耳机或头戴 / 颈挂两种）。
+以下协议移植自 [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)（GPL-3.0-or-later），并参考 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 交叉核对。证据等级均为 **参考实现**：协议帧有单元测试（使用参考项目公开的抓包向量），**尚未在真机上验证**。所有写入都在耳机回读确认后才显示为成功。没有产品图的型号显示通用的单色耳机图标。
 
 | 品牌 | 型号 | 已实现 | 未实现 / 说明 |
 |---|---|---|---|
