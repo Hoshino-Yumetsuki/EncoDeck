@@ -21,3 +21,8 @@ EncoDeck is an unofficial, open-source Windows app for controlling compatible OP
 - **Device artwork and 3D models.** To show your device, EncoDeck requests model-specific images from `encoapi.tianli0.top`. Requests contain only the product model ID and color ID — no device address, serial number or personal information. The server may keep standard access logs (such as IP addresses) for operation.
 - **Local storage.** Settings, caches and logs are stored in `%LOCALAPPDATA%\EncoDeck` on your PC and are never uploaded. You can delete this folder after uninstalling.
 - **Contact.** Questions: https://github.com/TIANLI0/EncoDeck/issues
+
+
+多品牌素材查询会发送公开目录中的型号名称、索引编号及可用的颜色码。型号匹配在本机完成，自定义蓝牙名称、蓝牙地址、序列号与账户信息不会随素材请求发送。
+
+For multi-brand artwork, requests contain public catalog model names, indexed model IDs and available color codes. Matching happens locally; customized Bluetooth names, Bluetooth addresses, serial numbers and account data are not sent with artwork requests.

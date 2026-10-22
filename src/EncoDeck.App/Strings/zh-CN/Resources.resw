@@ -116,7 +116,7 @@
   <data name="Nav_Settings.Content" xml:space="preserve"><value>设置</value></data>
   <data name="Home_GenericModel.Title" xml:space="preserve"><value>未识别的型号</value></data>
   <data name="Home_NoDevice_Title.Text" xml:space="preserve"><value>没有找到支持的耳机</value></data>
-  <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>请先在 Windows 蓝牙设置中配对 OPPO 耳机。配对后 EncoDeck 会自动发现它。</value></data>
+  <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>请先在 Windows 蓝牙设置中配对耳机。配对后 EncoDeck 会自动发现它。</value></data>
   <data name="Home_NoDevice_OpenSettings.Content" xml:space="preserve"><value>打开蓝牙设置</value></data>
   <data name="Home_Unavailable_Title.Text" xml:space="preserve"><value>耳机控制暂不可用</value></data>
   <data name="Home_Unavailable_Body.Text" xml:space="preserve"><value>音频可能仍然正常，但 EncoDeck 无法打开耳机的控制通道。</value></data>
@@ -149,7 +149,7 @@
   <data name="Settings_StartWithWindows.Header" xml:space="preserve"><value>开机时启动</value></data>
   <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>关闭窗口后继续在通知区域运行</value></data>
   <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>在快速设置上方显示耳机面板</value></data>
-  <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>仅限 Windows 11。随快速设置（Win+A）一起打开和关闭。</value></data>
+  <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>需要 Windows 11 24H2 或更高版本。随快速设置（Win+A）一起打开和关闭。</value></data>
   <data name="Settings_Hotkeys.Text" xml:space="preserve"><value>快捷键</value></data>
   <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>在任何程序中都能切换降噪模式，EncoDeck 只在通知区域运行时也可以。点击按钮，然后按下要使用的按键组合。</value></data>
   <data name="Settings_HotkeyToggle.Header" xml:space="preserve"><value>降噪 / 通透切换</value></data>
@@ -486,4 +486,9 @@
   <data name="Huawei_Eq_Bass" xml:space="preserve"><value>低音增强</value></data>
   <data name="Huawei_Eq_Treble" xml:space="preserve"><value>高音增强</value></data>
   <data name="Huawei_Eq_Voices" xml:space="preserve"><value>人声</value></data>
+  <data name="Artwork_Left.Text" xml:space="preserve"><value>左耳</value></data>
+  <data name="Artwork_Right.Text" xml:space="preserve"><value>右耳</value></data>
+  <data name="Artwork_Case.Text" xml:space="preserve"><value>充电盒</value></data>
+  <data name="Artwork_Representative.Text" xml:space="preserve"><value>配色未识别，展示同型号参考素材。</value></data>
+  <data name="Home_Dual.Header" xml:space="preserve"><value>设备双连</value></data>
 </root>

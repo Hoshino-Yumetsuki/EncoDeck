@@ -28,8 +28,11 @@ public sealed class QuickSettingsWatcher(ILogger<QuickSettingsWatcher> logger) :
     private bool _open;
     private bool _leaving;
 
-    /// <summary>Windows 11 (build 22000) or later.</summary>
-    public static bool IsSupported => OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000);
+    /// <summary>
+    /// Windows 11 24H2 (build 26100) or later. Earlier builds show Quick Settings as a
+    /// ShellExperienceHost CoreWindow that can only be told apart by its localized title: unsupported.
+    /// </summary>
+    public static bool IsSupported => OperatingSystem.IsWindowsVersionAtLeast(10, 0, 26100);
 
     /// <summary>Quick Settings appeared, or the user went back to it while it was closing.</summary>
     public event EventHandler? Opened;

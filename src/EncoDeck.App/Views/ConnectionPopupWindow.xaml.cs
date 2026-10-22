@@ -117,7 +117,7 @@ public sealed partial class ConnectionPopupWindow : Window
         $"frames={_video?.Player?.FramesPublished} last={_video?.Player?.LastFrameTime?.TotalMilliseconds} holding={_video?.Player?.IsHolding} " +
         $"style={_layout.BatteryStyle} videoVisible={_arrangement?.VideoVisible} images={_arrangement?.ImagesVisible} " +
         $"groups=[{string.Join("; ", _arrangement?.Groups.Select(g => $"{g.Group}:{g.Image}:{string.Join(",", g.Slots.Select(x => $"{x.Slot}={x.Battery}"))}") ?? [])}] " +
-        $"column=[{string.Join(",", _arrangement?.Column ?? [])}] title={(TitleText.Visibility == Visibility.Visible ? TitleText.Text : "-")} shown={_shown:0.##} dialog={Scaled.Height:0.#} topmost={WindowInterop.IsTopmost(this)} bounds={_bounds}";
+        $"column=[{string.Join(",", _arrangement?.Column ?? [])}] title={(TitleText.Visibility == Visibility.Visible ? TitleText.Text : "-")} shown={_shown:0.##} dialog={Scaled.Height:0.#} compact={Picture.DiagnosticState} topmost={WindowInterop.IsTopmost(this)} bounds={_bounds}";
 
     /// <summary>Diagnostics: switch to click-through as a fullscreen app would.</summary>
     internal void ForceClickThroughForDiagnostics() => EnterClickThrough();
@@ -233,13 +233,14 @@ public sealed partial class ConnectionPopupWindow : Window
     /// <summary>Video → official layout and timeline (HeyMelody picks its normal/night pack by theme); otherwise the card.</summary>
     private void ChooseLayout()
     {
+        ViewModel.PropertyChanged += OnArtworkChanged;
         bool dark = IsDark;
         string? path = MediaOverride ?? (dark ? ViewModel.PopupMediaDarkPath : ViewModel.PopupMediaPath);
         bool isVideo = MediaOverride is not null
             ? string.Equals(Path.GetExtension(MediaOverride), ".mp4", StringComparison.OrdinalIgnoreCase)
             : dark ? ViewModel.PopupMediaDarkIsVideo : ViewModel.PopupMediaIsVideo;
 
-        if (isVideo && path is not null && File.Exists(path))
+        if (isVideo && path is not null && File.Exists(path) && !path.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase))
         {
             _timeline = PopupTimeline.TryReadFor(path) ?? PopupTimeline.Default with { CloseDelay = _fallbackDuration };
             _layout = PopupLayout.TryReadFor(path) ?? PopupLayout.Default;
@@ -253,12 +254,60 @@ public sealed partial class ConnectionPopupWindow : Window
         else
         {
             _timeline = null;
-            Picture.IsVideo = false;
-            Picture.IsHeadphones = ViewModel.IsHeadphones;
-            Picture.SourcePath = path;
+            ConfigureCompactArtwork(path);
+            CompactArt.Loaded += (_, _) => AnimateCompactArtwork(ComponentArt.Visibility == Visibility.Visible);
             Card.Visibility = Visibility.Visible;
             OfficialLayout.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private void ConfigureCompactArtwork(string? path)
+    {
+        Picture.LoopVideo = false;
+        Picture.IsVideo = Path.GetExtension(path ?? string.Empty).Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+        Picture.IsHeadphones = ViewModel.IsHeadphones;
+        Picture.FallbackPath = ViewModel.DeviceImagePath;
+        Picture.SourcePath = path;
+        bool components = !Picture.IsVideo && Path.GetExtension(path ?? string.Empty).ToLowerInvariant() is not (".json" or ".webp") && !ViewModel.IsHeadphones
+            && ViewModel.LeftArtworkPath is not null && ViewModel.RightArtworkPath is not null && ViewModel.CaseArtworkPath is not null;
+        ComponentArt.Visibility = components ? Visibility.Visible : Visibility.Collapsed;
+        Picture.Visibility = components ? Visibility.Collapsed : Visibility.Visible;
+        LeftArt.SourcePath = ViewModel.LeftArtworkPath;
+        RightArt.SourcePath = ViewModel.RightArtworkPath;
+        CaseArt.SourcePath = ViewModel.CaseArtworkPath;
+    }
+
+    private void OnArtworkChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_closing || _finished || MediaOverride is not null || Card.Visibility != Visibility.Visible) return;
+        if (e.PropertyName is not (nameof(DeviceViewModel.DeviceImagePath) or nameof(DeviceViewModel.PopupMediaPath)
+            or nameof(DeviceViewModel.PopupMediaDarkPath) or nameof(DeviceViewModel.PopupMediaIsVideo) or nameof(DeviceViewModel.PopupMediaDarkIsVideo)
+            or nameof(DeviceViewModel.LeftArtworkPath) or nameof(DeviceViewModel.RightArtworkPath) or nameof(DeviceViewModel.CaseArtworkPath))) return;
+        // Metadata arrives asynchronously on a first connection. Refresh the compact shot in place;
+        // video layouts with their own timing are selected on the next connection.
+        var path = IsDark ? ViewModel.PopupMediaDarkPath : ViewModel.PopupMediaPath;
+        bool video = IsDark ? ViewModel.PopupMediaDarkIsVideo : ViewModel.PopupMediaIsVideo;
+        ConfigureCompactArtwork(video && !(path?.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase) ?? false) ? ViewModel.DeviceImagePath : path);
+    }
+
+    private void AnimateCompactArtwork(bool components)
+    {
+        if (!_animate) return;
+        void Reveal(FrameworkElement element, float rise, int delay)
+        {
+            ElementCompositionPreview.SetIsTranslationEnabled(element, true);
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var c = visual.Compositor;
+            visual.StartAnimation("Translation", Vector(c, new Vector3(0, rise, 0), Vector3.Zero, 650, delay,
+                c.CreateCubicBezierEasingFunction(new Vector2(0.16f, 1), new Vector2(0.3f, 1))));
+            var fade = c.CreateScalarKeyFrameAnimation();
+            fade.InsertKeyFrame(0, 0); fade.InsertKeyFrame(1, 1);
+            fade.Duration = TimeSpan.FromMilliseconds(450);
+            fade.DelayTime = TimeSpan.FromMilliseconds(delay);
+            visual.StartAnimation("Opacity", fade);
+        }
+        if (components) { Reveal(CaseArt, 10, 0); Reveal(LeftArt, 26, 90); Reveal(RightArt, 26, 140); }
+        else Reveal(Picture, 12, 0);
     }
 
     // HeyMelody's colours where a pack sets none (night variants in dark mode): the dialog title
@@ -734,6 +783,7 @@ public sealed partial class ConnectionPopupWindow : Window
 
     private void Release()
     {
+        ViewModel.PropertyChanged -= OnArtworkChanged;
         StopTimers();
         StopFrames();
         if (_closeTimer is not null) _closeTimer.Tick -= OnCloseTick;
@@ -742,6 +792,7 @@ public sealed partial class ConnectionPopupWindow : Window
         // Ends the decode thread, which releases the reader and its Media Foundation objects.
         _video?.Stop();
         _video = null;
+        Picture.Stop();
     }
 
     // ---- interaction (only when not click-through) -------------------------------------------------
@@ -751,6 +802,7 @@ public sealed partial class ConnectionPopupWindow : Window
     {
         if (_passThrough || _closing) return;
         _hovered = true;
+        Picture.Pause();
         _closeTimer?.Stop();
         if (_timeline is not null) OfficialClose.Visibility = Visibility.Visible;
     }
@@ -759,6 +811,7 @@ public sealed partial class ConnectionPopupWindow : Window
     {
         if (_passThrough || _closing) return;
         _hovered = false;
+        Picture.Resume();
         OfficialClose.Visibility = Visibility.Collapsed;
         if (!_closing) StartCloseTimer();
     }

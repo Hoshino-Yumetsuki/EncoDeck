@@ -67,6 +67,7 @@ internal static class PopupPreview
             });
             app.CreateViewModelsForDiagnostics(dispatcher);
             await Task.Delay(300);
+            UiSnapshot.ApplyArtworkDirectory(app, Value("--artwork-dir"));
 
             var interruption = FullscreenDetector.GetState();
             bool offscreen = args.Contains("--offscreen", StringComparer.OrdinalIgnoreCase) || interruption != InterruptionState.Available;

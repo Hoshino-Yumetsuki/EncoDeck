@@ -7,6 +7,8 @@
     <Grid>
         <!-- Silent video frames (SilentVideoPresenter): never a media player, so never media playback. -->
         <Image x:Name="Video" Stretch="Uniform" Visibility="Collapsed" />
+        <AnimatedVisualPlayer x:Name="Animation" AutoPlay="False" Stretch="Uniform" Visibility="Collapsed" IsHitTestVisible="False" />
+        <controls:DeviceModelView x:Name="WebpAnimation" Visibility="Collapsed" IsHitTestVisible="False" IsTabStop="False" />
         <controls:DeviceImage x:Name="Still" />
     </Grid>
 </UserControl>

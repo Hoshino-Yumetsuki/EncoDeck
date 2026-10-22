@@ -73,3 +73,8 @@ shipped.
 ## 5. Runtime artwork service
 
 Device images and animations are obtained through EncoAPI (https://encoapi.vercel.app), an independent community service, and cached locally. The artwork remains the property of its respective rights holders. These downloaded files are not included in the installer.
+
+# 多品牌动画与素材目录
+
+CommunityToolkit.WinUI.Lottie（MIT）用于本地渲染官方 Lottie JSON；间接依赖 Microsoft.Graphics.Win2D（MIT）。
+型号与素材映射由 EncoAPI 的官方 App 目录生成，仅包含互操作事实；OPPO、OnePlus、realme、DIZO、vivo、iQOO、HUAWEI、Xiaomi、Redmi、EDIFIER 素材仍属于各自权利人，不随客户端安装包分发。

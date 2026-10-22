@@ -116,7 +116,7 @@
   <data name="Nav_Settings.Content" xml:space="preserve"><value>Settings</value></data>
   <data name="Home_GenericModel.Title" xml:space="preserve"><value>Unrecognized model</value></data>
   <data name="Home_NoDevice_Title.Text" xml:space="preserve"><value>No supported earbuds found</value></data>
-  <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>Pair your OPPO earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically.</value></data>
+  <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>Pair your earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically.</value></data>
   <data name="Home_NoDevice_OpenSettings.Content" xml:space="preserve"><value>Open Bluetooth settings</value></data>
   <data name="Home_Unavailable_Title.Text" xml:space="preserve"><value>Earbud controls are unavailable</value></data>
   <data name="Home_Unavailable_Body.Text" xml:space="preserve"><value>Audio may still work, but EncoDeck could not open the earbuds' control channel.</value></data>
@@ -149,7 +149,7 @@
   <data name="Settings_StartWithWindows.Header" xml:space="preserve"><value>Start with Windows</value></data>
   <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>Keep running in the notification area when the window is closed</value></data>
   <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>Show the earbuds panel on top of Quick Settings</value></data>
-  <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>Windows 11 only. Opens and closes with Quick Settings (Win+A).</value></data>
+  <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>Requires Windows 11 24H2 or later. Opens and closes with Quick Settings (Win+A).</value></data>
   <data name="Settings_Hotkeys.Text" xml:space="preserve"><value>Hotkeys</value></data>
   <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>Switch noise control from any app, also while EncoDeck is only in the notification area. Click a box, then press the keys.</value></data>
   <data name="Settings_HotkeyToggle.Header" xml:space="preserve"><value>Noise cancelling / transparency</value></data>
@@ -486,4 +486,9 @@
   <data name="Huawei_Eq_Bass" xml:space="preserve"><value>Bass boost</value></data>
   <data name="Huawei_Eq_Treble" xml:space="preserve"><value>Treble boost</value></data>
   <data name="Huawei_Eq_Voices" xml:space="preserve"><value>Vocals</value></data>
+  <data name="Artwork_Left.Text" xml:space="preserve"><value>Left earbud</value></data>
+  <data name="Artwork_Right.Text" xml:space="preserve"><value>Right earbud</value></data>
+  <data name="Artwork_Case.Text" xml:space="preserve"><value>Charging case</value></data>
+  <data name="Artwork_Representative.Text" xml:space="preserve"><value>Showing reference artwork for this model; device color is unknown.</value></data>
+  <data name="Home_Dual.Header" xml:space="preserve"><value>Dual connection</value></data>
 </root>

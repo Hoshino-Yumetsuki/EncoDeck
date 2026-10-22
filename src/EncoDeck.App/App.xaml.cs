@@ -2,6 +2,7 @@
 using EncoDeck.App.Services;
 using EncoDeck.App.ViewModels;
 using EncoDeck.Core.Devices;
+using EncoDeck.Core.Commands;
 using EncoDeck.Core.Notifications;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Input;
@@ -30,6 +31,7 @@ public partial class App : Application
     private UpdateRelease? _pendingUpdateNotice;
     private DispatcherQueueTimer? _noticeTimer;
     private bool _exiting;
+    private BrandDemo? _brandDemo;
 
     public App()
     {
@@ -54,7 +56,7 @@ public partial class App : Application
 
     public SettingsViewModel Settings { get; private set; } = null!;
 
-    public WindowManager Windows { get; private set; } = null!;
+    public WindowManager Windows { get; internal set; } = null!;
 
     /// <summary>The noise-control hotkeys; null in the diagnostic modes.</summary>
     public HotkeyService? Hotkeys { get; private set; }
@@ -63,10 +65,10 @@ public partial class App : Application
     internal void SetHostForDiagnostics(AppHost host) => Host = host;
 
     /// <summary>Diagnostics only: the view models and windows, without tray, single instance or Bluetooth.</summary>
-    internal void CreateViewModelsForDiagnostics(DispatcherQueue dispatcher)
+    internal void CreateViewModelsForDiagnostics(DispatcherQueue dispatcher, IDeviceCommandService? commands = null)
     {
-        Device = new DeviceViewModel(Host.Store, Host.Devices, Host.Settings, Host.Resources, dispatcher);
-        Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Device, dispatcher);
+        Device = new DeviceViewModel(Host.Store, commands ?? Host.Devices, Host.Settings, Host.Resources, dispatcher);
+        Features = new FeaturesViewModel(Host.Store, commands ?? Host.Devices, Host.Devices, Device, dispatcher);
         Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
             Host.StoreUpdates, static () => 0, dispatcher,
             static () => { }, Host.Loggers.CreateLogger<SettingsViewModel>());
@@ -84,6 +86,15 @@ public partial class App : Application
             commandLine = [.. commandLine, StartupRegistration.BackgroundArgument];
         }
         _dispatcher = DispatcherQueue.GetForCurrentThread();
+        int demo = Array.FindIndex(commandLine, a => string.Equals(a, "--brand-demo", StringComparison.OrdinalIgnoreCase));
+        if (demo >= 0 && demo + 1 < commandLine.Length)
+        {
+            _brandDemo = new BrandDemo(this, commandLine[demo + 1], _dispatcher);
+            int demoBrand = Array.FindIndex(commandLine, a => string.Equals(a, "--demo-brand", StringComparison.OrdinalIgnoreCase));
+            _brandDemo.Show(commandLine.Contains("--demo-check", StringComparer.OrdinalIgnoreCase),
+                demoBrand >= 0 && demoBrand + 1 < commandLine.Length ? commandLine[demoBrand + 1] : null);
+            return;
+        }
 
         int modelTest = Array.FindIndex(commandLine, a => string.Equals(a, ModelSelfTest.Argument, StringComparison.OrdinalIgnoreCase));
         if (modelTest >= 0 && modelTest + 2 < commandLine.Length)
@@ -130,7 +141,11 @@ public partial class App : Application
             string outDir = snapshot + 1 < commandLine.Length ? commandLine[snapshot + 1] : Path.Combine(Path.GetTempPath(), "EncoDeck-ui-snapshot");
             int modelArg = Array.FindIndex(commandLine, a => string.Equals(a, "--model", StringComparison.OrdinalIgnoreCase));
             string? modelFile = modelArg >= 0 && modelArg + 1 < commandLine.Length ? commandLine[modelArg + 1] : null;
-            _ = UiSnapshot.RunAsync(this, outDir, _dispatcher, modelFile).ContinueWith(
+            int artworkArg = Array.FindIndex(commandLine, a => string.Equals(a, "--artwork-dir", StringComparison.OrdinalIgnoreCase));
+            string? artworkDirectory = artworkArg >= 0 && artworkArg + 1 < commandLine.Length ? commandLine[artworkArg + 1] : null;
+            int profileArg = Array.FindIndex(commandLine, a => string.Equals(a, "--profile", StringComparison.OrdinalIgnoreCase));
+            string? profileId = profileArg >= 0 && profileArg + 1 < commandLine.Length ? commandLine[profileArg + 1] : null;
+            _ = UiSnapshot.RunAsync(this, outDir, _dispatcher, modelFile, artworkDirectory, profileId).ContinueWith(
                 t =>
                 {
                     if (t.Exception is { } ex) File.WriteAllText(Path.Combine(outDir, "fatal.txt"), ex.ToString());

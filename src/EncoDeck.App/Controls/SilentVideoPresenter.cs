@@ -21,6 +21,8 @@ internal sealed class SilentVideoPresenter : IDisposable
     private WriteableBitmap? _bitmap;
     private int _presentQueued;
     private bool _firstFrameShown;
+    private bool _alphaRight;
+    private byte[]? _composited;
 
     public SilentVideoPresenter(Image target)
     {
@@ -79,15 +81,19 @@ internal sealed class SilentVideoPresenter : IDisposable
     }
 
     /// <param name="maxHeight">Decode height in physical pixels (the size it is shown at), or null for the full size.</param>
-    public void Play(string path, VideoSegment segment, int? maxHeight = null)
+    public void Play(string path, VideoSegment segment, int? maxHeight = null, bool alphaRight = false)
     {
         Stop();
+        _alphaRight = alphaRight;
         var player = new SilentVideoPlayer(path, segment, maxHeight);
         _player = player;
         player.Opened += (_, _) => _dispatcher.TryEnqueue(() =>
         {
             if (_player != player) return;
-            _bitmap = new WriteableBitmap(player.Width, player.Height);
+            if (_alphaRight && (player.Width & 1) != 0) { Failed?.Invoke(this, new InvalidDataException("Invalid split-alpha video width.")); Stop(); return; }
+            int width = _alphaRight ? player.Width / 2 : player.Width;
+            _bitmap = new WriteableBitmap(width, player.Height);
+            _composited = _alphaRight ? new byte[width * player.Height * 4] : null;
             _target.Source = _bitmap;
         });
         player.FrameAvailable += (_, _) =>
@@ -146,11 +152,20 @@ internal sealed class SilentVideoPresenter : IDisposable
         try
         {
             int length = player.Width * player.Height * 4;
-            if (bitmap.PixelWidth != player.Width || bitmap.PixelHeight != player.Height || frame.Length < length) return;
-            frame.CopyTo(0, bitmap.PixelBuffer, 0, length);
+            int width = _alphaRight ? player.Width / 2 : player.Width;
+            if (bitmap.PixelWidth != width || bitmap.PixelHeight != player.Height || frame.Length < length) return;
+            byte[] pixels = frame;
+            if (_alphaRight)
+            {
+                if (_composited is null) return;
+                SplitAlphaFrame.Compose(frame, _composited, player.Width, player.Height);
+                pixels = _composited;
+                length = width * player.Height * 4;
+            }
+            pixels.CopyTo(0, bitmap.PixelBuffer, 0, length);
             bitmap.Invalidate();
-            SampleLuma(frame, player.Width, player.Height);
-            if (!_firstFrameShown) BottomEdgeColor = AverageRow(frame, player.Width, player.Height - 1);
+            SampleLuma(pixels, width, player.Height);
+            if (!_firstFrameShown) BottomEdgeColor = AverageRow(pixels, width, player.Height - 1);
         }
         finally
         {

@@ -13,8 +13,8 @@ public sealed class DeviceResourceSync(IDeviceStateStore store, IDeviceResourceD
 
     private readonly CancellationTokenSource _shutdown = new();
     private readonly Lock _gate = new();
-    private readonly Dictionary<(uint, int), Task<ResourceDownloadResult>> _pending = [];
-    private readonly Dictionary<(uint, int), DateTimeOffset> _nextAttempt = [];
+    private readonly Dictionary<(string, int?), Task<ResourceDownloadResult>> _pending = [];
+    private readonly Dictionary<(string, int?), DateTimeOffset> _nextAttempt = [];
     private DeviceResourceStatus _status = DeviceResourceStatus.Idle;
     private bool _started;
     private bool _disposed;
@@ -40,8 +40,7 @@ public sealed class DeviceResourceSync(IDeviceStateStore store, IDeviceResourceD
 
     private void Schedule(DeviceState state)
     {
-        if (state.Device is null || state.ProductId is not { } pid || state.ColorId is not (>= 0 and <= 16)) return;
-        var key = new DeviceResourceKey(state.Profile?.ModelId ?? $"oppo-{pid:X6}", pid, state.ColorId);
+        if (state.Device is null || DeviceResourceKey.FromState(state) is not { CanDownload: true } key) return;
         bool newKey;
         lock (_gate)
         {
@@ -60,17 +59,17 @@ public sealed class DeviceResourceSync(IDeviceStateStore store, IDeviceResourceD
         }
         lock (_gate)
         {
-            if (_disposed || _shutdown.IsCancellationRequested || _pending.ContainsKey((pid, state.ColorId.Value))
-                || (_nextAttempt.TryGetValue((pid, state.ColorId.Value), out var next) && next > DateTimeOffset.UtcNow)) return;
+            if (_disposed || _shutdown.IsCancellationRequested || _pending.ContainsKey((key.CacheIdentity, key.ColorId))
+                || (_nextAttempt.TryGetValue((key.CacheIdentity, key.ColorId), out var next) && next > DateTimeOffset.UtcNow)) return;
         }
         _ = ObserveAsync(RefreshAsync(key));
     }
 
     public Task<ResourceDownloadResult> RefreshAsync(DeviceResourceKey key, bool force = false)
     {
-        if (key.ProductId is not { } pid || key.ColorId is not (>= 0 and <= 16))
+        if (!key.CanDownload)
             return Task.FromException<ResourceDownloadResult>(new InvalidOperationException("Product and color are not available yet."));
-        var identity = (pid, key.ColorId.Value);
+        var identity = (key.CacheIdentity, key.ColorId);
         lock (_gate)
         {
             if (_disposed) return Task.FromException<ResourceDownloadResult>(new ObjectDisposedException(nameof(DeviceResourceSync)));
@@ -118,11 +117,12 @@ public sealed class DeviceResourceSync(IDeviceStateStore store, IDeviceResourceD
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { return null; }
     }
 
-    private static bool Same(DeviceResourceKey? a, DeviceResourceKey? b) => a is not null && b is not null && a.ProductId == b.ProductId && a.ColorId == b.ColorId;
+    private static bool Same(DeviceResourceKey? a, DeviceResourceKey? b) => a is not null && b is not null && a.CacheIdentity == b.CacheIdentity && a.ColorId == b.ColorId;
 
     /// <summary>Applies <paramref name="change"/> to the status of <paramref name="key"/>, switching the status to that key if needed.</summary>
     private void Publish(DeviceResourceKey key, Func<DeviceResourceStatus, DeviceResourceStatus> change)
     {
+        if (DeviceResourceKey.FromState(store.Current) is { CanDownload: true } active && !Same(active, key)) return;
         lock (_gate)
         {
             if (_disposed) return;

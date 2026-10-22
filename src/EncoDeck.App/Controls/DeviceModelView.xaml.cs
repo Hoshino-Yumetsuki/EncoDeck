@@ -70,6 +70,13 @@ public sealed partial class DeviceModelView : UserControl
     private double _dragStartX;
     private DispatcherQueueTimer? _animation;
     private long _lastTick;
+    public bool Loop { get; set; } = true;
+    private double _playbackElapsed;
+    public void PauseAnimation() => _animation?.Stop();
+    public void ResumeAnimation()
+    {
+        if (_model is not null && (Loop || _playbackElapsed < _model.Frames.Sum(f => f.DurationMs) / 1000.0)) StartPlayback();
+    }
 
     public DeviceModelView()
     {
@@ -182,6 +189,7 @@ public sealed partial class DeviceModelView : UserControl
         ModelCanvas.Width = _model.CanvasWidth;
         ModelCanvas.Height = _model.CanvasHeight;
         _motion = new TurntableMotion(_model.Frames.Select(f => f.DurationMs).ToArray());
+        _playbackElapsed = 0;
         PlanCache(_model);
         _decoderCancel = new CancellationTokenSource();
         var loaded = _model;
@@ -232,7 +240,17 @@ public sealed partial class DeviceModelView : UserControl
         double elapsed = (now - _lastTick) / 1000.0;
         _lastTick = now;
         // Nothing to draw while the window is minimised or hidden in the tray.
-        if (XamlRoot?.IsHostVisible == false) return;
+        if (Visibility != Visibility.Visible || XamlRoot?.IsHostVisible == false) return;
+        if (!Loop)
+        {
+            _playbackElapsed += elapsed;
+            if (!ShellEnvironment.AnimationsEnabled() || _playbackElapsed >= _model.Frames.Sum(f => f.DurationMs) / 1000.0)
+            {
+                ShowFrame(_model.Frames.Count - 1);
+                timer.Stop();
+                return;
+            }
+        }
         int before = _motion.Frame;
         _motion.Advance(elapsed, ShellEnvironment.AnimationsEnabled());
         int after = _motion.Frame;
@@ -487,10 +505,7 @@ public sealed partial class DeviceModelView : UserControl
             _surface = new WriteableBitmap(width, height);
             FrameImage.Source = _surface;
         }
-        using (var target = _surface.PixelBuffer.AsStream())
-        {
-            target.Write(pixels, 0, pixels.Length);
-        }
+        pixels.CopyTo(0, _surface.PixelBuffer, 0, pixels.Length);
         _surface.Invalidate();
         Canvas.SetLeft(FrameImage, frame.X);
         Canvas.SetTop(FrameImage, frame.Y);

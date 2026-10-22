@@ -46,6 +46,11 @@ public sealed partial class HomePage : Page
         try
         {
             SyncDevices(f, ready);
+            bool noise = f.Has(DeviceCapability.NoiseCancellation) &&
+                (ViewModel.HasAncMode || ViewModel.HasTransparencyMode || ViewModel.HasAdaptiveMode);
+            NoiseCard.Visibility = noise ? Visibility.Visible : Visibility.Collapsed;
+            bool eq = f.Has(DeviceCapability.Equalizer) || f.Has(DeviceCapability.CustomEqualizer);
+            EqRow.Visibility = eq ? Visibility.Visible : Visibility.Collapsed;
 
             // Rows follow the (cached) model capabilities only, not whether the live value has been
             // read yet, so the layout is the same right after a restart as once connected.
@@ -63,6 +68,8 @@ public sealed partial class HomePage : Page
             bool? on = f.Toggle(DeviceToggle.GamingMode);
             GameSwitch.IsOn = on == true;
             GameSwitch.IsEnabled = ready && on is not null && !f.IsPending("toggle:");
+            SoundCard.Visibility = eq || spatial || game ? Visibility.Visible : Visibility.Collapsed;
+            UpdateLayoutForWidth(PageRoot.ActualWidth);
         }
         finally
         {
@@ -75,13 +82,25 @@ public sealed partial class HomePage : Page
     private void SyncDevices(FeaturesViewModel f, bool ready)
     {
         // The connected-device list is read with OPPO's multi-connect commands.
-        bool available = f.Has(DeviceCapability.DualDeviceConnection) && f.Model is not null;
+        bool list = f.Has(DeviceCapability.DualDeviceConnection) && f.Model is not null;
+        bool toggle = f.Has(DeviceCapability.DualDeviceConnection) && f.HasSwitch(DeviceToggle.DualDeviceConnection);
+        bool available = list || toggle;
         DevicesCard.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
-        // Keep the card (and its height) while the list has not been read yet.
-        if (!available || f.State.SourceDevices is null) return;
+        DualRow.Visibility = toggle ? Visibility.Visible : Visibility.Collapsed;
+        bool? enabled = f.Toggle(DeviceToggle.DualDeviceConnection);
+        DualSwitch.IsOn = enabled == true;
+        DualSwitch.IsEnabled = ready && enabled is not null && !f.IsPending("toggle:DualDeviceConnection");
+        DeviceHost.Visibility = list ? Visibility.Visible : Visibility.Collapsed;
+        if (!list || f.State.SourceDevices is null)
+        {
+            _devicesSignature = string.Empty;
+            DeviceHost.Children.Clear();
+            DeviceHost.ColumnDefinitions.Clear();
+            return;
+        }
 
         var devices = f.SourceDevices;
-        string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsAudioActive}/{d.Name}")) + $"#{ready}";
+        string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsAudioActive}/{d.Name}")) + $"#{ready}#{f.State.Device?.DeviceId}#{f.State.Profile?.ModelId}";
         if (signature == _devicesSignature) return;
         _devicesSignature = signature;
 
@@ -229,17 +248,50 @@ public sealed partial class HomePage : Page
         Sync();
     }
 
+    private async void OnDualToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        bool requested = DualSwitch.IsOn;
+        Sync();
+        await Features.SetToggleAsync(DeviceToggle.DualDeviceConnection, requested);
+        Sync();
+    }
+
     // ---- layout ----------------------------------------------------------------------------------
 
     /// <summary>Landscape: the device stage on the left and its controls on the right; narrow: stacked.</summary>
     private void OnPageSizeChanged(object sender, SizeChangedEventArgs e)
+        => UpdateLayoutForWidth(e.NewSize.Width);
+
+    private void OnMainScrollSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        bool wide = e.NewSize.Width >= 820;
-        Grid.SetColumnSpan(Stage, wide ? 1 : 2);
-        Grid.SetRow(SidePanel, wide ? 1 : 2);
-        Grid.SetColumn(SidePanel, wide ? 1 : 0);
-        Grid.SetColumnSpan(SidePanel, wide ? 1 : 2);
-        Model.Height = wide ? 440 : 320;
+        if (e.NewSize.Height != e.PreviousSize.Height) UpdateLayoutForWidth(PageRoot.ActualWidth);
+    }
+
+    private void UpdateLayoutForWidth(double width)
+    {
+        bool controls = NoiseCard.Visibility == Visibility.Visible || DevicesCard.Visibility == Visibility.Visible || SoundCard.Visibility == Visibility.Visible;
+        bool wide = width >= 820 && controls;
+
+        // Wide: SidePanel scrolls on its own beside the fixed stage; narrow: it follows the stage in MainScroll.
+        if (wide && SidePanel.Parent != SideHost)
+        {
+            MainColumn.Children.Remove(SidePanel);
+            SideHost.Child = SidePanel;
+        }
+        else if (!wide && SidePanel.Parent == SideHost)
+        {
+            SideHost.Child = null;
+            MainColumn.Children.Add(SidePanel);
+        }
+        SideScroll.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+        Grid.SetColumnSpan(MainScroll, wide ? 1 : 2);
+        MainScroll.VerticalScrollMode = wide ? ScrollMode.Disabled : ScrollMode.Enabled;
+        MainScroll.VerticalScrollBarVisibility = wide ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
+
+        // Keep the artwork within the fixed column: leave room for the name, levels and captions below it.
+        double available = MainScroll.ActualHeight > 0 ? MainScroll.ActualHeight : 600;
+        Model.Height = wide ? Math.Clamp(available - 220, 200, 400) : 280;
     }
 
     // ---- navigation ------------------------------------------------------------------------------

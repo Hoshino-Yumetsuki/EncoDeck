@@ -16,6 +16,7 @@ internal sealed partial class AlwaysActiveAcrylicBackdrop : SystemBackdrop
     private DesktopAcrylicController? _controller;
     private SystemBackdropConfiguration? _configuration;
     private FrameworkElement? _root;
+    private long _requestedThemeToken;
 
     protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
     {
@@ -23,7 +24,11 @@ internal sealed partial class AlwaysActiveAcrylicBackdrop : SystemBackdrop
         if (!DesktopAcrylicController.IsSupported()) return;
         _configuration = new SystemBackdropConfiguration { IsInputActive = true };
         _root = xamlRoot.Content as FrameworkElement;
-        if (_root is not null) _root.ActualThemeChanged += OnThemeChanged;
+        if (_root is not null)
+        {
+            _root.ActualThemeChanged += OnThemeChanged;
+            _requestedThemeToken = _root.RegisterPropertyChangedCallback(FrameworkElement.RequestedThemeProperty, OnRequestedThemeChanged);
+        }
         UpdateTheme();
         _controller = new DesktopAcrylicController();
         _controller.AddSystemBackdropTarget(connectedTarget);
@@ -33,7 +38,11 @@ internal sealed partial class AlwaysActiveAcrylicBackdrop : SystemBackdrop
     protected override void OnTargetDisconnected(ICompositionSupportsSystemBackdrop disconnectedTarget)
     {
         base.OnTargetDisconnected(disconnectedTarget);
-        if (_root is not null) _root.ActualThemeChanged -= OnThemeChanged;
+        if (_root is not null)
+        {
+            _root.ActualThemeChanged -= OnThemeChanged;
+            _root.UnregisterPropertyChangedCallback(FrameworkElement.RequestedThemeProperty, _requestedThemeToken);
+        }
         _root = null;
         if (_controller is null) return;
         _controller.RemoveSystemBackdropTarget(disconnectedTarget);
@@ -43,10 +52,18 @@ internal sealed partial class AlwaysActiveAcrylicBackdrop : SystemBackdrop
 
     private void OnThemeChanged(FrameworkElement sender, object args) => UpdateTheme();
 
+    private void OnRequestedThemeChanged(DependencyObject sender, DependencyProperty property) => UpdateTheme();
+
+    /// <summary>
+    /// Follows the root's requested theme. "Use system setting" must stay
+    /// <see cref="SystemBackdropTheme.Default"/>: the controller then follows the system itself,
+    /// whereas ActualThemeChanged does not fire when the system theme changes, which left the
+    /// acrylic in the old theme under content in the new one.
+    /// </summary>
     private void UpdateTheme()
     {
         if (_configuration is null) return;
-        _configuration.Theme = _root?.ActualTheme switch
+        _configuration.Theme = _root?.RequestedTheme switch
         {
             ElementTheme.Dark => SystemBackdropTheme.Dark,
             ElementTheme.Light => SystemBackdropTheme.Light,

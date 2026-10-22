@@ -20,6 +20,9 @@ public sealed class SceneRenderer : IDisposable
 {
     public const Format ColorFormat = Format.B8G8R8A8_UNorm;
     private const Format DepthFormat = Format.D32_Float;
+    // Bytecode is device-independent. Compile once, including when two views load concurrently.
+    private static readonly Lazy<ReadOnlyMemory<byte>> VertexBytecode = new(() => Compile("VS", "vs_5_0"));
+    private static readonly Lazy<ReadOnlyMemory<byte>> PixelBytecode = new(() => Compile("PS", "ps_5_0"));
 
     /// <summary>Filament's default camera exposure: 1 / (1.2 · 2^EV100) with EV100 = log2(16² / (1/125) · 100/100).</summary>
     public static readonly float Exposure = (float)(1 / (1.2 * (16.0 * 16.0 / 0.008)));
@@ -51,8 +54,8 @@ public sealed class SceneRenderer : IDisposable
         Context = context;
         SampleCount = PickSampleCount(device);
 
-        var vs = Compile("VS", "vs_5_0");
-        var ps = Compile("PS", "ps_5_0");
+        var vs = VertexBytecode.Value;
+        var ps = PixelBytecode.Value;
         _vertexShader = Own(device.CreateVertexShader(vs.Span));
         _pixelShader = Own(device.CreatePixelShader(ps.Span));
         _inputLayout = Own(device.CreateInputLayout(
@@ -273,6 +276,7 @@ public sealed class SceneRenderer : IDisposable
         private readonly Matrix4x4 _world;
         private readonly Matrix4x4 _iblRotation;
         private readonly Vector4[] _sh = new Vector4[9];
+        private readonly bool[] _blendedMaterials;
 
         public SceneGpu(SceneRenderer renderer, SceneAssets assets)
         {
@@ -280,6 +284,9 @@ public sealed class SceneRenderer : IDisposable
             _assets = assets;
             var device = renderer.Device;
             var model = assets.Model;
+            // Textures and materials are immutable for the lifetime of this scene. Scanning a
+            // texture's alpha channel in Draw would repeat millions of byte reads every frame.
+            _blendedMaterials = model.Materials.Select(m => m.Blend && HasTransparency(m)).ToArray();
             _vertices = Track(device.CreateBuffer(model.Vertices, BindFlags.VertexBuffer, ResourceUsage.Immutable));
             _indices = Track(device.CreateBuffer(model.Indices, BindFlags.IndexBuffer, ResourceUsage.Immutable));
             _world = OrbitCamera.ModelTransform(model.Center, model.HalfExtent, assets.Config.ModelScale);
@@ -397,12 +404,13 @@ public sealed class SceneRenderer : IDisposable
             context.PSSetShaderResource(5, _environment!);
 
             // Opaque first; blended materials afterwards without depth writes, like Filament's transparent pass.
-            foreach (bool blendPass in new[] { false, true })
+            for (int pass = 0; pass < 2; pass++)
             {
+                bool blendPass = pass == 1;
                 foreach (var draw in _assets.Model.Draws)
                 {
                     var material = draw.Material >= 0 && draw.Material < _assets.Model.Materials.Count ? _assets.Model.Materials[draw.Material] : GltfMaterial.Default;
-                    bool blended = material.Blend && HasTransparency(material);
+                    bool blended = draw.Material >= 0 && draw.Material < _blendedMaterials.Length && _blendedMaterials[draw.Material];
                     if (blended != blendPass) continue;
                     var overrides = draw.Material >= 0 && draw.Material < config.Materials.Count ? config.Materials[draw.Material] : null;
                     Bind(material, overrides, blended);

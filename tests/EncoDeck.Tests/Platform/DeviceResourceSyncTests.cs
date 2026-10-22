@@ -93,6 +93,26 @@ public sealed class DeviceResourceSyncTests
         }
     }
 
+    [Fact]
+    public async Task PreviousDeviceCompletionCannotReplaceTheActiveArtworkStatus()
+    {
+        var store = new DeviceStateStore();
+        var download = new Downloader();
+        await using var sync = new DeviceResourceSync(store, download, NullLogger<DeviceResourceSync>.Instance);
+        sync.Start();
+        var device = new DeviceIdentity("first", "First earbuds", new BluetoothAddress(0));
+        store.Reset(DeviceState.Empty with { Device = device, ProductId = 0x06EC10, ColorId = 1 });
+        await download.Started.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+        var old = sync.RefreshAsync(new DeviceResourceKey("model", 0x06EC10, 1));
+        store.Reset(DeviceState.Empty with { Device = device with { Name = "Second earbuds" }, ProductId = 0x067410, ColorId = 1 });
+        var current = sync.RefreshAsync(new DeviceResourceKey("model", 0x067410, 1));
+        download.Complete.SetResult(new ResourceDownloadResult(3, "cache", false));
+        await Task.WhenAll(old, current);
+        Assert.Equal(0x067410u, sync.Status.Key!.ProductId);
+        Assert.Equal("Second earbuds", sync.Status.DeviceName);
+        Assert.Equal(ResourceSyncStage.Completed, sync.Status.Stage);
+    }
+
     [Theory]
     [InlineData("offline", ResourceSyncFailure.Offline)]
     [InlineData("404", ResourceSyncFailure.NotAvailable)]

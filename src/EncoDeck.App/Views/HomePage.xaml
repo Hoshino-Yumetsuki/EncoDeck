@@ -34,18 +34,17 @@
         </Style>
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
-        <Grid>
-        <Grid x:Name="PageRoot" MaxWidth="1180" Padding="32,12,32,32" ColumnSpacing="28" RowSpacing="16" SizeChanged="OnPageSizeChanged">
+    <!-- Wide: the device stage stays fixed on the left and only the controls scroll (SideScroll);
+         narrow: stage and controls stack in MainScroll. HomePage.xaml.cs moves SidePanel between the two. -->
+    <Grid>
+        <Grid x:Name="PageRoot" MaxWidth="1180" Padding="32,12,32,0" ColumnSpacing="28" RowSpacing="16" SizeChanged="OnPageSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="11*" />
                 <ColumnDefinition Width="9*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <!-- Messages and the no-device / unavailable states. -->
@@ -67,7 +66,7 @@
                     <StackPanel Spacing="12">
                         <TextBlock x:Uid="Home_NoDevice_Title" Text="No supported earbuds found" Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock x:Uid="Home_NoDevice_Body" TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"
-                                   Text="Pair your OPPO earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically." />
+                                   Text="Pair your earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically." />
                         <Button x:Uid="Home_NoDevice_OpenSettings" Content="Open Bluetooth settings" Click="OnOpenBluetoothSettings" Style="{StaticResource AccentButtonStyle}" />
                     </StackPanel>
                 </Border>
@@ -87,7 +86,9 @@
             </StackPanel>
 
             <!-- The device stage: name, levels and the rotatable 3D model (HeyMelody's device page). -->
-            <StackPanel x:Name="Stage" Grid.Row="1" Grid.ColumnSpan="2" Spacing="6" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+            <ScrollViewer x:Name="MainScroll" Grid.Row="1" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Auto" Margin="0,0,-20,0" SizeChanged="OnMainScrollSizeChanged">
+            <StackPanel x:Name="MainColumn" Spacing="16" Padding="0,0,20,32">
+            <StackPanel x:Name="Stage" Spacing="6" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource TitleLargeTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                 <StackPanel Orientation="Horizontal" Spacing="14">
                     <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Left.HasValue, Mode=OneWay}">
@@ -113,18 +114,43 @@
                                    AutomationProperties.LiveSetting="Polite" />
                     </StackPanel>
                 </StackPanel>
-                <controls:DeviceModelView x:Name="Model" Height="320" Margin="0,8,0,0"
+                <Grid Margin="0,8,0,0">
+                <controls:DeviceModelView x:Name="Model" Height="280" Visibility="{x:Bind services:Ui.Collapsed(ViewModel.HasDeviceMotion), Mode=OneWay}"
                                           ModelPath="{x:Bind ViewModel.DeviceModelPath, Mode=OneWay}"
                                           ImagePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}"
                                           IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
+                <controls:DeviceMedia SourcePath="{x:Bind ViewModel.DeviceMotionPath, Mode=OneWay}"
+                                      Height="{Binding Height, ElementName=Model}"
+                                      IsVideo="{x:Bind ViewModel.DeviceMotionIsVideo, Mode=OneWay}"
+                                      FallbackPath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}"
+                                      Visibility="{x:Bind ViewModel.HasDeviceMotion, Mode=OneWay}" />
+                </Grid>
                 <TextBlock x:Uid="Home_DragHint" Text="Drag to rotate" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
                            Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.DeviceModelPath), Mode=OneWay}" />
                 <TextBlock Text="{x:Bind ViewModel.FirmwareText, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" />
+                <TextBlock x:Uid="Artwork_Representative" Text="Showing reference artwork for this model; device color is unknown."
+                           TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
+                           Visibility="{x:Bind ViewModel.IsRepresentativeArtwork, Mode=OneWay}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24" Margin="0,12,0,4"
+                            Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}">
+                    <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.LeftArtworkPath), Mode=OneWay}">
+                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.LeftArtworkPath, Mode=OneWay}" />
+                        <TextBlock x:Uid="Artwork_Left" Text="Left earbud" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                    <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.RightArtworkPath), Mode=OneWay}">
+                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.RightArtworkPath, Mode=OneWay}" />
+                        <TextBlock x:Uid="Artwork_Right" Text="Right earbud" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                    <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.CaseArtworkPath), Mode=OneWay}">
+                        <controls:DeviceImage Width="72" Height="64" SourcePath="{x:Bind ViewModel.CaseArtworkPath, Mode=OneWay}" />
+                        <TextBlock x:Uid="Artwork_Case" Text="Charging case" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
 
             <!-- Controls (HeyMelody's device page sections). -->
-            <StackPanel x:Name="SidePanel" Grid.Row="2" Grid.ColumnSpan="2" Spacing="16" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
-                <Border Style="{StaticResource CardStyle}" Padding="20">
+            <StackPanel x:Name="SidePanel" Spacing="16" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+                <Border x:Name="NoiseCard" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel Spacing="16">
                         <Grid>
                             <TextBlock x:Uid="Home_NoiseControl" Text="Noise control" Style="{StaticResource BodyStrongTextBlockStyle}" />
@@ -143,14 +169,17 @@
                             <TextBlock x:Uid="Home_Devices" Text="Device management" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
                             <HyperlinkButton x:Uid="Home_DevicesMore" Content="More" HorizontalAlignment="Right" Padding="4,2" Click="OnOpenControls" />
                         </Grid>
+                        <controls:SettingRow x:Name="DualRow" x:Uid="Home_Dual" Header="Dual connection">
+                            <ToggleSwitch x:Name="DualSwitch" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnDualToggled" />
+                        </controls:SettingRow>
                         <Grid x:Name="DeviceHost" ColumnSpacing="8" MinHeight="104" />
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource CardStyle}" Padding="20,12">
+                <Border x:Name="SoundCard" Style="{StaticResource CardStyle}" Padding="20,12">
                     <StackPanel>
                         <TextBlock x:Uid="Home_SoundCard" Text="Sound" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,8,0,4" />
-                        <Button Style="{StaticResource NavigationRowStyle}" Click="OnOpenSound">
+                        <Button x:Name="EqRow" Style="{StaticResource NavigationRowStyle}" Click="OnOpenSound">
                             <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -180,7 +209,13 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </StackPanel>
+            </ScrollViewer>
+
+            <!-- The scroll bar sits in the page gutter (negative margin) instead of over the cards. -->
+            <ScrollViewer x:Name="SideScroll" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-20,0" Visibility="Collapsed">
+                <Border x:Name="SideHost" Padding="0,0,20,32" />
+            </ScrollViewer>
         </Grid>
-        </Grid>
-    </ScrollViewer>
+    </Grid>
 </Page>

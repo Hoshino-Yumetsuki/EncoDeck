@@ -77,6 +77,7 @@ public sealed record DeviceResourceStatus
     {
         ResourceUnavailableException => ResourceSyncFailure.NotAvailable,
         HttpRequestException { StatusCode: HttpStatusCode.NotFound } => ResourceSyncFailure.NotAvailable,
+        HttpRequestException { StatusCode: HttpStatusCode.Conflict } => ResourceSyncFailure.NotAvailable,
         HttpRequestException { StatusCode: null } => ResourceSyncFailure.Offline,
         HttpRequestException => ResourceSyncFailure.Server,
         // A timeout (shutdown is filtered out by the caller).

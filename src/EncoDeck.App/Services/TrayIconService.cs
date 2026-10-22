@@ -94,7 +94,17 @@ public sealed partial class TrayIconService : IDisposable
         Command = new RelayCommand(() => _device.SetNoiseModeCommand.Execute(mode)),
     };
 
-    private void OnDeviceChanged(object? sender, PropertyChangedEventArgs e) => Refresh();
+    private void OnDeviceChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName is
+            nameof(DeviceViewModel.TrayToolTip) or nameof(DeviceViewModel.HasDevice) or
+            nameof(DeviceViewModel.DeviceName) or nameof(DeviceViewModel.ConnectionText) or
+            nameof(DeviceViewModel.IsNoiseAvailable) or nameof(DeviceViewModel.IsNoisePending) or
+            nameof(DeviceViewModel.HasAncMode) or nameof(DeviceViewModel.HasAdaptiveMode) or
+            nameof(DeviceViewModel.HasTransparencyMode) or nameof(DeviceViewModel.HasOffMode) or
+            nameof(DeviceViewModel.IsAncSelected) or nameof(DeviceViewModel.IsAdaptiveSelected) or
+            nameof(DeviceViewModel.IsTransparencySelected) or nameof(DeviceViewModel.IsOffSelected)) Refresh();
+    }
 
     private void Refresh()
     {

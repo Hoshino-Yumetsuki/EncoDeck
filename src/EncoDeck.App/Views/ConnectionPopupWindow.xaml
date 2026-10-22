@@ -53,43 +53,47 @@
                 </Grid>
 
                 <!-- Compact card, used when no connection video is available. -->
-                <Grid x:Name="Card" Padding="16,14,12,14" ColumnSpacing="16" Visibility="Collapsed">
+                <!-- Artwork on the left, centred; name, status and levels share one left edge on the right. -->
+                <Grid x:Name="Card" Padding="16,12,10,12" ColumnSpacing="18" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="104" />
+                        <ColumnDefinition Width="108" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <controls:DeviceMedia x:Name="Picture" Height="96" VerticalAlignment="Center" />
+                    <Grid x:Name="CompactArt" Width="108" Height="104" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <controls:DeviceMedia x:Name="Picture" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        <Grid x:Name="ComponentArt" Visibility="Collapsed" IsHitTestVisible="False">
+                            <controls:DeviceImage x:Name="CaseArt" Width="80" Height="50" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                            <controls:DeviceImage x:Name="LeftArt" Width="36" Height="62" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14,4,0,0" />
+                            <controls:DeviceImage x:Name="RightArt" Width="36" Height="62" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,14,0" />
+                        </Grid>
+                    </Grid>
 
-                    <Grid Grid.Column="1" RowSpacing="8">
+                    <Grid Grid.Column="1" RowSpacing="10" VerticalAlignment="Center">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid ColumnSpacing="4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel>
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                                <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
-                            <Button x:Name="CardClose" Grid.Column="1" x:Uid="Popup_Close" Click="OnCloseClick" Style="{StaticResource SubtleButtonStyle}" Padding="6" VerticalAlignment="Top"
+                            <Button x:Name="CardClose" Grid.Column="1" x:Uid="Popup_Close" Click="OnCloseClick" Style="{StaticResource SubtleButtonStyle}" Padding="6" VerticalAlignment="Top" Margin="0,-2,0,0"
                                     AutomationProperties.Name="Close">
                                 <FontIcon Glyph="&#xE711;" FontSize="10" />
                             </Button>
                         </Grid>
-                        <Grid x:Name="BatteryRow" Grid.Row="1" ColumnSpacing="4" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <controls:BatteryIndicator Grid.Column="0" Item="{x:Bind ViewModel.Left}" GlyphSize="18" LevelFontSize="15" />
-                            <controls:BatteryIndicator Grid.Column="1" Item="{x:Bind ViewModel.Right}" Visibility="{x:Bind ViewModel.Right.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
-                            <controls:BatteryIndicator Grid.Column="2" Item="{x:Bind ViewModel.Case}" Visibility="{x:Bind ViewModel.Case.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
-                        </Grid>
+                        <!-- Left-aligned with fixed gaps, so the first level lines up under the name instead of floating mid-column. -->
+                        <StackPanel x:Name="BatteryRow" Grid.Row="1" Orientation="Horizontal" Spacing="26" HorizontalAlignment="Left">
+                            <controls:BatteryIndicator MinWidth="44" Item="{x:Bind ViewModel.Left}" GlyphSize="18" LevelFontSize="15" />
+                            <controls:BatteryIndicator MinWidth="44" Item="{x:Bind ViewModel.Right}" Visibility="{x:Bind ViewModel.Right.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
+                            <controls:BatteryIndicator MinWidth="44" Item="{x:Bind ViewModel.Case}" Visibility="{x:Bind ViewModel.Case.IsVisible, Mode=OneWay}" GlyphSize="18" LevelFontSize="15" />
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </Grid>

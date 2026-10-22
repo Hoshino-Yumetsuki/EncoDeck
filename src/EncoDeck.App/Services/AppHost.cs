@@ -75,16 +75,23 @@ public sealed class AppHost : IAsyncDisposable
     public LowBatteryMonitor LowBattery { get; } = new();
 
     /// <param name="logDirectory">Where to write the log (diagnostics runs keep the user's log clean).</param>
-    public static AppHost Create(string? logDirectory = null)
+    public static AppHost Create(string? logDirectory = null, string? rootOverride = null)
     {
-        var paths = new AppPaths();
+        var paths = new AppPaths(rootOverride);
         paths.EnsureCreated();
         var fileLog = new JsonFileLoggerProvider(logDirectory ?? paths.LogDirectory, LogLevel.Information);
         var loggers = LoggerFactory.Create(builder =>
         {
+            // Avoid formatting Debug messages when the only release sink writes Information and up.
+#if DEBUG
             builder.SetMinimumLevel(LogLevel.Debug);
+#else
+            builder.SetMinimumLevel(LogLevel.Information);
+#endif
             builder.AddProvider(fileLog);
+#if DEBUG
             builder.AddDebug();
+#endif
         });
 
         var settings = new JsonSettingsStore(paths.SettingsFile, loggers.CreateLogger<JsonSettingsStore>());

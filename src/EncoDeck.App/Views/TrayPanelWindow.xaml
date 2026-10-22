@@ -10,6 +10,10 @@
     </Window.SystemBackdrop>
 
     <Grid x:Name="Root" KeyDown="OnRootKeyDown">
-        <controls:DeviceQuickPanel x:Name="ContentPanel" VerticalAlignment="Top" />
+        <!-- Measured at unbounded height (never clipped to the current window), so SizeChanged follows
+             the content both ways and Place() can grow or shrink the window to fit. -->
+        <ScrollViewer VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden">
+            <controls:DeviceQuickPanel x:Name="ContentPanel" VerticalAlignment="Top" />
+        </ScrollViewer>
     </Grid>
 </Window>

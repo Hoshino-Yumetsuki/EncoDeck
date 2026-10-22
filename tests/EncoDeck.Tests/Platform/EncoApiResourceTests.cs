@@ -305,5 +305,68 @@ public sealed class EncoApiResourceTests : IDisposable
         Assert.Empty(handler.Requests);
     }
 
+    [Fact]
+    public async Task MultiBrandResolvesPublicCatalogNameAndKeepsFamilyCachesSeparate()
+    {
+        var key = new DeviceResourceKey("redmi-earbuds", null, null, "Redmi Buds 6", "Redmi earbuds");
+        var other = key with { DeviceName = "Redmi Buds 5" };
+        Assert.NotEqual(key.CacheIdentity, other.CacheIdentity);
+        var packs = new Dictionary<string, byte[]>
+        {
+            ["control"] = Pack(("config.json", """{"detailImageRes":{"path":"device.png"},"lottieRes":{"path":"open.json"}}"""),
+                ("device.png", "image"), ("open.json", """{"v":"5.7","layers":[],"fr":30,"ip":0,"op":30}""")),
+        };
+        var handler = new Handler(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            if (path == "/v1/resolve") return new(HttpStatusCode.OK) { Content = new StringContent("""{"productId":"xiaomi-2717-509f","colorId":2}""") };
+            if (path.Contains("resources")) return new(HttpStatusCode.OK) { Content = new StringContent(Metadata(packs, "xiaomi-2717-509f", 2)) };
+            return new(HttpStatusCode.OK) { Content = new ByteArrayContent(packs["control"]) };
+        });
+        using var client = new EncoApiResourceClient(new HttpClient(handler), _root, () => { }, Api);
+        Assert.Equal(2, (await client.EnsureAsync(key, cancellationToken: Ct)).Files);
+        Assert.Equal(3, handler.Requests.Count);
+        var manifest = JsonSerializer.Deserialize(await File.ReadAllTextAsync(Path.Combine(client.GetCacheInfo(key)!.Folder, "manifest.json"), Ct), ResourcePackJsonContext.Default.ResourcePackManifest)!;
+        Assert.Equal(key.CacheIdentity, manifest.Models[0].ResourceIdentity);
+        Assert.Equal("popupAnimation", manifest.Models[0].Resources.Keys.Single(k => k == "popupAnimation"));
+        Assert.True((await client.EnsureAsync(key, cancellationToken: Ct)).FromCache);
+        Assert.Equal(3, handler.Requests.Count);
+        Assert.Equal(DeviceResourceKind.Lottie, IDeviceResourceProvider.KindOf("open.json"));
+    }
+
+    [Fact]
+    public async Task FrameAnimationAndHomeModelHaveSeparateResourceRoles()
+    {
+        var packs = new Dictionary<string, byte[]>
+        {
+            ["control"] = Pack(("config.json", """{"detailImageRes":{"path":"device.png"},"animationRes":{"path":"open.webp"}}"""),
+                ("device.png", "image"), ("open.webp", "frames")),
+            ["model"] = Pack(("config.json", """{"model3D":{"path":"scene.vfxms"}}"""), ("scene.vfxms", "scene")),
+        };
+        using var client = new EncoApiResourceClient(new HttpClient(Respond(packs)), _root, () => { }, Api);
+        Assert.Equal(3, (await client.EnsureAsync(Key, cancellationToken: Ct)).Files);
+        var manifest = JsonSerializer.Deserialize(await File.ReadAllTextAsync(Path.Combine(client.GetCacheInfo(Key)!.Folder, "manifest.json"), Ct), ResourcePackJsonContext.Default.ResourcePackManifest)!;
+        Assert.EndsWith("open.webp", manifest.Models[0].Resources["popupAnimation"]);
+        Assert.EndsWith("scene.vfxms", manifest.Models[0].Resources["deviceModel"]);
+    }
+
+    [Fact]
+    public async Task CustomizedBluetoothNameStaysLocalWhenKnownProfileSuppliesTheModel()
+    {
+        var key = new DeviceResourceKey("huawei-FreeBudsPro3", null, null, "Private personal nickname", "HUAWEI FreeBuds Pro 3");
+        var handler = new Handler(request =>
+        {
+            Assert.DoesNotContain("Private", request.RequestUri!.OriginalString);
+            return new(HttpStatusCode.NotFound);
+        });
+        using var client = new EncoApiResourceClient(new HttpClient(handler), _root, () => { }, Api);
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.EnsureAsync(key, cancellationToken: Ct));
+        Assert.Single(handler.Requests);
+        Assert.Contains("FreeBuds", handler.Requests[0].OriginalString);
+        var unknown = key with { ModelId = "huawei-generic", ModelName = "HUAWEI earbuds" };
+        await Assert.ThrowsAsync<ResourceUnavailableException>(() => client.EnsureAsync(unknown, cancellationToken: Ct));
+        Assert.Single(handler.Requests);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

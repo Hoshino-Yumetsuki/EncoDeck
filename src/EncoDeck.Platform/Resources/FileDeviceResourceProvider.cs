@@ -15,6 +15,7 @@ public sealed record ResourcePackManifest
     public string? Source { get; init; }
     public List<ResourcePackModel> Models { get; init; } = [];
     public DateTimeOffset? UpdatedAt { get; init; }
+    public bool RepresentativeArtwork { get; init; }
 }
 
 public sealed record ResourcePackModel
@@ -23,6 +24,8 @@ public sealed record ResourcePackModel
     public string? ProductId { get; init; }
     /// <summary>Model id, or <see cref="AnyModel"/> for generic art used when nothing more specific exists.</summary>
     public string? ModelId { get; init; }
+    /// <summary>Distinguishes devices sharing a family profile.</summary>
+    public string? ResourceIdentity { get; init; }
     public int? ColorId { get; init; }
     /// <summary>Role name (device, case, leftBud, rightBud, popupAnimation) → path relative to the pack folder.</summary>
     public Dictionary<string, string> Resources { get; init; } = new(StringComparer.OrdinalIgnoreCase);
@@ -134,7 +137,7 @@ public sealed class FileDeviceResourceProvider : IDeviceResourceProvider, IDispo
             if (model is null || !model.Resources.TryGetValue(RoleName(role), out var relative)) continue;
             string path = Path.GetFullPath(Path.Combine(folder, relative));
             if (!path.StartsWith(Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || !File.Exists(path)) continue;
-            return new DeviceResourceFile(path, IDeviceResourceProvider.KindOf(path), origin, manifest.Name);
+            return new DeviceResourceFile(path, IDeviceResourceProvider.KindOf(path), origin, manifest.Name, manifest.RepresentativeArtwork);
         }
 
         // Generic entries in existing local packs are used only as a fallback.
@@ -152,9 +155,11 @@ public sealed class FileDeviceResourceProvider : IDeviceResourceProvider, IDispo
     /// <summary>Entry for the device: matched by product id or model id; exact colour first, then colourless, then any.</summary>
     internal static ResourcePackModel? BestModel(ResourcePackManifest manifest, DeviceResourceKey key)
     {
-        var matching = manifest.Models.Where(m =>
+        var matching = manifest.Models.Where(m => m.ResourceIdentity is not null
+            ? string.Equals(m.ResourceIdentity, key.CacheIdentity, StringComparison.Ordinal)
+            : (
             (m.ProductId is not null && key.ProductId is not null && string.Equals(m.ProductId, key.ProductIdText, StringComparison.OrdinalIgnoreCase)) ||
-            (m.ModelId is not null && string.Equals(m.ModelId, key.ModelId, StringComparison.OrdinalIgnoreCase))).ToList();
+            (m.ModelId is not null && string.Equals(m.ModelId, key.ModelId, StringComparison.OrdinalIgnoreCase)))).ToList();
         return matching.FirstOrDefault(m => m.ColorId is not null && m.ColorId == key.ColorId)
             ?? matching.FirstOrDefault(m => m.ColorId is null)
             ?? matching.FirstOrDefault();
@@ -233,6 +238,7 @@ public sealed class FileDeviceResourceProvider : IDeviceResourceProvider, IDispo
         DeviceResourceRole.RightBud => "rightBud",
         DeviceResourceRole.PopupAnimationDark => "popupAnimationDark",
         DeviceResourceRole.DeviceModel => "deviceModel",
+        DeviceResourceRole.DeviceAnimation => "deviceAnimation",
         _ => "popupAnimation",
     };
 

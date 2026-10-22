@@ -21,9 +21,11 @@ public interface IDeviceResourceDownloader
 
 internal sealed record ApiResourcePackage(string Url, string Sha256, string? CacheUrl = null);
 internal sealed record ApiResourceResponse(string ProductId, int ColorId, bool Available, Dictionary<string, ApiResourcePackage> Packages);
+internal sealed record ApiResolvedModel(string ProductId, int ColorId, string? ColorSelection = null);
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(ApiResourceResponse))]
+[JsonSerializable(typeof(ApiResolvedModel))]
 internal sealed partial class EncoApiJsonContext : JsonSerializerContext;
 
 /// <summary>Fetches model-specific artwork through EncoAPI and atomically publishes a verified local cache.</summary>
@@ -38,8 +40,8 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
 
     public async Task<ResourceDownloadResult> EnsureAsync(DeviceResourceKey key, bool force = false, CancellationToken cancellationToken = default, IProgress<ResourceDownloadProgress>? progress = null)
     {
-        if (key.ProductId is not { } pid || pid > 0xFFFFFF || key.ColorId is not (>= 0 and <= 16))
-            throw new InvalidOperationException("A product id and color reported by the earbuds are required.");
+        if (!key.CanDownload)
+            throw new InvalidOperationException("A supported model identity is required.");
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -49,11 +51,30 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
                 return new ResourceDownloadResult(current.Models[0].Resources.Count, folder, true);
 
             progress?.Report(new ResourceDownloadProgress(ResourceSyncStage.Checking));
-            var url = new Uri(_api, $"v1/models/{key.ProductIdText}/resources?color={key.ColorId.Value}{(force ? "&fresh=1" : string.Empty)}");
+            string apiId = key.ProductIdText;
+            bool representativeArtwork = false;
+            int apiColor = key.ColorId ?? 0;
+            if (!key.UsesOplusId)
+            {
+                // Local matching returns public catalog strings, never a customized device name.
+                var lookup = OfficialArtworkCatalog.Lookup(key) ?? throw new ResourceUnavailableException("This model is not in the verified artwork catalog.");
+                var resolveUrl = new Uri(_api, $"v1/resolve?brand={Uri.EscapeDataString(key.Brand)}&modelId={Uri.EscapeDataString(lookup.ModelId)}"
+                    + $"&name={Uri.EscapeDataString(lookup.Name)}"
+                    + (key.ColorId is { } knownColor ? $"&color={knownColor}" : "&representative=1"));
+                var resolved = JsonSerializer.Deserialize(await GetBytesAsync(resolveUrl, 1024 * 1024, cancellationToken).ConfigureAwait(false),
+                    EncoApiJsonContext.Default.ApiResolvedModel) ?? throw new InvalidDataException("Empty model resolution.");
+                if (resolved.ProductId is not { Length: >= 1 and <= 80 } || resolved.ProductId.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
+                    || resolved.ColorId is < 0 or > 255 || (key.ColorId is { } reported && reported != resolved.ColorId))
+                    throw new InvalidDataException("Invalid model resolution.");
+                apiId = resolved.ProductId;
+                apiColor = resolved.ColorId;
+                representativeArtwork = resolved.ColorSelection is "representative" or "catalog-default";
+            }
+            var url = new Uri(_api, $"v1/models/{apiId}/resources?color={apiColor}{(force ? "&fresh=1" : string.Empty)}");
             using var metadataStream = new MemoryStream(await GetBytesAsync(url, 4 * 1024 * 1024, cancellationToken).ConfigureAwait(false));
             var metadata = await JsonSerializer.DeserializeAsync(metadataStream, EncoApiJsonContext.Default.ApiResourceResponse, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidDataException("EncoAPI returned an empty response.");
-            if (!metadata.Available || metadata.ColorId != key.ColorId || !string.Equals(metadata.ProductId, key.ProductIdText, StringComparison.OrdinalIgnoreCase)
+            if (!metadata.Available || metadata.ColorId != apiColor || !string.Equals(metadata.ProductId, apiId, StringComparison.OrdinalIgnoreCase)
                 || metadata.Packages is null || metadata.Packages.Count == 0)
             {
                 if (!metadata.Available || metadata.Packages is not { Count: > 0 }) throw new ResourceUnavailableException("EncoAPI has no resources for this product and color.");
@@ -74,6 +95,9 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
                 {
                     foreach (var (role, field) in new[] { ("device", "detailImageRes"), ("case", "boxImageRes"), ("leftBud", "leftImageRes"), ("rightBud", "rightImageRes") })
                         AddRole(roles, folder, pack, role, Descriptor(config.RootElement, field), false);
+                    if (!AddRole(roles, folder, pack, "popupAnimation", Descriptor(config.RootElement, "animationRes"), false))
+                        AddRole(roles, folder, pack, "popupAnimation", Descriptor(config.RootElement, "lottieRes"), false);
+                    AddRole(roles, folder, pack, "deviceAnimation", Descriptor(config.RootElement, "homeAnimationRes"), false);
                 }
                 else if (kind == "model")
                 {
@@ -95,8 +119,9 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
             var manifest = new ResourcePackManifest
             {
                 Name = $"EncoAPI {key.ProductIdText} / {key.ColorId}", Source = "encoapi", UpdatedAt = DateTimeOffset.UtcNow,
+                RepresentativeArtwork = representativeArtwork,
                 // Product id is sufficient even when the app has no control profile for the model.
-                Models = [new ResourcePackModel { ProductId = key.ProductIdText, ColorId = key.ColorId, Resources = roles }],
+                Models = [new ResourcePackModel { ProductId = apiId, ModelId = key.ModelId, ResourceIdentity = key.CacheIdentity, ColorId = key.ColorId, Resources = roles }],
             };
             string temporary = Path.Combine(folder, $".manifest-{Guid.NewGuid():N}.tmp");
             try
@@ -114,11 +139,11 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
     }
 
     private string FolderFor(DeviceResourceKey key) =>
-        Path.GetFullPath(Path.Combine(cacheRoot, key.ProductIdText, key.ColorId!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        Path.GetFullPath(Path.Combine(cacheRoot, key.CacheIdentity, (key.ColorId ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture)));
 
     public ResourceCacheInfo? GetCacheInfo(DeviceResourceKey key)
     {
-        if (key.ProductId is not <= 0xFFFFFF || key.ColorId is not (>= 0 and <= 16)) return null;
+        if (!key.CanDownload) return null;
         string folder = FolderFor(key);
         try
         {
@@ -146,7 +171,9 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
             if (manifest?.Source != "encoapi" || manifest.UpdatedAt is not { } updated || updated > DateTimeOffset.UtcNow
                 || DateTimeOffset.UtcNow - updated >= CacheLifetime || manifest.Models.Count != 1) return null;
             var model = manifest.Models[0];
-            if (!string.Equals(model.ProductId, key.ProductIdText, StringComparison.OrdinalIgnoreCase) || model.ColorId != key.ColorId || model.Resources.Count == 0) return null;
+            bool matches = model.ResourceIdentity is not null ? model.ResourceIdentity == key.CacheIdentity
+                : key.UsesOplusId && string.Equals(model.ProductId, key.ProductIdText, StringComparison.OrdinalIgnoreCase);
+            if (!matches || model.ColorId != key.ColorId || model.Resources.Count == 0) return null;
             return model.Resources.Values.All(relative => SafeRelativePath(relative) && File.Exists(Within(folder, relative))) ? manifest : null;
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or InvalidDataException) { return null; }

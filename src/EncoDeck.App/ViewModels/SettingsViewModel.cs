@@ -214,7 +214,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         var key = status.Key;
         ArtworkDevice = key is { ProductId: { } pid, ColorId: { } color }
             ? Loc.Format("Artwork_Device", string.IsNullOrWhiteSpace(status.DeviceName) ? key.ModelId : status.DeviceName, pid.ToString("X6", CultureInfo.InvariantCulture), color)
-            : Loc.Get("Artwork_NoDevice");
+            : key is { CanDownload: true } ? key.ModelName ?? status.DeviceName ?? key.ModelId : Loc.Get("Artwork_NoDevice");
         ArtworkStatus = status.Stage switch
         {
             ResourceSyncStage.Checking => Loc.Get("Artwork_Checking"),
@@ -240,7 +240,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ArtworkProgress = status.Total is > 0 ? Math.Clamp(100.0 * status.Received / status.Total.Value, 0, 100) : 0;
         ArtworkUpdated = status.Cache?.UpdatedAt is { } updated ? updated.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) : "—";
         ArtworkCache = status.Cache is { } cache ? Loc.Format("Artwork_CacheSummary", cache.Files, Bytes(cache.Bytes)) : "—";
-        CanRedownloadArtwork = key is { ProductId: not null, ColorId: not null } && !status.IsRunning;
+        CanRedownloadArtwork = key is { CanDownload: true } && !status.IsRunning;
     }
 
     [RelayCommand(CanExecute = nameof(CanRedownloadArtwork))]

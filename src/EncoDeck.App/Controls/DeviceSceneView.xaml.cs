@@ -76,8 +76,8 @@ public sealed partial class DeviceSceneView : UserControl
     {
         string? path = ScenePath is { Length: > 0 } p ? p : null;
         if (path == _loadedPath && _renderer is not null) return;
-        int version = ++_loadVersion;
         Release();
+        int version = _loadVersion;
         if (path is null || !IsLoaded) return;
         _loadedPath = path;
         SceneRenderer renderer;
@@ -191,7 +191,7 @@ public sealed partial class DeviceSceneView : UserControl
         if (dt < 0.0155f) return;
         _lastFrame = now;
         // Nothing to draw while the window is minimised or hidden in the tray.
-        if (XamlRoot?.IsHostVisible == false) return;
+        if (Visibility != Visibility.Visible || XamlRoot?.IsHostVisible == false) return;
         _camera.AutoRotate = ShellEnvironment.AnimationsEnabled();
         _camera.Update(dt);
         try
@@ -199,7 +199,7 @@ public sealed partial class DeviceSceneView : UserControl
             EnsureBitmap();
             if (!_camera.IsMoving && !_dirty) return;
             _target.Render(_camera, _pixels);
-            using (var stream = _bitmap!.PixelBuffer.AsStream()) stream.Write(_pixels);
+            _pixels.CopyTo(0, _bitmap!.PixelBuffer, 0, _pixels.Length);
             _bitmap.Invalidate();
             _dirty = false;
             if (!_announced)
@@ -350,6 +350,7 @@ public sealed partial class DeviceSceneView : UserControl
 
     private void Release()
     {
+        ++_loadVersion; // An in-flight load must not revive a released or replaced scene.
         StopRendering();
         _pointerId = null;
         Surface.ReleasePointerCaptures();

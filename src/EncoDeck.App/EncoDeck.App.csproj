@@ -28,6 +28,22 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Keep symbols in bin for diagnostics, but don't distribute them to every user. -->
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+  </PropertyGroup>
+
+  <!-- The app supports Chinese and English. Native WinUI MUI files bypass the .NET
+       SatelliteResourceLanguages filter, so filter these explicitly at publish time. -->
+  <Target Name="FilterWinUILocalizations" AfterTargets="ComputeFilesToPublish" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+          Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' and '$(CopyOutputSymbolsToPublishDirectory)' == 'false'" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+          Condition="'%(ResolvedFileToPublish.Extension)' == '.mui' and !$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(?i:en-us|zh-cn)[\\/]'))" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
     <!-- Also publish: the installed app loads its logo, window and tray icons from Assets\. -->
@@ -49,6 +65,7 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
     <PackageReference Include="H.NotifyIcon.WinUI" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="CommunityToolkit.WinUI.Lottie" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" />

@@ -105,8 +105,16 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial bool IsControlUnavailable { get; set; }
     [ObservableProperty] public partial bool IsLinkDown { get; set; }
     [ObservableProperty] public partial string? DeviceImagePath { get; set; }
+    [ObservableProperty] public partial string? LeftArtworkPath { get; set; }
+    [ObservableProperty] public partial string? RightArtworkPath { get; set; }
+    [ObservableProperty] public partial string? CaseArtworkPath { get; set; }
+    [ObservableProperty] public partial bool HasComponentArtwork { get; set; }
+    [ObservableProperty] public partial bool IsRepresentativeArtwork { get; set; }
     /// <summary>HeyMelody's 360° device model (turntable WebP) for the home page, when available.</summary>
-    [ObservableProperty] public partial string? DeviceModelPath { get; set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial string? DeviceModelPath { get; set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial string? DeviceMotionPath { get; set; }
+    [ObservableProperty] public partial bool DeviceMotionIsVideo { get; set; }
+    public bool HasDeviceMotion => DeviceModelPath is null && DeviceMotionPath is not null;
     [ObservableProperty] public partial bool HasDeviceImage { get; set; }
 
     /// <summary>Selects the headphones illustration when no product image is available.</summary>
@@ -241,13 +249,17 @@ public sealed partial class DeviceViewModel : ObservableObject
         });
     }
 
+    /// <summary>Manual demos (BrandDemo) set their own artwork; state changes then leave it alone, so the
+    /// paths never briefly flip (which would restart the stage animation).</summary>
+    internal bool ArtworkPinned { get; set; }
+
     private void Apply(DeviceState state, bool forceNotify = false)
     {
         var now = DateTimeOffset.UtcNow;
         var profile = state.Profile;
         Profile = profile;
         HasDevice = state.Device is not null;
-        DeviceName = state.Device?.Name ?? Loc.Get("Device_None");
+        if (!ArtworkPinned) DeviceName = state.Device?.Name ?? Loc.Get("Device_None");
         ModelName = profile?.DisplayName ?? string.Empty;
         IsGenericModel = profile?.ModelId == "oppo-generic" && state.ProductId is not null;
         GenericModelMessage = state.ProductId is { } unknownPid ? Loc.Format("Home_GenericModel_Message", unknownPid.ToString("X6")) : string.Empty;
@@ -262,18 +274,30 @@ public sealed partial class DeviceViewModel : ObservableObject
         // (restored by the device cache) or the model's own product id, so the art shows at once.
         uint? productId = state.ProductId;
         if (productId is null && profile is OppoDeviceProfile { Definition.ProductIds: [var modelProductId, ..] }) productId = modelProductId;
-        ResourceKey = profile is null ? null : new DeviceResourceKey(profile.ModelId, productId, state.ColorId);
-        var image = ResourceKey is { } key ? _resources.Resolve(key, DeviceResourceRole.Device) : null;
-        DeviceImagePath = image?.Path ?? DeviceImages.Resolve(profile?.ImageKey);
-        DeviceModelPath = ResourceKey is { } km ? _resources.Resolve(km, DeviceResourceRole.DeviceModel)?.Path : null;
-        HasDeviceImage = DeviceImagePath is not null;
+        ResourceKey = DeviceResourceKey.FromState(state, productId);
         IsHeadphones = profile?.Form == DeviceForm.Headphones;
-        var popup = ResourceKey is { } k ? _resources.Resolve(k, DeviceResourceRole.PopupAnimation) : null;
-        PopupMediaPath = popup?.Path ?? DeviceImagePath;
-        PopupMediaIsVideo = popup?.Kind == DeviceResourceKind.Video;
-        var popupDark = ResourceKey is { } kd ? _resources.Resolve(kd, DeviceResourceRole.PopupAnimationDark) : null;
-        PopupMediaDarkPath = popupDark?.Path ?? PopupMediaPath;
-        PopupMediaDarkIsVideo = popupDark is not null ? popupDark.Kind == DeviceResourceKind.Video : PopupMediaIsVideo;
+        if (!ArtworkPinned)
+        {
+            var image = ResourceKey is { } key ? _resources.Resolve(key, DeviceResourceRole.Device) : null;
+            DeviceImagePath = image?.Path ?? DeviceImages.Resolve(profile?.ImageKey);
+            IsRepresentativeArtwork = image?.RepresentativeArtwork ?? false;
+            LeftArtworkPath = ResourceKey is { } kl ? _resources.Resolve(kl, DeviceResourceRole.LeftBud)?.Path : null;
+            RightArtworkPath = ResourceKey is { } kr ? _resources.Resolve(kr, DeviceResourceRole.RightBud)?.Path : null;
+            CaseArtworkPath = ResourceKey is { } kc ? _resources.Resolve(kc, DeviceResourceRole.Case)?.Path : null;
+            DeviceModelPath = ResourceKey is { } km ? _resources.Resolve(km, DeviceResourceRole.DeviceModel)?.Path : null;
+            var motion = ResourceKey is { } ka ? _resources.Resolve(ka, DeviceResourceRole.DeviceAnimation) : null;
+            DeviceMotionIsVideo = motion?.Kind == DeviceResourceKind.Video;
+            DeviceMotionPath = motion?.Path;
+            HasComponentArtwork = DeviceImagePath is null && DeviceModelPath is null && DeviceMotionPath is null &&
+                (LeftArtworkPath is not null || RightArtworkPath is not null || CaseArtworkPath is not null);
+            HasDeviceImage = DeviceImagePath is not null;
+            var popup = ResourceKey is { } k ? _resources.Resolve(k, DeviceResourceRole.PopupAnimation) : null;
+            PopupMediaPath = popup?.Path ?? DeviceImagePath;
+            PopupMediaIsVideo = popup?.Kind == DeviceResourceKind.Video;
+            var popupDark = ResourceKey is { } kd ? _resources.Resolve(kd, DeviceResourceRole.PopupAnimationDark) : null;
+            PopupMediaDarkPath = popupDark?.Path ?? PopupMediaPath;
+            PopupMediaDarkIsVideo = popupDark is not null ? popupDark.Kind == DeviceResourceKind.Video : PopupMediaIsVideo;
+        }
 
         foreach (var item in new[] { Left, Right, Case }) item.SetSingleBattery(IsHeadphones);
         Left.Apply(state.Battery.Left, IsReady, now);

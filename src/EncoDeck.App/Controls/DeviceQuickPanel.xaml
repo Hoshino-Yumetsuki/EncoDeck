@@ -40,7 +40,7 @@
         </Grid>
 
         <!-- Noise control -->
-        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsNoiseAvailable, Mode=OneWay}">
             <Grid>
                 <TextBlock x:Uid="Panel_Noise" Text="Noise control" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 <ProgressRing HorizontalAlignment="Right" Width="12" Height="12" IsActive="{x:Bind ViewModel.IsNoisePending, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsNoisePending, Mode=OneWay}" />

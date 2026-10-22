@@ -6,6 +6,8 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo.Models;
+using EncoDeck.Protocol.Brands;
+using EncoDeck.Core.Capabilities;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -28,16 +30,27 @@ internal static class UiSnapshot
 
     private static readonly string[] Pages = ["Home", "Sound", "Controls", "Devices", "Settings"];
 
-    public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null)
+    public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null, string? artworkDirectory = null, string? profileId = null)
     {
         Directory.CreateDirectory(outDir);
         var host = AppHost.Create(Path.Combine(outDir, "logs"));
         app.SetHostForDiagnostics(host);
-        host.Store.Reset(SampleState(DateTimeOffset.UtcNow));
+        var sample = SampleState(DateTimeOffset.UtcNow);
+        if (profileId is not null)
+        {
+            var profile = BuiltInProfiles.Create().Single(p => p.ModelId == profileId);
+            sample = DeviceState.Empty with
+            {
+                Device = new DeviceIdentity("snapshot", profile.DisplayName, new BluetoothAddress(0)),
+                Profile = profile, Connection = DeviceConnectionState.ControlReady, Battery = sample.Battery,
+            };
+        }
+        host.Store.Reset(sample);
         app.CreateViewModelsForDiagnostics(dispatcher);
         await Task.Delay(300);
         // Display only: a test turntable can be given with --model <file>.
         if (modelFile is not null && File.Exists(modelFile)) app.Device.DeviceModelPath = modelFile;
+        ApplyArtworkDirectory(app, artworkDirectory);
 
         var main = new MainWindow();
         double scale = WindowInterop.GetScale(main);
@@ -121,6 +134,21 @@ internal static class UiSnapshot
         return errors.Count == 0 ? 0 : 1;
     }
 
+    internal static void ApplyArtworkDirectory(App app, string? directory)
+    {
+        if (directory is null || !Directory.Exists(directory)) return;
+        if (File.Exists(Path.Combine(directory, "name.txt"))) app.Device.DeviceName = File.ReadAllText(Path.Combine(directory, "name.txt")).Trim();
+        string? Find(string role) => Directory.EnumerateFiles(directory, role + ".*").FirstOrDefault(p => Path.GetExtension(p) is ".png" or ".webp" or ".jpg");
+        app.Device.DeviceImagePath = Find("device");
+        app.Device.LeftArtworkPath = Find("left");
+        app.Device.RightArtworkPath = Find("right");
+        app.Device.CaseArtworkPath = Find("case");
+        app.Device.HasComponentArtwork = app.Device.DeviceImagePath is null &&
+            (app.Device.LeftArtworkPath is not null || app.Device.RightArtworkPath is not null || app.Device.CaseArtworkPath is not null);
+        app.Device.DeviceModelPath = null;
+        app.Device.HasDeviceImage = app.Device.DeviceImagePath is not null;
+    }
+
     /// <summary>Values like the ones read from a real X4 (display only, never shown to the user).</summary>
     internal static DeviceState SampleState(DateTimeOffset now)
     {
@@ -186,7 +214,7 @@ internal static class UiSnapshot
         };
     }
 
-    private static IEnumerable<DependencyObject> Descendants(DependencyObject? root)
+    internal static IEnumerable<DependencyObject> Descendants(DependencyObject? root)
     {
         if (root is null) yield break;
         var queue = new Queue<DependencyObject>();
@@ -217,7 +245,7 @@ internal static class UiSnapshot
         return best;
     }
 
-    private static async Task CaptureAsync(Window window, string path)
+    internal static async Task CaptureAsync(Window window, string path)
     {
         if (WindowInterop.CaptureWindow(window) is not { } shot) return;
         var bitmap = new SoftwareBitmap(BitmapPixelFormat.Bgra8, shot.Width, shot.Height, BitmapAlphaMode.Ignore);
