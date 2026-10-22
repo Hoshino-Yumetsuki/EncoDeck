@@ -26,7 +26,9 @@ public sealed partial class NoiseControlSelector : UserControl
     public NoiseControlSelector()
     {
         InitializeComponent();
-        Unloaded += (_, _) => Detach(ViewModel);
+        // Moving the control to another parent (HomePage on wide windows) can raise Unloaded after the
+        // new Loaded; detaching then would leave the buttons deaf to the device state.
+        Unloaded += (_, _) => { if (!IsLoaded) Detach(ViewModel); };
         Loaded += (_, _) => Attach(ViewModel);
     }
 

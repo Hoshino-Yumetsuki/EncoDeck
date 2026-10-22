@@ -55,7 +55,9 @@ public sealed partial class NoiseModeCircles : UserControl
             _modes.Add((mode, button, cell));
             ModeGrid.Children.Add(cell);
         }
-        Unloaded += (_, _) => Detach(ViewModel);
+        // Moving the control to another parent (HomePage on wide windows) can raise Unloaded after the
+        // new Loaded; detaching then would leave the buttons deaf to the device state.
+        Unloaded += (_, _) => { if (!IsLoaded) Detach(ViewModel); };
         Loaded += (_, _) => Attach(ViewModel);
     }
 
