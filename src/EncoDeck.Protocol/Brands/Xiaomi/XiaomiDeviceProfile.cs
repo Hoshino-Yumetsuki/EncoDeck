@@ -66,6 +66,8 @@ public sealed class XiaomiDeviceProfile : IControllableProfile
     /// <summary>Whether the earbuds have answered for low-latency (game) mode.</summary>
     public bool HasGamingMode { get; }
 
+    public IReadOnlyCollection<DeviceToggle> Toggles => HasGamingMode ? [DeviceToggle.GamingMode] : [];
+
     public IDeviceCapabilities Capabilities { get; }
 
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions => [];

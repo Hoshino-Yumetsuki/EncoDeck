@@ -466,4 +466,11 @@
   <data name="StoreUpdate_Available" xml:space="preserve"><value>Microsoft Store 中有新版本。</value></data>
   <data name="Notify_StoreUpdate_Title" xml:space="preserve"><value>EncoDeck 有更新</value></data>
   <data name="Notify_StoreUpdate_Message" xml:space="preserve"><value>打开设置，通过 Microsoft Store 更新。</value></data>
+  <data name="Vivo_Eq_Standard" xml:space="preserve"><value>标准</value></data>
+  <data name="Vivo_Eq_ClearVoice" xml:space="preserve"><value>清晰人声</value></data>
+  <data name="Vivo_Eq_MegaBass" xml:space="preserve"><value>澎湃低音</value></data>
+  <data name="Vivo_Eq_CrispHighs" xml:space="preserve"><value>清脆高音</value></data>
+  <data name="Vivo_Eq_Immersive" xml:space="preserve"><value>沉浸环绕</value></data>
+  <data name="Vivo_Eq_Audiobooks" xml:space="preserve"><value>悠扬听书</value></data>
+  <data name="Vivo_Eq_UltimateMaster" xml:space="preserve"><value>至臻大师</value></data>
 </root>

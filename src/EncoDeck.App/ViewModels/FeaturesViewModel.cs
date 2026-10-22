@@ -3,6 +3,7 @@ using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.UI.Dispatching;
 
@@ -48,11 +49,21 @@ public sealed class FeaturesViewModel
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
 
-    public bool Has(DeviceCapability capability) =>
-        Model is { IsGeneric: false } model && model.Capabilities.Get(capability).Support == CapabilitySupport.Supported;
+    public bool Has(DeviceCapability capability) => State.Profile switch
+    {
+        OppoDeviceProfile { Definition: { IsGeneric: false } model } => model.Capabilities.Get(capability).Support == CapabilitySupport.Supported,
+        OppoDeviceProfile => false,
+        // Other brands: their profile's capabilities decide directly.
+        { } profile => profile.Capabilities.Get(capability).Support == CapabilitySupport.Supported,
+        _ => false,
+    };
 
-    public bool HasSwitch(DeviceToggle toggle) =>
-        Model?.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported) == true;
+    public bool HasSwitch(DeviceToggle toggle) => State.Profile switch
+    {
+        OppoDeviceProfile => Model?.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported) == true,
+        IControllableProfile profile => profile.Toggles.Contains(toggle),
+        _ => false,
+    };
 
     public bool? Toggle(DeviceToggle toggle) => State.Toggles.TryGetValue(toggle, out var value) ? value.Value : null;
 

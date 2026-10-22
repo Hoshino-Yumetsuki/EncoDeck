@@ -39,6 +39,9 @@ public interface IControllableProfile : IDeviceProfile
     /// </summary>
     IControllableProfile Remember(DeviceState known) => this;
 
+    /// <summary>On/off settings the controller can write with <see cref="IDeviceController.SetToggleAsync"/>.</summary>
+    IReadOnlyCollection<DeviceToggle> Toggles => [];
+
     /// <summary>Creates the controller for an opened channel; the controller owns the channel from here on.</summary>
     IDeviceController CreateController(IDuplexByteChannel channel, ControllerContext context);
 }

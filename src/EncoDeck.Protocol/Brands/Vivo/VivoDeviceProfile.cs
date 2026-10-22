@@ -53,6 +53,10 @@ public sealed class VivoDeviceProfile : IControllableProfile
 
     public string ImageKey => Model.ModelId;
 
+    public DeviceForm Form => Model.Headphones ? DeviceForm.Headphones : DeviceForm.Earbuds;
+
+    public IReadOnlyCollection<DeviceToggle> Toggles => Capabilities.Get(DeviceCapability.GamingMode).Support == CapabilitySupport.Supported ? [DeviceToggle.GamingMode] : [];
+
     public IDeviceCapabilities Capabilities { get; }
 
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions { get; }

@@ -10,6 +10,7 @@ using EncoDeck.Core.Profiles;
 using EncoDeck.Core.Resources;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Settings;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.UI.Dispatching;
@@ -346,7 +347,10 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     private void AddToggle(IDeviceProfile profile, DeviceToggle toggle)
     {
-        if (profile is not OppoDeviceProfile { Definition: var model } || !model.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported)) return;
+        bool offered = profile is OppoDeviceProfile { Definition: var model }
+            ? model.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported)
+            : profile is IControllableProfile other && other.Toggles.Contains(toggle);
+        if (!offered) return;
         Toggles.Add(new DeviceToggleViewModel(toggle, Loc.Get($"Toggle_{toggle}"), Loc.Get($"Toggle_{toggle}_Description")));
     }
 

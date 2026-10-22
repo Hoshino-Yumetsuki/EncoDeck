@@ -74,7 +74,8 @@ public sealed partial class HomePage : Page
 
     private void SyncDevices(FeaturesViewModel f, bool ready)
     {
-        bool available = f.Has(DeviceCapability.DualDeviceConnection);
+        // The connected-device list is read with OPPO's multi-connect commands.
+        bool available = f.Has(DeviceCapability.DualDeviceConnection) && f.Model is not null;
         DevicesCard.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
         // Keep the card (and its height) while the list has not been read yet.
         if (!available || f.State.SourceDevices is null) return;

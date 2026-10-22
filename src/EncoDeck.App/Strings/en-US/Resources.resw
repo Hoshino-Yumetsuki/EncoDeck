@@ -466,4 +466,11 @@
   <data name="StoreUpdate_Available" xml:space="preserve"><value>A new version is available in the Microsoft Store.</value></data>
   <data name="Notify_StoreUpdate_Title" xml:space="preserve"><value>EncoDeck update available</value></data>
   <data name="Notify_StoreUpdate_Message" xml:space="preserve"><value>Open Settings to update through the Microsoft Store.</value></data>
+  <data name="Vivo_Eq_Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="Vivo_Eq_ClearVoice" xml:space="preserve"><value>Clear voice</value></data>
+  <data name="Vivo_Eq_MegaBass" xml:space="preserve"><value>Mega bass</value></data>
+  <data name="Vivo_Eq_CrispHighs" xml:space="preserve"><value>Crisp highs</value></data>
+  <data name="Vivo_Eq_Immersive" xml:space="preserve"><value>Immersive audio</value></data>
+  <data name="Vivo_Eq_Audiobooks" xml:space="preserve"><value>Audiobooks</value></data>
+  <data name="Vivo_Eq_UltimateMaster" xml:space="preserve"><value>Ultimate master</value></data>
 </root>
