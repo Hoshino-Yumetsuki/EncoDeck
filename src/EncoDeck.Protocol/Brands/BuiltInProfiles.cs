@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Edifier;
+using EncoDeck.Protocol.Brands.Xiaomi;
 using EncoDeck.Protocol.Oppo.Models;
 
 namespace EncoDeck.Protocol.Brands;
@@ -12,5 +13,6 @@ public static class BuiltInProfiles
     [
         .. OppoDeviceProfile.CreateBuiltIn(),
         .. EdifierProfiles.CreateBuiltIn(),
+        .. XiaomiProfiles.CreateBuiltIn(),
     ];
 }
