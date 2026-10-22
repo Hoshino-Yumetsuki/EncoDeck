@@ -2,8 +2,10 @@
 
 # EncoDeck
 
-**A native Windows control center for earbuds** (OPPO / OnePlus / realme, plus vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER) — check battery, switch noise control and adjust
-sound from your PC instead of reaching for your phone.
+**A native, multi-brand Windows control center for earbuds** — OPPO / OnePlus / realme, vivo / iQOO, HUAWEI, Xiaomi / Redmi,
+EDIFIER and more: check battery, switch noise control and adjust sound from your PC instead of reaching for your phone.
+
+> 🍎 **On a Mac?** We recommend [HeyBuds](https://github.com/abaichuan1017/HeyBuds).
 
 > ⚠️ **Unofficial project.** EncoDeck is community-built open-source software. It is not affiliated
 > with, endorsed by or supported by OPPO, OnePlus, realme, vivo, HUAWEI, Xiaomi, EDIFIER or any other manufacturer. Product names are used only to describe
@@ -22,7 +24,8 @@ sound from your PC instead of reaching for your phone.
 ## Features
 
 - **Multiple brands**: besides the OPPO family, vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER
-  (protocols ported from OppoPodsManager, not yet verified on hardware; see
+  (protocols ported from OppoPodsManager, with some device connections from
+  [HeyBuds](https://github.com/abaichuan1017/HeyBuds); not yet verified on hardware; see
   [Compatibility](docs/COMPATIBILITY.md)).
 - **Lives in the notification area**: left click opens a quick panel (battery + noise control), right
   click opens a native menu; near-zero CPU while idle.
@@ -110,7 +113,8 @@ Compatibility reports, protocol findings and code are welcome — please read [C
 
 Protocol research by [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows),
 [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager) and
-[OppoPods](https://github.com/Leaf-lsgtky/OppoPods); tray icon by
+[OppoPods](https://github.com/Leaf-lsgtky/OppoPods); some device connections come from
+[HeyBuds](https://github.com/abaichuan1017/HeyBuds); tray icon by
 [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License
