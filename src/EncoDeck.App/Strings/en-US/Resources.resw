@@ -43,6 +43,7 @@
   <data name="Connection_NotDetected" xml:space="preserve"><value>No supported earbuds</value></data>
   <data name="Connection_PairedNotConnected" xml:space="preserve"><value>Paired, not connected</value></data>
   <data name="Connection_AudioConnected" xml:space="preserve"><value>Connected, preparing controls</value></data>
+  <data name="Connection_UsbReceiverConnected" xml:space="preserve"><value>USB receiver connected; headset wireless link unconfirmed</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>Connecting controls…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>Connected</value></data>
   <data name="Connection_ControlUnavailable" xml:space="preserve"><value>Controls unavailable</value></data>

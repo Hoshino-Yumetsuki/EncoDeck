@@ -2,6 +2,13 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased] — headset adapters
+
+- AKG N5/N9 Hybrid 新增 Airoha RACE 会话及电量读取，按实际 ANC 配置布局和回读开放控制。
+- 森海塞尔新增 11 个 GAIA v3 型号配置、RFCOMM / BLE 回退及电量/固件读取，头戴三款按设备回读开放 ANC/通透。
+- 新增 HECATE / DAREU / RAPOO USB 接收器发现与条件性标准 HID 电量；不宣称完整厂商控制或无线链路就绪。
+- 与 EncoAPI 同步型号目录和官方素材。未真机验证，具体范围见 docs/HEADSET_ADAPTERS.md。
+
 ## [Unreleased]
 
 - 新增水月雨 MOONDROP：17 个型号档案和通用识别，接入 GAIA BLE GATT 与 RFCOMM 控制通道。

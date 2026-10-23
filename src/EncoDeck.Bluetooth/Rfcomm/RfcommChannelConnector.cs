@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Gatt;
 using EncoDeck.Protocol.Brands.Moondrop;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,9 +46,16 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
             foreach (var uuid in serviceUuids)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (uuid == SennheiserProfile.GattServiceId)
+                {
+                    var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                    if (result.Status == ChannelOpenStatus.Opened) return result;
+                    gattFailure = result;
+                    continue;
+                }
                 if (uuid == MoondropConstants.GattServiceId)
                 {
-                    var result = await MoondropGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                    var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
                     if (result.Status == ChannelOpenStatus.Opened) return result;
                     gattFailure = result;
                     _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
@@ -74,7 +82,8 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
                     _logger.LogInformation("SDP lookup for {Service}: {Error}", uuid, services.Error);
                     if (services.Error is BluetoothError.DeviceNotConnected or BluetoothError.RadioNotAvailable)
                     {
-                        return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
+                        if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Contains(SennheiserProfile.GattServiceId))
+                            return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
                     }
                     continue;
                 }

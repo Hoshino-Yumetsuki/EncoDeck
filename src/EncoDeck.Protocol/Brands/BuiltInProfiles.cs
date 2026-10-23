@@ -21,5 +21,7 @@ public static class BuiltInProfiles
         .. HuaweiProfiles.CreateBuiltIn(),
         .. MoondropProfiles.CreateBuiltIn(),
         .. Sony.SonyAkgProfiles.CreateBuiltIn(),
+        .. Sennheiser.SennheiserProfiles.Create(),
+        .. Usb.UsbHeadsetProfiles.Create(),
     ];
 }

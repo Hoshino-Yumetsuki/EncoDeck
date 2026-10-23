@@ -112,7 +112,8 @@
 | 兼容设备 | 对应功能 |
 | --- | --- |
 | AKG N400NC、AKG N700NCM2、AKG N200NC、AKG Y600 | 电量、降噪 / 环境声、入耳自动播放 / 暂停（需设备确认） |
-| AKG N700NC、AKG N5 Hybrid、AKG N9 Hybrid | 仅型号识别和素材，暂不提供耳机控制 |
+| AKG N700NC | 仅型号识别和素材，暂不提供耳机控制 |
+| AKG N5 Hybrid、AKG N9 Hybrid | Airoha RACE 蓝牙控制、电量、按返回布局开放 ANC；模拟设备回归通过，真机待验证 |
 
 ## 小米 / Redmi
 
@@ -136,3 +137,9 @@
 | Sony / AKG | 无通用型号兜底；仅匹配上表内置名称 |
 
 通用识别不保证兼容。设备素材可用不代表控制可用；小米、华为、索尼、AKG 暂未达到 OPPO 的全部功能覆盖。
+
+## 森海塞尔与 USB 2.4G 接收器（开发分支）
+
+森海塞尔新增 11 个 GAIA v3 配置，支持电量、固件和型号读取；MOMENTUM 4、ACCENTUM、ACCENTUM Plus 按回读开放 ANC/通透端点，含 RFCOMM / BLE 回退。其余型号不因此宣称控制支持。
+
+HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。具体型号、来源、APK 哈希及功能限制见 [适配记录](HEADSET_ADAPTERS.md)。

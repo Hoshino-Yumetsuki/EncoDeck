@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Channels;
 using EncoDeck.Protocol.Brands.Moondrop;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Transport;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
@@ -12,9 +13,10 @@ using Windows.Storage.Streams;
 namespace EncoDeck.Bluetooth.Gatt;
 
 /// <summary>GAIA GATT carries one unframed message per characteristic notification.</summary>
-internal sealed class MoondropGattByteChannel : IDuplexByteChannel
+internal sealed class GaiaGattByteChannel : IDuplexByteChannel
 {
     private readonly BluetoothLEDevice _device;
+    private readonly bool _sennheiser;
     private readonly GattDeviceService _service;
     private readonly GattCharacteristic _command;
     private readonly GattCharacteristic _response;
@@ -32,10 +34,11 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
     private int _stopped;
     private int _disposed;
 
-    private MoondropGattByteChannel(BluetoothLEDevice device, GattDeviceService service,
-        GattCharacteristic command, GattCharacteristic response, GattCharacteristic data)
+    private GaiaGattByteChannel(BluetoothLEDevice device, GattDeviceService service,
+        GattCharacteristic command, GattCharacteristic response, GattCharacteristic data, bool sennheiser)
     {
         _device = device;
+        _sennheiser = sennheiser;
         _service = service;
         _command = command;
         _response = response;
@@ -48,13 +51,21 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
         _device.ConnectionStatusChanged += OnConnectionStatusChanged;
     }
 
-    public string Description => "Moondrop GAIA GATT";
+    public string Description => _sennheiser ? "Sennheiser GAIA v3 GATT" : "Moondrop GAIA GATT";
 
-    internal static async Task<ChannelOpenResult> OpenAsync(ulong bluetoothAddress, CancellationToken cancellationToken)
+    internal static Task<ChannelOpenResult> OpenAsync(ulong bluetoothAddress, CancellationToken cancellationToken) => OpenAsync(bluetoothAddress, false, cancellationToken);
+
+    internal static Task<ChannelOpenResult> OpenSennheiserAsync(ulong bluetoothAddress, CancellationToken cancellationToken) => OpenAsync(bluetoothAddress, true, cancellationToken);
+
+    private static async Task<ChannelOpenResult> OpenAsync(ulong bluetoothAddress, bool sennheiser, CancellationToken cancellationToken)
     {
+        var serviceId = sennheiser ? SennheiserProfile.GattServiceId : MoondropConstants.GattServiceId;
+        var commandId = sennheiser ? new Guid("6333133b-23c1-11e5-b696-feff819cdc9f") : MoondropConstants.GattCommandId;
+        var responseId = sennheiser ? new Guid("6333133c-23c1-11e5-b696-feff819cdc9f") : MoondropConstants.GattResponseId;
+        var dataId = sennheiser ? new Guid("6333133d-23c1-11e5-b696-feff819cdc9f") : MoondropConstants.GattDataId;
         BluetoothLEDevice? device = null;
         GattDeviceService? service = null;
-        MoondropGattByteChannel? channel = null;
+        GaiaGattByteChannel? channel = null;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
         try
@@ -66,7 +77,7 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
             if (access != DeviceAccessStatus.Allowed)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"BLE device access: {access}");
 
-            var services = await device.GetGattServicesForUuidAsync(MoondropConstants.GattServiceId, BluetoothCacheMode.Uncached)
+            var services = await device.GetGattServicesForUuidAsync(serviceId, BluetoothCacheMode.Uncached)
                 .AsTask(timeout.Token).ConfigureAwait(false);
             // Own every returned service even when discovery reports an error.
             for (int i = 0; i < services.Services.Count; i++)
@@ -79,28 +90,31 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
 
             var characteristics = await service.GetCharacteristicsAsync(BluetoothCacheMode.Uncached).AsTask(timeout.Token).ConfigureAwait(false);
             if (characteristics.Status != GattCommunicationStatus.Success) return Failed(characteristics.Status, "GAIA characteristic discovery");
-            var command = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == MoondropConstants.GattCommandId);
-            var response = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == MoondropConstants.GattResponseId);
-            var data = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == MoondropConstants.GattDataId);
+            var command = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == commandId);
+            var response = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == responseId);
+            var data = characteristics.Characteristics.FirstOrDefault(c => c.Uuid == dataId);
             if (command is null || response is null || data is null)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "GAIA command, response or data characteristic is missing.");
             if ((command.CharacteristicProperties & (GattCharacteristicProperties.Write | GattCharacteristicProperties.WriteWithoutResponse)) == 0)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, "GAIA command characteristic is not writable.");
 
-            channel = new MoondropGattByteChannel(device, service, command, response, data);
+            channel = new GaiaGattByteChannel(device, service, command, response, data, sennheiser);
             device = null;
             service = null;
             using var connected = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, channel._shutdownToken);
             channel._responseSubscribed = true;
             var status = await SubscribeAsync(response, connected.Token).ConfigureAwait(false);
             if (status != GattCommunicationStatus.Success) return Failed(status, "GAIA response subscription");
-            channel._dataSubscribed = true;
-            status = await SubscribeAsync(data, connected.Token).ConfigureAwait(false);
-            if (status != GattCommunicationStatus.Success) return Failed(status, "GAIA data subscription");
+            if (!sennheiser || (data.CharacteristicProperties & (GattCharacteristicProperties.Notify | GattCharacteristicProperties.Indicate)) != 0)
+            {
+                channel._dataSubscribed = true;
+                status = await SubscribeAsync(data, connected.Token).ConfigureAwait(false);
+                if (status != GattCommunicationStatus.Success) return Failed(status, "GAIA data subscription");
+            }
             connected.Token.ThrowIfCancellationRequested();
             if (channel._device.ConnectionStatus != BluetoothConnectionStatus.Connected)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "GAIA device disconnected during setup.");
-            var result = new ChannelOpenResult(ChannelOpenStatus.Opened, channel, MoondropConstants.GattServiceId, null);
+            var result = new ChannelOpenResult(ChannelOpenStatus.Opened, channel, serviceId, null);
             channel = null;
             return result;
         }
@@ -147,7 +161,15 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
     private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
     {
         if (Volatile.Read(ref _stopped) == 0 && args.CharacteristicValue.Length > 0)
-            _notifications.Writer.TryWrite(args.CharacteristicValue.ToArray());
+            {
+                byte[] bytes = args.CharacteristicValue.ToArray();
+                if (_sennheiser)
+                {
+                    try { bytes = SennheiserGattFraming.WrapNotification(bytes); }
+                    catch (InvalidDataException) { return; }
+                }
+                _notifications.Writer.TryWrite(bytes);
+            }
     }
 
     private void OnConnectionStatusChanged(BluetoothLEDevice sender, object args)
@@ -190,6 +212,7 @@ internal sealed class MoondropGattByteChannel : IDuplexByteChannel
         if (_shutdownToken.IsCancellationRequested) throw new IOException("GAIA GATT device is disconnected.");
         cancellationToken.ThrowIfCancellationRequested();
         if (data.IsEmpty) return;
+        if (_sennheiser) data = SennheiserGattFraming.UnwrapCommand(data.Span);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownToken);
         IBuffer buffer = MemoryMarshal.TryGetArray(data, out var segment)
             ? segment.Array!.AsBuffer(segment.Offset, segment.Count)

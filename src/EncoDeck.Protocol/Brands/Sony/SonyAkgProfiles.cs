@@ -17,8 +17,8 @@ public static class SonyAkgProfiles
         .. new[] { "AKG N400NC", "AKG N700NCM2", "AKG N200NC", "AKG Y600" }
             .Select(n => new SonyAkgProfile("akg", n, n.Contains("N400", StringComparison.Ordinal))),
         new AkgArtworkProfile("akg-n700nc", "AKG N700NC", false),
-        new AkgArtworkProfile("akg-n5hybrid", "AKG N5 Hybrid", true),
-        new AkgArtworkProfile("akg-n9hybrid", "AKG N9 Hybrid", false),
+        new Akg.AkgHybridProfile(true),
+        new Akg.AkgHybridProfile(false),
     ];
 }
 

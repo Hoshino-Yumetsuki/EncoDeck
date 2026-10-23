@@ -150,7 +150,7 @@ public sealed class SonyAkgTests
     public void CatalogOnlyModelsNeverOpenAnUnrelatedControlService()
     {
         var profiles = SonyAkgProfiles.CreateBuiltIn();
-        foreach (string name in new[] { "AKG N700NC", "AKG N5 Hybrid", "AKG N9 Hybrid" })
+        foreach (string name in new[] { "AKG N700NC" })
         {
             var profile = profiles.Single(p => p.DisplayName == name);
             Assert.False(profile is IControllableProfile);
