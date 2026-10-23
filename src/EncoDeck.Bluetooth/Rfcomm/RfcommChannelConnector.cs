@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.Bluetooth.Gatt;
+using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,7 +11,7 @@ using Windows.Networking.Sockets;
 
 namespace EncoDeck.Bluetooth.Rfcomm;
 
-/// <summary>Opens an RFCOMM StreamSocket to the first matching service UUID.</summary>
+/// <summary>Opens the first matching control service over RFCOMM or GAIA GATT.</summary>
 public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
 {
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
@@ -17,6 +19,7 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
 
     public async Task<ChannelOpenResult> OpenAsync(string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
     {
+        ChannelOpenResult? gattFailure = null;
         BluetoothDevice? device;
         try
         {
@@ -42,6 +45,14 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
             foreach (var uuid in serviceUuids)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (uuid == MoondropConstants.GattServiceId)
+                {
+                    var result = await MoondropGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                    if (result.Status == ChannelOpenStatus.Opened) return result;
+                    gattFailure = result;
+                    _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
+                    continue;
+                }
                 RfcommDeviceServicesResult services;
                 try
                 {
@@ -78,7 +89,7 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
             }
         }
 
-        return ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
+        return gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
     }
 
     private static async Task<ChannelOpenResult> TryConnectAsync(RfcommDeviceService service, Guid uuid, CancellationToken cancellationToken)

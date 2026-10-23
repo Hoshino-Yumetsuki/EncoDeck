@@ -22,9 +22,11 @@ public sealed partial class ControlsPage : Page
 {
     private static readonly TimeSpan PromptVolumeDebounce = TimeSpan.FromMilliseconds(500);
 
-    private readonly List<(DeviceToggleViewModel Toggle, ToggleSwitch Switch)> _switches = [];
+    private readonly List<(DeviceToggleViewModel Toggle, ToggleSwitch Switch, SettingRow Row)> _switches = [];
     private readonly List<(int Type, RadioButton Button)> _gameSoundButtons = [];
     private readonly List<(OppoGestureRow Row, ComboBox Box)> _gestureBoxes = [];
+    private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _moondropGestures = [];
+    private readonly HashSet<string> _moondropWrites = [];
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
     private DispatcherQueueTimer? _promptVolumeTimer;
@@ -40,6 +42,7 @@ public sealed partial class ControlsPage : Page
         EarSelector.SelectedIndex = 0;
         HeadMotionChoice.Items.Add(Loc.Get("Head_NodAnswers"));
         HeadMotionChoice.Items.Add(Loc.Get("Head_ShakeAnswers"));
+        foreach (string key in new[] { "Moondrop_GainLow", "Moondrop_GainMid", "Moondrop_GainHigh" }) GainBox.Items.Add(Loc.Get(key));
         Loaded += (_, _) =>
         {
             ViewModel.Toggles.CollectionChanged += OnTogglesChanged;
@@ -54,7 +57,7 @@ public sealed partial class ControlsPage : Page
             ViewModel.Toggles.CollectionChanged -= OnTogglesChanged;
             ViewModel.PropertyChanged -= OnViewModelChanged;
             Features.Changed -= OnFeaturesChanged;
-            foreach (var (toggle, _) in _switches) toggle.PropertyChanged -= OnToggleChanged;
+            foreach (var (toggle, _, _) in _switches) toggle.PropertyChanged -= OnToggleChanged;
             _promptVolumeTimer?.Stop();
         };
     }
@@ -89,16 +92,17 @@ public sealed partial class ControlsPage : Page
 
     private void RebuildToggles()
     {
-        foreach (var (toggle, _) in _switches) toggle.PropertyChanged -= OnToggleChanged;
+        foreach (var (toggle, _, _) in _switches) toggle.PropertyChanged -= OnToggleChanged;
         _switches.Clear();
         ToggleHost.Children.Clear();
         foreach (var toggle in ViewModel.Toggles)
         {
-            var sw = new ToggleSwitch { Style = (Style)Application.Current.Resources["TrailingSwitchStyle"], Tag = toggle };
+            var sw = new ToggleSwitch { Name = $"Toggle{toggle.Toggle}", Style = (Style)Application.Current.Resources["TrailingSwitchStyle"], Tag = toggle };
             sw.Toggled += OnSwitchToggled;
             toggle.PropertyChanged += OnToggleChanged;
-            _switches.Add((toggle, sw));
-            ToggleHost.Children.Add(new SettingRow { Header = toggle.Label, Description = toggle.Description, Action = sw });
+            var row = new SettingRow { Header = toggle.Label, Description = toggle.Description, Action = sw };
+            _switches.Add((toggle, sw, row));
+            ToggleHost.Children.Add(row);
         }
     }
 
@@ -106,9 +110,10 @@ public sealed partial class ControlsPage : Page
     private void BuildForModel(bool force)
     {
         var model = Features.Model;
-        string key = model?.ProfileKey ?? string.Empty;
+        string key = ViewModel.ProfileKey;
         if (!force && key == _builtFor) return;
         _builtFor = key;
+        _promptVolumeTimer?.Stop();
 
         _gameSoundButtons.Clear();
         GameSoundHost.Children.Clear();
@@ -121,10 +126,40 @@ public sealed partial class ControlsPage : Page
         }
 
         _gestureBoxes.Clear();
+        _moondropGestures.Clear();
         GestureHost.Children.Clear();
         CallGestureHost.Children.Clear();
         foreach (var row in Features.GestureRows(callControls: false)) GestureHost.Children.Add(GestureRow(row));
         foreach (var row in Features.GestureRows(callControls: true)) CallGestureHost.Children.Add(GestureRow(row));
+        if (Features.IsMoondrop)
+        {
+            foreach (var side in new[] { EarSide.Left, EarSide.Right })
+            foreach (var (action, label) in new[]
+            {
+                (GestureAction.SingleSqueeze, "Gesture_Tap1"),
+                (GestureAction.DoubleSqueeze, "Gesture_Tap2"),
+                (GestureAction.TripleSqueeze, "Gesture_Tap3"),
+                (GestureAction.SqueezeAndHold, "Moondrop_Hold1"),
+                (GestureAction.LongHold, "Moondrop_Hold3"),
+            })
+            {
+                var box = new ComboBox { Name = $"Moondrop{side}{action}", MinWidth = 200, Tag = (side, action) };
+                for (int function = 0; function <= 15; function++)
+                    box.Items.Add(new ComboBoxItem
+                    {
+                        Content = function <= 7 ? Loc.Get($"Moondrop_Function_{function}") : Loc.Format("Moondrop_UnknownAction", function.ToString("X")),
+                        IsEnabled = function <= 7 && (function is not (4 or 5) || Features.AllowExperimental),
+                    });
+                box.SelectionChanged += OnMoondropGestureChanged;
+                var row = new SettingRow
+                {
+                    Header = $"{Loc.Get(side == EarSide.Left ? "Gesture_Left" : "Gesture_Right")} · {Loc.Get(label)}",
+                    Action = box,
+                };
+                _moondropGestures.Add((side, action, box, row));
+                GestureHost.Children.Add(row);
+            }
+        }
 
         _cycleBoxes.Clear();
         CycleHost.Children.Clear();
@@ -145,9 +180,17 @@ public sealed partial class ControlsPage : Page
         // One setting for both earbuds everywhere: no left/right choice.
         bool perEar = model is not null && (model.GestureRows.Any(r => r.IsWritten && !r.IsCallControl && !r.BothEars) || (model.NoiseCycleIndices.Count > 0 && !model.NoiseCycleShared));
         EarSelector.Visibility = Show(perEar);
-        var (minVolume, maxVolume) = model?.PromptVolumeRange ?? (1, 10);
-        PromptVolumeSlider.Minimum = minVolume;
-        PromptVolumeSlider.Maximum = maxVolume;
+        var (minVolume, maxVolume) = Features.State.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile
+            ? (0, 100) : model?.PromptVolumeRange ?? (1, 10);
+        // Changing the range can un-coerce a previous value and raise ValueChanged; it is not a user edit.
+        bool wasSyncing = _syncing;
+        _syncing = true;
+        try
+        {
+            PromptVolumeSlider.Minimum = minVolume;
+            PromptVolumeSlider.Maximum = maxVolume;
+        }
+        finally { _syncing = wasSyncing; }
     }
 
     private Grid GestureRow(OppoGestureRow row)
@@ -176,11 +219,20 @@ public sealed partial class ControlsPage : Page
         {
             NotReadyBar.IsOpen = !ready && ViewModel.HasDevice;
 
-            foreach (var (toggle, sw) in _switches)
+            foreach (var (toggle, sw, row) in _switches)
             {
+                bool moondropSetting = f.IsMoondrop && toggle.Toggle is DeviceToggle.IndicatorLight or DeviceToggle.PromptTone;
+                bool supported = !moondropSetting || f.Has(toggle.Toggle == DeviceToggle.IndicatorLight ? DeviceCapability.IndicatorLight : DeviceCapability.PromptTone);
+                row.Visibility = Show(!moondropSetting || (ready && toggle.IsKnown && f.HasSwitch(toggle.Toggle) && supported));
                 sw.IsOn = toggle.IsOn;
-                sw.IsEnabled = toggle.IsKnown && !toggle.IsPending;
+                sw.IsEnabled = toggle.IsKnown && supported && !toggle.IsPending && !_moondropWrites.Contains($"toggle:{toggle.Toggle}")
+                    && (!moondropSetting || toggle.Toggle != DeviceToggle.PromptTone || (!f.IsPending("prompt-tone") && !f.IsPending("prompt-volume")));
             }
+
+            bool gain = f.IsMoondrop && ready && f.Has(DeviceCapability.Gain) && f.State.Gain?.Value is >= 0 and <= 2;
+            GainSection.Visibility = Show(gain);
+            GainBox.SelectedIndex = gain ? f.State.Gain!.Value : -1;
+            GainBox.IsEnabled = gain && !f.IsPending("gain") && !_moondropWrites.Contains("gain");
 
             SyncGame(f, ready);
             SyncDual(f, ready);
@@ -193,7 +245,8 @@ public sealed partial class ControlsPage : Page
             // Don't fight the user: hold the slider while they drag and while the write is in flight.
             if (_promptVolumeTimer?.IsRunning != true && !f.IsPending("prompt-volume") && f.State.PromptVolume?.Value is int volume) PromptVolumeSlider.Value = volume;
             PromptVolumeValue.Text = ((int)Math.Round(PromptVolumeSlider.Value)).ToString(System.Globalization.CultureInfo.CurrentCulture);
-            PromptVolumeSlider.IsEnabled = ready && !f.IsPending("prompt-volume");
+            PromptVolumeSlider.IsEnabled = ready && !f.IsPending("prompt-volume")
+                && (!f.IsMoondrop || (!f.IsPending("prompt-tone") && !f.IsPending("toggle:PromptTone") && !_moondropWrites.Contains("toggle:PromptTone")));
         }
         finally
         {
@@ -306,6 +359,26 @@ public sealed partial class ControlsPage : Page
 
     private void SyncGestures(FeaturesViewModel f, bool ready)
     {
+        if (f.IsMoondrop)
+        {
+            bool moondropAvailable = ready && f.Has(DeviceCapability.TouchCustomization)
+                && _moondropGestures.Any(row => f.MoondropFunction(row.Side, row.Action) is >= 0 and <= 15);
+            GestureCard.Visibility = Show(moondropAvailable);
+            EarSelector.Visibility = Visibility.Collapsed;
+            CycleSection.Visibility = Visibility.Collapsed;
+            CallGestureTitle.Visibility = Visibility.Collapsed;
+            foreach (var (side, action, box, row) in _moondropGestures)
+            {
+                int? function = f.MoondropFunction(side, action);
+                bool known = function is >= 0 and <= 15;
+                row.Visibility = Show(moondropAvailable && known);
+                box.SelectedIndex = known ? function!.Value : -1;
+                box.IsEnabled = moondropAvailable && known && !f.IsPending("key-function") && !_moondropWrites.Contains("gesture");
+                ((ComboBoxItem)box.Items[4]).IsEnabled = f.AllowExperimental;
+                ((ComboBoxItem)box.Items[5]).IsEnabled = f.AllowExperimental;
+            }
+            return;
+        }
         bool hasCycle = f.Model is { NoiseCycleIndices.Count: > 0 } && _cycleBoxes.Count > 0;
         bool available = (f.Has(DeviceCapability.TouchCustomization) && _gestureBoxes.Count > 0) || hasCycle;
         GestureCard.Visibility = Show(available);
@@ -362,11 +435,20 @@ public sealed partial class ControlsPage : Page
 
     private async void OnSwitchToggled(object sender, RoutedEventArgs e)
     {
-        if (_syncing || sender is not ToggleSwitch { Tag: DeviceToggleViewModel toggle } sw) return;
+        if (_syncing || !IsLoaded || sender is not ToggleSwitch { Tag: DeviceToggleViewModel toggle } sw || !sw.IsEnabled) return;
         bool requested = sw.IsOn;
+        string key = $"toggle:{toggle.Toggle}";
+        bool moondrop = Features.IsMoondrop && toggle.Toggle is DeviceToggle.IndicatorLight or DeviceToggle.PromptTone;
+        if (moondrop && (!Features.IsReady || !toggle.IsKnown || !Features.HasSwitch(toggle.Toggle)
+            || !Features.Has(toggle.Toggle == DeviceToggle.IndicatorLight ? DeviceCapability.IndicatorLight : DeviceCapability.PromptTone)
+            || !_moondropWrites.Add(key))) return;
         Sync(); // the device decides; snap back until it confirms
-        await ViewModel.SetToggleAsync(toggle.Toggle, requested);
-        Sync();
+        try { await ViewModel.SetToggleAsync(toggle.Toggle, requested); }
+        finally
+        {
+            if (moondrop) _moondropWrites.Remove(key);
+            Sync();
+        }
     }
 
     private async void OnGameModeToggled(object sender, RoutedEventArgs e)
@@ -455,6 +537,33 @@ public sealed partial class ControlsPage : Page
         Sync();
     }
 
+    private async void OnGainChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        int level = GainBox.SelectedIndex;
+        if (_syncing || !IsLoaded || !GainBox.IsEnabled || !f.IsMoondrop || !f.IsReady || !f.Has(DeviceCapability.Gain)
+            || f.State.Gain?.Value is not (>= 0 and <= 2) || level is < 0 or > 2 || level == f.State.Gain?.Value
+            || !_moondropWrites.Add("gain")) return;
+        Sync();
+        try { await f.SetGainAsync(level); }
+        finally { _moondropWrites.Remove("gain"); Sync(); }
+    }
+
+    private async void OnMoondropGestureChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        if (_syncing || !IsLoaded || sender is not ComboBox { IsEnabled: true, Tag: ValueTuple<EarSide, GestureAction> target } box
+            || !f.IsMoondrop || !f.IsReady || !f.Has(DeviceCapability.TouchCustomization)
+            || f.MoondropFunction(target.Item1, target.Item2) is not (>= 0 and <= 15)
+            || box.SelectedIndex is < 0 or > 7 || (box.SelectedIndex is 4 or 5 && !f.AllowExperimental)
+            || box.SelectedIndex == f.MoondropFunction(target.Item1, target.Item2)
+            || !_moondropWrites.Add("gesture")) return;
+        int function = box.SelectedIndex;
+        Sync();
+        try { await f.SetMoondropGestureAsync(target.Item1, target.Item2, function); }
+        finally { _moondropWrites.Remove("gesture"); Sync(); }
+    }
+
     private async void OnCycleClick(object sender, RoutedEventArgs e)
     {
         if (_syncing) return;
@@ -480,7 +589,7 @@ public sealed partial class ControlsPage : Page
 
     private async void OnHeadMotionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_syncing || HeadMotionChoice.SelectedIndex < 0) return;
+        if (_syncing || !IsLoaded || !Features.HasSwitch(DeviceToggle.HeadGestures) || HeadMotionChoice.SelectedIndex < 0) return;
         int type = HeadMotionChoice.SelectedIndex;
         if (type == Features.State.HeadMotionType?.Value) return;
         Sync();

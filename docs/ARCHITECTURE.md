@@ -93,6 +93,6 @@ ControlConnecting ─成功─► ControlReady ─通道掉线且链路仍在─
 
 ## 扩展点
 
-- `IChannelConnector` / `IDuplexByteChannel`：可加入 GATT（LE Audio）传输。
+- `IChannelConnector` / `IDuplexByteChannel`：水月雨 GAIA 已加入 BLE GATT 通道，保留每条通知的消息边界；其他品牌继续使用 RFCOMM。GATT 控制不等于 LE Audio 音频支持。
 - BLE 广播开盒弹窗：需先实测广播格式（见 PROTOCOL_FINDINGS §6），再实现 `IBleAdvertisementSource`。
 - 新命令：在 `OppoCommand` 增加常量，在 `OppoParsers` 增加严格解析器，在控制器中通过能力位图门控。

@@ -2,9 +2,9 @@
 namespace EncoDeck.App.Services;
 
 /// <summary>
-/// Resolves per-model product images from <c>Assets\Devices\{imageKey}.png</c>. EncoDeck ships
-/// no manufacturer artwork; when no image is present the UI draws its own generic illustration.
-/// Contributors may only add images they have the right to distribute (see CONTRIBUTING.md).
+/// Resolves bundled per-model product images from <c>Assets\Devices\{imageKey}.png</c>
+/// after user and cached resources. Missing images retain the UI's generic illustration.
+/// Manufacturer artwork provenance and rights limitations are in THIRD_PARTY_NOTICES.md.
 /// </summary>
 internal static class DeviceImages
 {

@@ -265,7 +265,12 @@ public sealed partial class DeviceViewModel : ObservableObject
         ModelName = profile?.DisplayName ?? string.Empty;
         IsGenericModel = profile?.ModelId == "oppo-generic" && state.ProductId is not null;
         GenericModelMessage = state.ProductId is { } unknownPid ? Loc.Format("Home_GenericModel_Message", unknownPid.ToString("X6")) : string.Empty;
-        ProfileKey = (profile as OppoDeviceProfile)?.Definition.ProfileKey ?? profile?.ModelId ?? string.Empty;
+        ProfileKey = profile switch
+        {
+            OppoDeviceProfile oppo => oppo.Definition.ProfileKey,
+            EncoDeck.Protocol.Brands.Moondrop.MoondropProfile moondrop => moondrop.ProfileKey,
+            _ => profile?.ModelId ?? string.Empty,
+        };
         Connection = state.Connection;
         ConnectionText = DescribeConnection(state.Connection);
         IsReady = state.Connection == DeviceConnectionState.ControlReady;
@@ -338,7 +343,7 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     private void RebuildOptionsIfNeeded(IDeviceProfile? profile)
     {
-        string? key = (profile as OppoDeviceProfile)?.Definition.ProfileKey ?? profile?.ModelId;
+        string key = ProfileKey;
         if (key == _profileKey) return;
         _profileKey = key;
 
@@ -369,6 +374,12 @@ public sealed partial class DeviceViewModel : ObservableObject
         AddToggle(profile, DeviceToggle.SleepDetection);
         AddToggle(profile, DeviceToggle.SwiftPair);
         AddToggle(profile, DeviceToggle.VoiceCommands);
+        if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile { LhdcSupport: CapabilitySupport.Supported }) AddToggle(profile, DeviceToggle.HiRes);
+        if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile)
+        {
+            if (profile.Capabilities.IsAvailable(DeviceCapability.IndicatorLight, _settings.Current.EnableExperimentalFeatures)) AddToggle(profile, DeviceToggle.IndicatorLight);
+            if (profile.Capabilities.IsAvailable(DeviceCapability.PromptTone, _settings.Current.EnableExperimentalFeatures)) AddToggle(profile, DeviceToggle.PromptTone);
+        }
 
         bool Has(NoiseControlMode mode) => profile.NoiseControlOptions.Any(o => o.Mode == mode && IsAllowed(o.Support));
         HasOffMode = Has(NoiseControlMode.Off);

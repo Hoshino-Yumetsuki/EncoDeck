@@ -5,6 +5,7 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo.Models;
+using EncoDeck.Platform.Settings;
 using Microsoft.UI.Dispatching;
 
 namespace EncoDeck.App.ViewModels;
@@ -27,16 +28,19 @@ public sealed class FeaturesViewModel
     private readonly IDeviceCommandService _basic;
     private readonly IAdvancedDeviceCommands _commands;
     private readonly DeviceViewModel _device;
+    private readonly ISettingsStore _settings;
     private readonly DispatcherQueue _dispatcher;
     private int _queued;
 
-    public FeaturesViewModel(IDeviceStateStore store, IDeviceCommandService basic, IAdvancedDeviceCommands commands, DeviceViewModel device, DispatcherQueue dispatcher)
+    public FeaturesViewModel(IDeviceStateStore store, IDeviceCommandService basic, IAdvancedDeviceCommands commands, ISettingsStore settings, DeviceViewModel device, DispatcherQueue dispatcher)
     {
         _store = store;
         _basic = basic;
         _commands = commands;
         _device = device;
+        _settings = settings;
         _dispatcher = dispatcher;
+        _settings.Changed += (_, _) => Queue();
         _store.StateChanged += (_, _) => Queue();
     }
 
@@ -47,6 +51,10 @@ public sealed class FeaturesViewModel
 
     public OppoModelDefinition? Model => (State.Profile as OppoDeviceProfile)?.Definition;
 
+    public bool IsMoondrop => State.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile;
+
+    public bool AllowExperimental => IsMoondrop && _settings.Current.EnableExperimentalFeatures;
+
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
 
     public bool Has(DeviceCapability capability) => State.Profile switch
@@ -54,7 +62,7 @@ public sealed class FeaturesViewModel
         OppoDeviceProfile { Definition: { IsGeneric: false } model } => model.Capabilities.Get(capability).Support == CapabilitySupport.Supported,
         OppoDeviceProfile => false,
         // Other brands: their profile's capabilities decide directly.
-        { } profile => profile.Capabilities.Get(capability).Support == CapabilitySupport.Supported,
+        { } profile => profile.Capabilities.IsAvailable(capability, AllowExperimental),
         _ => false,
     };
 
@@ -157,6 +165,8 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetPromptVolumeAsync(int level) => Run(() => _commands.SetPromptVolumeAsync(level));
 
+    public Task<CommandResult> SetGainAsync(int level) => Run(() => _commands.SetGainAsync(level));
+
     public Task<CommandResult> SetBassEngineLevelAsync(int level) => Run(() => _commands.SetBassEngineLevelAsync(level));
 
     // ---- gestures --------------------------------------------------------------------------------
@@ -186,6 +196,12 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetGestureAsync(OppoGestureRow row, EarSide side, int function) =>
         Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, row.Button, row.Action, function)));
+
+    public int? MoondropFunction(EarSide side, GestureAction action) => State.KeyFunctions?.Value
+        .FirstOrDefault(k => k.Side == side && k.Button == 0 && k.Action == action)?.Function;
+
+    public Task<CommandResult> SetMoondropGestureAsync(EarSide side, GestureAction action, int function) =>
+        Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
 
     /// <summary>
     /// Whether the long-press noise cycle applies: always for models whose hold gesture only cycles

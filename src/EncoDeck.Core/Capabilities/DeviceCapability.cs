@@ -22,6 +22,9 @@ public enum DeviceCapability
     PromptVolume,
     BassEngine,
     FirmwareInformation,
+    Gain,
+    IndicatorLight,
+    PromptTone,
 }
 
 /// <summary>

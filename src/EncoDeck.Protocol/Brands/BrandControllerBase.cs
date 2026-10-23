@@ -132,6 +132,8 @@ public abstract class BrandControllerBase : IDeviceController
 
     public virtual Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Prompt volume"));
 
+    public virtual Task<CommandResult> SetGainAsync(int level, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Gain"));
+
     public virtual Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Bass engine"));
 
     public virtual Task<CommandResult> SetKeyFunctionAsync(KeyFunction assignment, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Gestures"));

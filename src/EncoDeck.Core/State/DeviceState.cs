@@ -51,8 +51,11 @@ public sealed record DeviceState
 
     public Observed<GameSoundState>? GameSound { get; init; }
 
-    /// <summary>Prompt (alert sound) volume 1–10.</summary>
+    /// <summary>Prompt (alert sound) volume in the model's native range (e.g. 1–10 or 0–100).</summary>
     public Observed<int>? PromptVolume { get; init; }
+
+    /// <summary>Device gain level in ascending order: 0 = low, 1 = medium, 2 = high.</summary>
+    public Observed<int>? Gain { get; init; }
 
     public Observed<BassEngineState>? BassEngine { get; init; }
 

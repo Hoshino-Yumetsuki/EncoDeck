@@ -63,6 +63,7 @@
   <data name="NoiseLevel_Deep" xml:space="preserve"><value>High</value></data>
   <data name="NoiseLevel_Medium" xml:space="preserve"><value>Moderate</value></data>
   <data name="NoiseLevel_Light" xml:space="preserve"><value>Low</value></data>
+  <data name="NoiseLevel_AntiWind" xml:space="preserve"><value>Anti-wind</value></data>
   <data name="NoiseLevel_AdaptiveLess" xml:space="preserve"><value>Less noise</value></data>
   <data name="NoiseLevel_AdaptiveStandard" xml:space="preserve"><value>Standard</value></data>
   <data name="NoiseLevel_AdaptiveMore" xml:space="preserve"><value>More noise</value></data>
@@ -76,6 +77,8 @@
   <data name="Eq_UnknownPreset" xml:space="preserve"><value>Preset {0}</value></data>
   <data name="Toggle_InEarDetection" xml:space="preserve"><value>In-ear detection</value></data>
   <data name="Toggle_InEarDetection_Description" xml:space="preserve"><value>Remove either earbud to pause audio playback or switch to another channel, and insert it again to resume.</value></data>
+  <data name="Toggle_HiRes" xml:space="preserve"><value>LHDC</value></data>
+  <data name="Toggle_HiRes_Description" xml:space="preserve"><value>Device-side LHDC switch. Enabling LHDC or dual connection turns the other off. This does not install an LHDC encoder in Windows.</value></data>
   <data name="Cap_BatteryLevel" xml:space="preserve"><value>Battery level</value></data>
   <data name="Cap_ChargingStatus" xml:space="preserve"><value>Charging status</value></data>
   <data name="Cap_NoiseCancellation" xml:space="preserve"><value>Noise control</value></data>
@@ -580,4 +583,28 @@
   <data name="Xiaomi_Eq_17" xml:space="preserve"><value>Outdoor</value></data>
   <data name="Xiaomi_Eq_18" xml:space="preserve"><value>Underwater</value></data>
   <data name="Xiaomi_Eq_21" xml:space="preserve"><value>Balanced listening</value></data>
+  <data name="Moondrop_Gain.Header" xml:space="preserve"><value>Gain</value></data>
+  <data name="Moondrop_GainLow" xml:space="preserve"><value>Low</value></data>
+  <data name="Moondrop_GainMid" xml:space="preserve"><value>Mid</value></data>
+  <data name="Moondrop_GainHigh" xml:space="preserve"><value>High</value></data>
+  <data name="Toggle_IndicatorLight" xml:space="preserve"><value>Indicator light</value></data>
+  <data name="Toggle_IndicatorLight_Description" xml:space="preserve"><value>Earbud indicator light.</value></data>
+  <data name="Toggle_PromptTone" xml:space="preserve"><value>Prompt tones</value></data>
+  <data name="Toggle_PromptTone_Description" xml:space="preserve"><value>Play earbud voice prompts; changing this keeps the reported volume.</value></data>
+  <data name="Cap_Gain" xml:space="preserve"><value>Gain</value></data>
+  <data name="Cap_IndicatorLight" xml:space="preserve"><value>Indicator light</value></data>
+  <data name="Cap_PromptTone" xml:space="preserve"><value>Prompt tones</value></data>
+  <data name="Moondrop_Hold1" xml:space="preserve"><value>Touch and hold (1 second)</value></data>
+  <data name="Moondrop_Hold3" xml:space="preserve"><value>Touch and hold (3 seconds)</value></data>
+  <data name="Moondrop_Function_0" xml:space="preserve"><value>None</value></data>
+  <data name="Moondrop_Function_1" xml:space="preserve"><value>Play / pause</value></data>
+  <data name="Moondrop_Function_2" xml:space="preserve"><value>Previous track</value></data>
+  <data name="Moondrop_Function_3" xml:space="preserve"><value>Next track</value></data>
+  <data name="Moondrop_Function_4" xml:space="preserve"><value>Volume up (inferred, experimental)</value></data>
+  <data name="Moondrop_Function_5" xml:space="preserve"><value>Volume down (inferred, experimental)</value></data>
+  <data name="Moondrop_Function_6" xml:space="preserve"><value>Voice assistant</value></data>
+  <data name="Moondrop_Function_7" xml:space="preserve"><value>Cycle noise control</value></data>
+  <data name="Moondrop_UnknownAction" xml:space="preserve"><value>Unknown action (0x{0}) — reported only</value></data>
+  <data name="Settings_MoondropExperimental.Header" xml:space="preserve"><value>Experimental MOONDROP features</value></data>
+  <data name="Settings_MoondropExperimental.Description" xml:space="preserve"><value>Enable unverified MOONDROP commands and inferred gesture actions. Off by default; use at your own risk. Reconnect to query newly enabled features.</value></data>
 </root>
