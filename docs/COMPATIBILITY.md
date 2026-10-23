@@ -2,28 +2,6 @@
 
 以下为当前开发版的设备与功能列表；正式版以对应版本为准。同一行设备具有相同的功能范围。实际可用项仍取决于固件和设备返回的能力；目前主要在 OPPO Enco X4 上完成实机验证。
 
-## 水月雨 MOONDROP
-
-依据 [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop/tree/2f78f6740b2f30d1c28d75ba05badb98b2eeb687) 移植。下列“上游验证”仅指参考项目的 Android / 其他平台记录，**不是 EncoDeck 的 Windows 真机验证**；本项目已验证模拟字节通道、控制器和实际 WinUI 页面。
-
-| 型号 | 当前范围 |
-| --- | --- |
-| PUDDING / 布丁 / MD-TWS-056 | RFCOMM GAIA；左右耳 / 盒电量（无数据的组件保持未知），关闭 / 降噪 / 通透 / 抗风噪 / 自适应，提示音量 0–100、提示音开关、增益、LED、双耳 TOUCHV2 手势，LHDC 与双设备连接开关；均需实际能力与状态回包 |
-| EDGE / 羽翼 | BLE GAIA；单设备电量，关闭 / 降噪 / 通透，增益，双设备连接（需能力回包）；其他发现功能按实验性策略开放 |
-| GOLDEN AGES 2 / 梦回2 | BLE GAIA；电量，关闭 / 降噪 / 通透 / 抗风噪，独立的读写模式映射；增益仅在固件实际提供 feature 15 且读回状态时开放，不保证 GA2 固件具备；TOUCHV2 等非确认功能须实验性开关 |
-| SPACE TRAVEL 2 / 太空漫游2 | 识别及 GAIA 兼容路径；仅当固件实际提供 GAIA 服务与能力回包时可读电量和控制降噪 / 抗风噪、增益；只有 9ECA 服务的固件不可控制 |
-| GOLDEN AGES、MOCA、NEKOCAKE、MUSIC PILL、ULTRASONIC、ROBIN、ALICE、SPARKS、VOYAGER、BLOCK、SPACE TRAVEL、EDGE2、SPACE TRAVEL 2 ULTRA | 识别和探测；型号表主要来自芯片级推断，发现的推断功能须显式开启实验性功能，不代表整机支持 |
-| 名称含 MOONDROP / 水月雨但未匹配型号 | 默认通用 GAIA 只读探测，不默认开放推断的降噪写入 |
-
-- 特有选项不作为全局功能显示：抗风噪仅在当前型号提供该档位、控制通道就绪且已选中降噪时出现；切换型号、失去连接或设备能力排除 ANC 后隐藏。
-- 能力分页探测用于排除固件未提供的功能；广告中的 feature ID 不会把未知型号的模式映射自动标成已验证。
-- LHDC 和双设备连接互斥，开启一项会先关闭并回读确认另一项。LHDC 这里只是耳机端开关，不等于给 Windows 安装编码器。
-- 提示音开关和音量均保留完整三字节 `[enabled,volume,index]` 的其他字段；全部设置经回读确认，不把发送成功当成设备已生效。增益 UI 索引 0 / 1 / 2 为低 / 中 / 高，经型号目录映射为设备值。
-- TOUCHV2 为五字节双耳半字节配置；支持单击、双击、三击、长按 1 秒 / 3 秒，同耳两种长按互斥。动作 4 / 5（音量）明确标为推断且需实验性开关；未知动作 8–15 仅显示 / 保留读回值，不可选择写入。
-- RFCOMM 先探测带帧封装、再探测裸 CSR API version；固定长度回包增量解析，可变长度回包依赖 40ms 静默分段。任意可变长消息粘包、payload 内长停顿仍不可靠且未获硬件验证。BLE 连接使用经典蓝牙地址，地址不同的双模固件尚需硬件验证。
-- 空间音频与头部跟踪始终为 Unsupported，不属于实验性功能。低延迟（仅见 HyperOS 设置）、EQ / 9ECA、双设备详细管理 / 固件信息，以及佩戴 / 充电 / 查找 / 贴合度 / 降噪循环 / OTA 均未支持。
-- 本轮验证：29 项 MOONDROP 定向测试、全套 509 项测试通过；WinUI x64 Debug 构建通过；实际控制器的有状态模拟 GATT 冒烟覆盖增益映射、LED、并发提示音修改、双耳互斥与未知值保留、拒绝写入和 pending 清理。实际 PUDDING / EDGE / GA2 / OPPO 页面截图及可视树测量覆盖实验性开关、pending、断连、未知状态、能力排除、恢复和未连接写入回退。证据位于 `artifacts/moondrop-verification`、`artifacts/moondrop-complete-ui`、`artifacts/moondrop-edge-complete-ui`、`artifacts/moondrop-ga2-complete-ui`、`artifacts/oppo-moondrop-regression-ui`；**没有 Windows MOONDROP 真机验证，17 个档案不等于 17 型号完整支持**。
-
 ## OPPO / 一加 / realme / DIZO
 
 | 兼容设备 | 对应功能 |
@@ -100,6 +78,28 @@
 | HUAWEI FreeLace Pro | 电量、充电状态、降噪、通透、降噪档位、独立空间音频 / 头部跟踪（需设备确认） |
 | HUAWEI FreeLace Pro 2 | 电量、充电状态、降噪、通透、降噪档位、游戏模式、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
 | HUAWEI Eyewear 2 | 电量、充电状态、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
+
+## 水月雨 MOONDROP
+
+依据 [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop/tree/2f78f6740b2f30d1c28d75ba05badb98b2eeb687) 移植。下列“上游验证”仅指参考项目的 Android / 其他平台记录，**不是 EncoDeck 的 Windows 真机验证**；本项目已验证模拟字节通道、控制器和实际 WinUI 页面。
+
+| 型号 | 当前范围 |
+| --- | --- |
+| PUDDING / 布丁 / MD-TWS-056 | RFCOMM GAIA；左右耳 / 盒电量（无数据的组件保持未知），关闭 / 降噪 / 通透 / 抗风噪 / 自适应，提示音量 0–100、提示音开关、增益、LED、双耳 TOUCHV2 手势，LHDC 与双设备连接开关；均需实际能力与状态回包 |
+| EDGE / 羽翼 | BLE GAIA；单设备电量，关闭 / 降噪 / 通透，增益，双设备连接（需能力回包）；其他发现功能按实验性策略开放 |
+| GOLDEN AGES 2 / 梦回2 | BLE GAIA；电量，关闭 / 降噪 / 通透 / 抗风噪，独立的读写模式映射；增益仅在固件实际提供 feature 15 且读回状态时开放，不保证 GA2 固件具备；TOUCHV2 等非确认功能须实验性开关 |
+| SPACE TRAVEL 2 / 太空漫游2 | 识别及 GAIA 兼容路径；仅当固件实际提供 GAIA 服务与能力回包时可读电量和控制降噪 / 抗风噪、增益；只有 9ECA 服务的固件不可控制 |
+| GOLDEN AGES、MOCA、NEKOCAKE、MUSIC PILL、ULTRASONIC、ROBIN、ALICE、SPARKS、VOYAGER、BLOCK、SPACE TRAVEL、EDGE2、SPACE TRAVEL 2 ULTRA | 识别和探测；型号表主要来自芯片级推断，发现的推断功能须显式开启实验性功能，不代表整机支持 |
+| 名称含 MOONDROP / 水月雨但未匹配型号 | 默认通用 GAIA 只读探测，不默认开放推断的降噪写入 |
+
+- 特有选项不作为全局功能显示：抗风噪仅在当前型号提供该档位、控制通道就绪且已选中降噪时出现；切换型号、失去连接或设备能力排除 ANC 后隐藏。
+- 能力分页探测用于排除固件未提供的功能；广告中的 feature ID 不会把未知型号的模式映射自动标成已验证。
+- LHDC 和双设备连接互斥，开启一项会先关闭并回读确认另一项。LHDC 这里只是耳机端开关，不等于给 Windows 安装编码器。
+- 提示音开关和音量均保留完整三字节 `[enabled,volume,index]` 的其他字段；全部设置经回读确认，不把发送成功当成设备已生效。增益 UI 索引 0 / 1 / 2 为低 / 中 / 高，经型号目录映射为设备值。
+- TOUCHV2 为五字节双耳半字节配置；支持单击、双击、三击、长按 1 秒 / 3 秒，同耳两种长按互斥。动作 4 / 5（音量）明确标为推断且需实验性开关；未知动作 8–15 仅显示 / 保留读回值，不可选择写入。
+- RFCOMM 先探测带帧封装、再探测裸 CSR API version；固定长度回包增量解析，可变长度回包依赖 40ms 静默分段。任意可变长消息粘包、payload 内长停顿仍不可靠且未获硬件验证。BLE 连接使用经典蓝牙地址，地址不同的双模固件尚需硬件验证。
+- 空间音频与头部跟踪始终为 Unsupported，不属于实验性功能。低延迟（仅见 HyperOS 设置）、EQ / 9ECA、双设备详细管理 / 固件信息，以及佩戴 / 充电 / 查找 / 贴合度 / 降噪循环 / OTA 均未支持。
+- 本轮验证：29 项 MOONDROP 定向测试、全套 509 项测试通过；WinUI x64 Debug 构建通过；实际控制器的有状态模拟 GATT 冒烟覆盖增益映射、LED、并发提示音修改、双耳互斥与未知值保留、拒绝写入和 pending 清理。实际 PUDDING / EDGE / GA2 / OPPO 页面截图及可视树测量覆盖实验性开关、pending、断连、未知状态、能力排除、恢复和未连接写入回退。证据位于 `artifacts/moondrop-verification`、`artifacts/moondrop-complete-ui`、`artifacts/moondrop-edge-complete-ui`、`artifacts/moondrop-ga2-complete-ui`、`artifacts/oppo-moondrop-regression-ui`；**没有 Windows MOONDROP 真机验证，17 个档案不等于 17 型号完整支持**。
 
 ## 索尼
 
