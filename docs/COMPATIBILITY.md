@@ -142,8 +142,8 @@
 
 森海塞尔新增 11 个 GAIA v3 配置，支持电量、固件和型号读取；MOMENTUM 4、ACCENTUM、ACCENTUM Plus 按回读开放 ANC/通透端点，含 RFCOMM / BLE 回退。其余型号不因此宣称控制支持。
 
-HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。具体型号、来源、APK 哈希及功能限制见 [适配记录](HEADSET_ADAPTERS.md)。
+HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。
 
 ## 迈从 / 雷蛇 USB 与水月雨动画研究
 
-见 [逐型号范围和来源](MCHOSE_RAZER_MOONDROP.md)。X9 和 BlackShark V2 Pro 2020/2023 有精确 PID 的专用电量读取，其他新增 USB 型号只提供识别和条件性标准电量。尚无本机真机验证。
+X9 和 BlackShark V2 Pro 2020/2023 有精确 PID 的专用电量读取，其他新增 USB 型号只提供识别和条件性标准电量。尚无本机真机验证。
