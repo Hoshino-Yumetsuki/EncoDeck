@@ -98,3 +98,9 @@ GitHub Release in the app; its licenses and source revision are retained in the 
 The complete upstream LICENSE, NOTICE.md and licenses directory are retained under LHDC/;
 release.json identifies the upstream source commit. EncoDeck provides its own WinUI controls; the upstream WPF panel is not included. Dependencies include the Apache-2.0
 LHDC V5 encoder, MS-PL Windows driver samples, and the bundled .NET and PowerShell runtimes.
+
+## Additional headset interoperability research
+
+AKG Hybrid and Sennheiser wire formats and model facts were independently implemented from official application configurations. Sennheiser Smart Control 4.9.3 and Rapoo Headset Control 1.0.0.2 were inspected locally; no APK, proprietary application code, vendor DLL, driver or firmware is distributed. Sennheiser GAIA framing was cross-checked against https://github.com/xndbogdan/sennheiser-control/blob/main/PROTOCOL.md. New artwork is served by the separate EncoAPI service and remains the property of its rights holders.
+
+MCHOSE X9 and Razer BlackShark receiver query formats were independently implemented from protocol facts documented by HeadsetControl (https://github.com/Sapd/HeadsetControl/blob/master/lib/devices/mchose_x9.hpp) and HaloBattery (https://github.com/HeyOkay/HaloBattery/tree/main/providers). The official MOONDROP 2.25 APK was inspected locally for animation resources; its binaries, playback/loading GIFs and proprietary code are not distributed.

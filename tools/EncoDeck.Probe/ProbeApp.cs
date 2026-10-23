@@ -21,6 +21,7 @@ internal static class ProbeApp
             return options.Command switch
             {
                 "devices" => await ListDevicesAsync(options, ct),
+                "usb-devices" => await UsbDevicesCommand.RunAsync(ct),
                 "services" => await ListServicesAsync(options, ct),
                 "query" => await QueryCommands.QueryAsync(options, ct),
                 "listen" => await QueryCommands.ListenAsync(options, ct),
@@ -55,6 +56,7 @@ internal static class ProbeApp
 
             Read-only commands:
               devices                     List paired Bluetooth Classic devices.
+              usb-devices                 List verified supported USB receivers and read standard HID battery.
               services [--device <name>]  List RFCOMM services (SDP) of a device.
                        [--cached]         Use the Windows SDP cache instead of querying the device.
               query                       Open the control channel and send only read queries

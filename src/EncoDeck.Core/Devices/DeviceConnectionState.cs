@@ -31,6 +31,9 @@ public enum DeviceConnectionState
 
     /// <summary>The device was connected earlier in this session and is now disconnected.</summary>
     Disconnected,
+
+    /// <summary>USB audio receiver is present; its presence does not prove a radio connection to the headset.</summary>
+    UsbReceiverConnected,
 }
 
 public static class DeviceConnectionStateExtensions

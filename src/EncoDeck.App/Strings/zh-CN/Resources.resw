@@ -43,6 +43,7 @@
   <data name="Connection_NotDetected" xml:space="preserve"><value>未发现支持的耳机</value></data>
   <data name="Connection_PairedNotConnected" xml:space="preserve"><value>已配对，未连接</value></data>
   <data name="Connection_AudioConnected" xml:space="preserve"><value>已连接，正在准备控制</value></data>
+  <data name="Connection_UsbReceiverConnected" xml:space="preserve"><value>USB 接收器已连接，耳机无线状态待确认</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>正在连接控制通道…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>已连接</value></data>
   <data name="Connection_ControlUnavailable" xml:space="preserve"><value>蓝牙已连接，控制通道不可用</value></data>

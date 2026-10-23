@@ -4,6 +4,7 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -58,9 +59,17 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             foreach (var uuid in serviceUuids)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (uuid == SennheiserProfile.GattServiceId)
+                {
+                    var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                    if (result.Status == ChannelOpenStatus.Opened) return result;
+                    gattFailure = result;
+                    _logger.LogInformation("Sennheiser GAIA GATT connect failed: {Detail}", result.Detail);
+                    continue;
+                }
                 if (uuid == MoondropConstants.GattServiceId)
                 {
-                    var result = await MoondropGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                    var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
                     if (result.Status == ChannelOpenStatus.Opened) return result;
                     gattFailure = result;
                     _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
@@ -87,7 +96,8 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                     _logger.LogInformation("SDP lookup for {Service}: {Error}", uuid, services.Error);
                     if (services.Error is BluetoothError.DeviceNotConnected or BluetoothError.RadioNotAvailable)
                     {
-                        return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
+                        if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Contains(SennheiserProfile.GattServiceId))
+                            return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
                     }
                     continue;
                 }

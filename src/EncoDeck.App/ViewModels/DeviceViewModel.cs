@@ -316,9 +316,10 @@ public sealed partial class DeviceViewModel : ObservableObject
         }
 
         foreach (var item in new[] { Left, Right, Case }) item.SetSingleBattery(IsHeadphones);
-        Left.Apply(state.Battery.Left, IsReady, now);
-        Right.Apply(state.Battery.Right, IsReady, now);
-        Case.Apply(state.Battery.Case, IsReady, now);
+        bool batteryReady = IsReady || (state.Connection == DeviceConnectionState.UsbReceiverConnected && state.LastResponseAt is not null);
+        Left.Apply(state.Battery.Left, batteryReady, now);
+        Right.Apply(state.Battery.Right, batteryReady, now);
+        Case.Apply(state.Battery.Case, batteryReady, now);
 
         RebuildOptionsIfNeeded(profile);
         ApplyNoise(state, profile);
@@ -492,6 +493,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         if (fw.Extra.TryGetValue("right", out var r)) parts.Add($"{Loc.Get("Battery_Right")} {r}");
         if (fw.Extra.TryGetValue("case", out var c)) parts.Add($"{Loc.Get("Battery_Case")} {c}");
         // Labelled, or the bare version numbers read like battery levels.
+        if (parts.Count == 0 && !string.IsNullOrWhiteSpace(fw.Version)) parts.Add(fw.Version);
         return parts.Count == 0 ? string.Empty : $"{Loc.Get("Home_FirmwareLabel")}  {string.Join(" · ", parts)}";
     }
 

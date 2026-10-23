@@ -9,6 +9,8 @@ using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Transport;
+using EncoDeck.Bluetooth.Usb;
+using EncoDeck.Protocol.Brands.Usb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -57,6 +59,11 @@ public sealed class DeviceManager : IDeviceManager
     private readonly SemaphoreSlim _selectionGate = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
     private ActiveDevice? _active;
+    private readonly UsbHeadsetWatcher _usbWatcher = new();
+    private DeviceIdentity? _usbIdentity;
+    private CancellationTokenSource? _usbStop;
+    private Task? _usbPoll;
+    private readonly SemaphoreSlim _usbReadGate = new(1, 1);
     private string? _manualSelection;
 
     public DeviceManager(
@@ -80,16 +87,19 @@ public sealed class DeviceManager : IDeviceManager
         _trace = trace;
         _watcher = new PairedDeviceWatcher(_loggers.CreateLogger<PairedDeviceWatcher>());
         _watcher.Changed += OnPairedDevicesChanged;
+        _usbWatcher.Changed += OnPairedDevicesChanged;
     }
 
     public IReadOnlyList<KnownDevice> KnownDevices
     {
         get
         {
-            string? activeId = _active?.Identity.DeviceId;
-            return _watcher.Devices
+            string? activeId = _usbIdentity?.DeviceId ?? _active?.Identity.DeviceId;
+            return _watcher.Devices.Concat(_usbWatcher.Devices)
                 .Select(d => (Device: d, Profile: _profiles.Match(d.Identity)))
                 .Where(x => x.Profile is not null)
+                // A USB endpoint name can also contain a Bluetooth model name; never open Bluetooth control for it.
+                .Where(x => x.Device.Identity.Transport != DeviceTransport.Usb || x.Profile is UsbHeadsetProfile)
                 // The read-only generic profile matches by name ("OPPO …"), which also hits phones and
                 // watches; only accept it for audio devices. Exact model profiles are trusted as-is.
                 .Where(x => !IsGeneric(x.Profile!) || x.Device.IsAudioDevice)
@@ -104,7 +114,7 @@ public sealed class DeviceManager : IDeviceManager
 
     public event EventHandler<DeviceIdentity>? ActiveDeviceCaseLidOpened;
 
-    public void Start() => _watcher.Start();
+    public void Start() { _watcher.Start(); _usbWatcher.Start(); }
 
     public async Task SelectDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
@@ -121,6 +131,7 @@ public sealed class DeviceManager : IDeviceManager
     private void OnPairedDevicesChanged(object? sender, EventArgs e)
     {
         KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
+        // Wait for Bluetooth enumeration so a USB receiver found first does not briefly take over.
         if (!_watcher.IsEnumerated) return;
         _ = ReselectAsync(_lifetime.Token);
     }
@@ -141,11 +152,16 @@ public sealed class DeviceManager : IDeviceManager
             var candidates = KnownDevices;
             string? preferred = _manualSelection ?? _preferredDeviceId();
             var choice = candidates.FirstOrDefault(c => c.Identity.DeviceId == preferred)
-                ?? candidates.Where(c => c.IsConnected).OrderByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault()
+                // A USB receiver is always "connected" even with the headset off, so connected
+                // Bluetooth devices win automatic selection; the user can still pick USB manually.
+                ?? candidates.Where(c => c.IsConnected).OrderBy(c => c.Identity.Transport == DeviceTransport.Usb)
+                    .ThenByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault()
                 ?? candidates.FirstOrDefault(c => c.Identity.DeviceId == _active?.Identity.DeviceId)
                 ?? candidates.OrderByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault();
 
-            if (choice?.Identity.DeviceId == _active?.Identity.DeviceId) return;
+            if (choice?.Identity.DeviceId == (_usbIdentity?.DeviceId ?? _active?.Identity.DeviceId)) return;
+
+            await StopUsbAsync().ConfigureAwait(false);
 
             if (_active is { } old)
             {
@@ -156,6 +172,18 @@ public sealed class DeviceManager : IDeviceManager
             if (choice is null)
             {
                 _store.Reset(DeviceState.Empty);
+                return;
+            }
+
+            if (choice.Identity.Transport == DeviceTransport.Usb && choice.Profile is UsbHeadsetProfile usb)
+            {
+                _usbIdentity = choice.Identity;
+                _usbStop = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+                _store.Reset(DeviceState.Empty with { Device = choice.Identity, Profile = usb, Connection = DeviceConnectionState.UsbReceiverConnected });
+                _store.TryUpdate(choice.Identity.DeviceId, s => s with { Battery = BatteryStatus.Unknown });
+                await RefreshUsbAsync(_usbStop.Token).ConfigureAwait(false);
+                _usbPoll = PollUsbAsync(_usbStop.Token);
+                KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
                 return;
             }
 
@@ -228,7 +256,7 @@ public sealed class DeviceManager : IDeviceManager
         Controller is { } c ? c.SetToggleAsync(toggle, enabled, cancellationToken) : Task.FromResult(CommandResult.NotConnected);
 
     public Task<CommandResult> RefreshAsync(CancellationToken cancellationToken = default) =>
-        Controller is { } c ? c.RefreshAsync(cancellationToken) : Task.FromResult(CommandResult.NotConnected);
+        _usbIdentity is not null ? RefreshUsbAsync(cancellationToken) : Controller is { } c ? c.RefreshAsync(cancellationToken) : Task.FromResult(CommandResult.NotConnected);
 
     private Task<CommandResult> WithController(Func<IDeviceController, Task<CommandResult>> action) =>
         Controller is { } c ? action(c) : Task.FromResult(CommandResult.NotConnected);
@@ -269,6 +297,7 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default)
     {
+        if (_usbIdentity is not null) return RefreshUsbAsync(cancellationToken);
         if (_active is null) return Task.FromResult(CommandResult.NotConnected);
         _active.Supervisor.RequestReconnect();
         return Task.FromResult(CommandResult.Ok);
@@ -279,9 +308,12 @@ public sealed class DeviceManager : IDeviceManager
         _lifetime.Cancel();
         _watcher.Changed -= OnPairedDevicesChanged;
         _watcher.Dispose();
+        _usbWatcher.Changed -= OnPairedDevicesChanged;
+        _usbWatcher.Dispose();
         await _selectionGate.WaitAsync().ConfigureAwait(false);
         try
         {
+            await StopUsbAsync().ConfigureAwait(false);
             if (_active is { } active)
             {
                 _active = null;
@@ -292,6 +324,61 @@ public sealed class DeviceManager : IDeviceManager
         {
             _selectionGate.Release();
         }
+    }
+
+    private async Task StopUsbAsync()
+    {
+        _usbIdentity = null;
+        if (_usbStop is null) return;
+        await _usbStop.CancelAsync().ConfigureAwait(false);
+        if (_usbPoll is not null) await _usbPoll.ConfigureAwait(false);
+        _usbStop.Dispose(); _usbStop = null; _usbPoll = null;
+    }
+
+    private async Task<CommandResult> RefreshUsbAsync(CancellationToken ct)
+    {
+        var identity = _usbIdentity;
+        if (identity is null || _usbWatcher.Container(identity.DeviceId) is not { } container) return CommandResult.NotConnected;
+        void ClearBattery() => _store.TryUpdate(identity.DeviceId, s => s with
+        {
+            Profile = s.Profile is UsbHeadsetProfile profile ? profile.WithBattery(false) : s.Profile,
+            Battery = BatteryStatus.Unknown,
+            LastResponseAt = null,
+        });
+        await _usbReadGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct, _lifetime.Token);
+            bounded.CancelAfter(TimeSpan.FromSeconds(8));
+            int? level = await UsbHidBattery.ReadAsync(container, bounded.Token).ConfigureAwait(false);
+            _store.TryUpdate(identity.DeviceId, s => s with
+            {
+                Profile = s.Profile is UsbHeadsetProfile profile ? profile.WithBattery(level.HasValue) : s.Profile,
+                Battery = level.HasValue ? new(Observed.From(new BatteryReading(level, null), DateTimeOffset.UtcNow, StateSource.QueryResponse), null, null) : BatteryStatus.Unknown,
+                LastResponseAt = level.HasValue ? DateTimeOffset.UtcNow : null,
+            });
+            return level.HasValue ? CommandResult.Ok : CommandResult.Unsupported("No valid battery reply from a documented receiver query or standard HID percentage report.");
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested && !_lifetime.IsCancellationRequested)
+        { ClearBattery(); return new(CommandStatus.Timeout, "USB battery read timed out."); }
+        catch (Exception ex) when (ex is not OperationCanceledException and not OutOfMemoryException)
+        {
+            ClearBattery();
+            _logger.LogWarning("USB battery read failed: 0x{HResult:X8}", ex.HResult);
+            return new(CommandStatus.TransportError, "USB battery access is unavailable.");
+        }
+        finally { _usbReadGate.Release(); }
+    }
+
+    private async Task PollUsbAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false)) await RefreshUsbAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { _logger.LogWarning(ex, "USB monitoring stopped"); }
     }
 
     private sealed record ActiveDevice(DeviceIdentity Identity, BluetoothLinkMonitor Link, ControlChannelSupervisor Supervisor) : IAsyncDisposable
