@@ -23,7 +23,7 @@
 
 EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings the everyday settings from HeyMelody to your PC: battery levels for the left and right earbuds and the case, noise control, EQ and spatial audio, touch controls and more. Most of the time it can live as just a tray icon, without keeping the main window open.
 
-**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi, Sony, AKG and EDIFIER** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
+**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi, Sony, AKG, EDIFIER and MOONDROP** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
 
 ## Screenshots
 
@@ -113,6 +113,7 @@ Support currently falls into two groups: models with configuration data from the
 | **Sony** | 46 built-in model names; battery/charging, ANC/ambient sound and device-reported EQ presets | Official MDR protocol and simulated-device tests; not verified on hardware |
 | **AKG** | N400NC, N700NCM2, N200NC, Y600: battery, ANC/ambient and automatic play/pause; N700NC, N5 Hybrid, N9 Hybrid: recognition/artwork only | Official APK analysis; not verified on hardware |
 | **EDIFIER** | W820NB, W200BT and generic detection; battery, noise cancelling / transparency on some models | Protocol port, not verified on hardware |
+| **MOONDROP** | 17 model profiles plus generic recognition, not complete model support; GAIA BLE / RFCOMM, battery, model-specific ANC / anti-wind and gain; runtime-discovered LED, prompt switch / volume, both-ear TOUCHV2 and mutually exclusive LHDC / multipoint | Based on MiuixMoondrop; 509 full-suite tests, actual-controller simulated GATT smoke and WinUI page diagnostics passed, not Windows MOONDROP hardware validation; inferred controls require opt-in; spatial / head tracking unsupported; raw variable-length RFCOMM has framing limitations |
 
 For more models, per-feature details and verification records, see the **[device compatibility list](docs/COMPATIBILITY.md)**. If your earbuds aren't on the tested list but work fine, please share the model, firmware and your results.
 
@@ -161,6 +162,7 @@ Protocol research, device testing and code contributions are all welcome. Before
 ## Acknowledgements
 
 Earbud protocol and device support draw on [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows), [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager), [OppoPods](https://github.com/Leaf-lsgtky/OppoPods) and [HeyBuds](https://github.com/abaichuan1017/HeyBuds); the tray uses [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon). Other third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MOONDROP model data, GAIA framing and commands draw on [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop). See the compatibility list for supported features and limitations.
 
 ## License
 

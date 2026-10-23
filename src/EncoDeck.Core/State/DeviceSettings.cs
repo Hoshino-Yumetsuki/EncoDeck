@@ -22,8 +22,10 @@ public enum DeviceToggle
     HeadGestures,
     /// <summary>BassWave bass engine.</summary>
     BassEngine,
-    /// <summary>Hi-Res mode (read only on Windows; mutually exclusive with spatial audio).</summary>
+    /// <summary>Device-side high-resolution codec mode; writability and mutual exclusions depend on the brand.</summary>
     HiRes,
+    IndicatorLight,
+    PromptTone,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

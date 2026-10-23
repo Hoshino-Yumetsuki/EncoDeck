@@ -202,3 +202,25 @@ EncoDeck 尚未实现，也未在 X4 上抓取广播；开盒弹窗需先用实�
 | `wearDetection` 1/2 → 功能 4；`multiDevicesConnect` 1/2 → 17；`sleepDetection` → 58；`swiftPair` → 55；`voiceCommand` 1/2 → 25；`headMotion` → 59；`bassEngineSupport` → 29 + `0x041B`；`highToneQuality` 1/2 → 24 | 功能开关 |
 | `spatialTypes` | 空间音频按钮（0 关、1 固定/打开、2 头部跟踪）。耳机支持 `0x0422` 用 V2，否则用功能 27（只有开/关）；`spatialHiResMutex` 时开启空间音频后关闭 Hi-Res |
 | `heyFindDevice` / `findDevice`、`fitDetection`、`promptVolume`（`promptVolumeRange`） | 查找耳机、贴合度检测、提示音音量（范围） |
+
+## 10. 水月雨 GAIA（独立于 OPPO）
+
+来源：MiuixMoondrop `2f78f6740b2f30d1c28d75ba05badb98b2eeb687` 的 `Gaia.kt`、`GaiaFramer.kt`、`BatteryCodec.kt`、`MoondropModels.kt`、`MoondropLink.kt`。证据是参考源码 / 上游抓包说明与本项目模拟会话，不是本地 Windows 真机抓包。
+
+- PDU：`vendor=001D`（BE）、`commandValue=(feature<<9)|(type<<7)|command`（BE）、payload；请求 / 通知 / 响应的 type 为 0 / 1 / 2。等待器同时匹配 feature、command 和响应类型，通知不能冒充查询应答。
+- BLE：服务 `00001100-d102-11e1-9b23-00025b00a5a5`，command / response / data 对应 `1101` / `1102` / `1103`；每次 characteristic notification 保留一个 PDU 边界。
+- RFCOMM：SPP UUID `00001101-0000-1000-8000-00805f9b34fb`；优先探测 `FF 04 flags length PDU` 帧，再以裸 CSR API version 探测裸 PDU。帧 length 只计算 payload，flags bit1 扩展为两字节长度，bit0 表示附加 XOR 校验。裸固定长度消息增量解析，可变长度消息以 40ms 静默结束；任意可变长消息粘包及 payload 内长停顿仍未验证且不可靠，不能声称完整流边界支持。
+- 功能：BASIC 0 的命令 1 / 2 分页，返回 `[more][feature,version]...`；兼容大端 32 位能力位图。电量 feature 13 命令 0 查类型，命令 1 携类型列表查询 `[type,level]...`；type 0 为整机，1 / 2 / 3 为左 / 右 / 盒，255 为未知，不挪动其他组件。
+- ANC：AudioCuration 8 的读 / 写命令 3 / 4；EDGE 写 `[1,2,4]`、读索引 `[0,1,2]`，梦回2 / 太空漫游2 写 `[1,2,4,3]`、读 `[0,1,2,3]`。PUDDING 使用 feature 32 命令 3 / 4，UI 关闭 / 降噪 / 通透 / 抗风 / 自适应对应设备值 `[0,4,2,3,1]`。
+- 提示音 feature 14 的读 / 写命令 1 / 2 使用完整 `[enabled,volume,index]`，volume 0–100；LHDC feature 16 命令 5 / 6；双设备 feature 20 命令 1 / 2，两者开启时互斥。
+- 增益 feature 15 GET / SET 1 / 2：UI 0 / 1 / 2 为低 / 中 / 高；PUDDING、GA2、ST2、GOLDEN AGES、ST2 ULTRA 设备映射为 `[2,1,0]`，其余已知且有映射的目录型号为 `[0,1,2]`，BLOCK 和通用型号无映射。LED feature 19 GET / SET 1 / 2。新增设置受运行时 feature 门控；界面只在已读状态后显示，提示音 / 手势写入前读取完整配置，目录本身不是支持证据。
+- TOUCHV2 feature 22 GET / SET 2 / 3 使用五字节，每字节高 / 低半字节分别保留双耳动作；单击 / 双击 / 三击 / 长按 1 秒 / 长按 3 秒，同耳两种长按互斥。动作 4 / 5 的音量含义仍为推断，仅显式实验性启用；8–15 仅显示与保留，不能主动选择写入。空间音频和头部跟踪完全排除，能力始终 Unsupported。
+- 会话每 30 秒刷新状态；所有写入序列化并查询确认。未读到配置时不拼造提示音其他字段，不将推断功能默认开放。
+
+### 10.1 关联项目核查
+
+- [FxxkMoondrop `c68a7a6`](https://github.com/bqj6666/FxxkMoondrop/tree/c68a7a6dbc8ff27089428f7395eac895b970116b) 的 [`EqActivity.kt`](https://github.com/bqj6666/FxxkMoondrop/blob/c68a7a6dbc8ff27089428f7395eac895b970116b/src/com/fxxkmoondrop/secret/EqActivity.kt) 已有预设 EQ 选择、回包处理及只读 PEQ 页面；它调用 `BleSourceSwitchClient`，使用独立的 **9ECA** 服务，不是 GAIA feature 5。PEQ 编辑 / 提交未做，增益单位仍标为推断；[`ADAPTATION.md`](https://github.com/bqj6666/FxxkMoondrop/blob/c68a7a6dbc8ff27089428f7395eac895b970116b/ADAPTATION.md) 明确写明 9ECA 客户端未经实机验证。因此没有把此路径并入当前 GAIA 支持声明。
+- 同一来源的 `GaiaPacketHandler.kt` 对固件版本和 ANC 循环命令 41 / 42 只记日志，不构成可移植的完整用户功能；GA2 的命令 41 回包还有不稳定记录。系统低延迟属于 HyperOS 蓝牙设置，不是已确认的跨平台 GAIA 写入。
+- [PuddingPods `f527afe`](https://github.com/lingbai-rong/PuddingPods/tree/f527afe503749d7d2ceadbf5529c0639d7de1f7f) 的公开树只有文档 / 构建包装文件，没有应用源码可追踪完整读写路径。参考项目致谢的 `MegaSuite/moondrop-link-desktop` 在本次核查时不可公开访问，无法核实实现或许可证。
+- 此次未找到已完成且有硬件证据的双设备详细管理、固件信息展示、佩戴 / 充电状态、查找耳机、贴合度检测、硬件降噪循环或耳机 OTA 的完整可移植路径；继续明确标为未支持。型号档案和 feature 常量不替代实际回包证据。
+

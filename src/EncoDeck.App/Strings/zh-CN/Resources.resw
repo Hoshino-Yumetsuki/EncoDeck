@@ -63,6 +63,7 @@
   <data name="NoiseLevel_Deep" xml:space="preserve"><value>深度</value></data>
   <data name="NoiseLevel_Medium" xml:space="preserve"><value>中度</value></data>
   <data name="NoiseLevel_Light" xml:space="preserve"><value>轻度</value></data>
+  <data name="NoiseLevel_AntiWind" xml:space="preserve"><value>抗风噪</value></data>
   <data name="NoiseLevel_AdaptiveLess" xml:space="preserve"><value>更少噪音</value></data>
   <data name="NoiseLevel_AdaptiveStandard" xml:space="preserve"><value>标准</value></data>
   <data name="NoiseLevel_AdaptiveMore" xml:space="preserve"><value>更多噪音</value></data>
@@ -76,6 +77,8 @@
   <data name="Eq_UnknownPreset" xml:space="preserve"><value>音效 {0}</value></data>
   <data name="Toggle_InEarDetection" xml:space="preserve"><value>佩戴检测</value></data>
   <data name="Toggle_InEarDetection_Description" xml:space="preserve"><value>摘下耳机时自动暂停音乐等媒体内容或切换到其他通道，重新佩戴后恢复播放</value></data>
+  <data name="Toggle_HiRes" xml:space="preserve"><value>LHDC</value></data>
+  <data name="Toggle_HiRes_Description" xml:space="preserve"><value>耳机端 LHDC 开关，与双设备连接互斥，开启任一项会关闭另一项。此开关不会为 Windows 安装 LHDC 编码器。</value></data>
   <data name="Cap_BatteryLevel" xml:space="preserve"><value>电量</value></data>
   <data name="Cap_ChargingStatus" xml:space="preserve"><value>充电状态</value></data>
   <data name="Cap_NoiseCancellation" xml:space="preserve"><value>降噪模式</value></data>
@@ -580,4 +583,28 @@
   <data name="Xiaomi_Eq_17" xml:space="preserve"><value>户外</value></data>
   <data name="Xiaomi_Eq_18" xml:space="preserve"><value>水下</value></data>
   <data name="Xiaomi_Eq_21" xml:space="preserve"><value>均衡聆听</value></data>
+  <data name="Moondrop_Gain.Header" xml:space="preserve"><value>增益</value></data>
+  <data name="Moondrop_GainLow" xml:space="preserve"><value>低</value></data>
+  <data name="Moondrop_GainMid" xml:space="preserve"><value>中</value></data>
+  <data name="Moondrop_GainHigh" xml:space="preserve"><value>高</value></data>
+  <data name="Toggle_IndicatorLight" xml:space="preserve"><value>指示灯</value></data>
+  <data name="Toggle_IndicatorLight_Description" xml:space="preserve"><value>耳机指示灯。</value></data>
+  <data name="Toggle_PromptTone" xml:space="preserve"><value>提示音</value></data>
+  <data name="Toggle_PromptTone_Description" xml:space="preserve"><value>播放耳机语音提示；更改开关会保留已读回的音量。</value></data>
+  <data name="Cap_Gain" xml:space="preserve"><value>增益</value></data>
+  <data name="Cap_IndicatorLight" xml:space="preserve"><value>指示灯</value></data>
+  <data name="Cap_PromptTone" xml:space="preserve"><value>提示音</value></data>
+  <data name="Moondrop_Hold1" xml:space="preserve"><value>长按 1 秒</value></data>
+  <data name="Moondrop_Hold3" xml:space="preserve"><value>长按 3 秒</value></data>
+  <data name="Moondrop_Function_0" xml:space="preserve"><value>无</value></data>
+  <data name="Moondrop_Function_1" xml:space="preserve"><value>播放 / 暂停</value></data>
+  <data name="Moondrop_Function_2" xml:space="preserve"><value>上一曲</value></data>
+  <data name="Moondrop_Function_3" xml:space="preserve"><value>下一曲</value></data>
+  <data name="Moondrop_Function_4" xml:space="preserve"><value>音量增加（推断，实验性）</value></data>
+  <data name="Moondrop_Function_5" xml:space="preserve"><value>音量降低（推断，实验性）</value></data>
+  <data name="Moondrop_Function_6" xml:space="preserve"><value>语音助手</value></data>
+  <data name="Moondrop_Function_7" xml:space="preserve"><value>降噪切换</value></data>
+  <data name="Moondrop_UnknownAction" xml:space="preserve"><value>未知动作 (0x{0}) — 仅显示读回值</value></data>
+  <data name="Settings_MoondropExperimental.Header" xml:space="preserve"><value>水月雨实验性功能</value></data>
+  <data name="Settings_MoondropExperimental.Description" xml:space="preserve"><value>启用未经验证的水月雨命令及推断的手势动作。默认关闭，风险自负。开启后请重新连接以读取新功能。</value></data>
 </root>

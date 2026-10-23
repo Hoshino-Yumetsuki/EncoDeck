@@ -1,0 +1,525 @@
+{
+  "retrieved_on": "2026-10-23",
+  "copyright": "Official MOONDROP manufacturer product photographs; copyrights and trademarks remain with their respective owners. Public availability is not a redistribution license. No GPL license or blanket redistribution permission is asserted. ROBIN includes licensed collaboration artwork.",
+  "catalogues": [
+    "https://moondroplab.com/cn/headphones",
+    "https://moondroplab.com/cn/tws",
+    "https://moondroplab.com/cn/collabs"
+  ],
+  "processing": "Seeded connected-white masks; reviewed per-photo floor zones/polygons; local edge matting; narrow-band GrabCut where enabled; source-traced capsule/case contour clipping for PILL/GA2. No generated/repainted product content. 512x512 RGBA with at least 24px transparent padding. Original 500x500 official thumbnails remain the resolution limit.",
+  "images": [
+    {
+      "model_id": "moondrop-edge",
+      "product_url": "https://moondroplab.com/cn/products/edge",
+      "official_title": "水月雨 EDGE 羽翼 便携无线降噪 头戴式耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/676410ed82ea45da46ff78e8_edge.jpg",
+      "source_sha256": "0f99a12c75ce0449ae04b8864042f4ee2514756e275c2a426786302328b1392b",
+      "background_seeds": [
+        [
+          0.32,
+          0.32
+        ],
+        [
+          0.68,
+          0.32
+        ]
+      ],
+      "white_floor": 250,
+      "refine_grabcut": true
+    },
+    {
+      "model_id": "moondrop-edge2",
+      "product_url": "https://moondroplab.com/cn/products/edge2",
+      "official_title": "水月雨 EDGE2 羽翼2 便携无线降噪 头戴式耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6a4342a990442c93582ff9b4_EDGE2.jpg",
+      "source_sha256": "2930f3244705592665743bbe79495f0b0e344d8f0fad27e2843ac9ad9a59b60b",
+      "background_seeds": [
+        [
+          0.32,
+          0.32
+        ],
+        [
+          0.69,
+          0.32
+        ]
+      ]
+    },
+    {
+      "model_id": "moondrop-pudding",
+      "product_url": "https://moondroplab.com/cn/products/pudding",
+      "official_title": "水月雨 布丁 PUDDING 实时ANC TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6a2fb08813d7140173c5c267_PUDDING.jpg",
+      "source_sha256": "e1a951b4e412c7a6e9009116259a38883d90b778552710cbafaf5e1204cff408",
+      "background_seeds": []
+    },
+    {
+      "model_id": "moondrop-golden-ages-2",
+      "product_url": "https://moondroplab.com/cn/products/golden-ages-2",
+      "official_title": "水月雨 梦回2 平板单元 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6a2fb5f036590b1d78e2796f_GOLDENAGES2.jpg",
+      "source_sha256": "a03dab1227f63f89591f5a1bb47c524c7f9e410d737eb0a3b3dd21e2e966bc59",
+      "background_seeds": [],
+      "background_zones": [
+        [
+          0,
+          390,
+          500,
+          500,
+          215
+        ],
+        [
+          169,
+          350,
+          175,
+          390,
+          200
+        ]
+      ],
+      "refine_grabcut": false,
+      "contour_band": 12,
+      "foreground_roundrects": [
+        [
+          177,
+          117,
+          485,
+          260,
+          23
+        ],
+        [
+          174,
+          231,
+          490,
+          400,
+          7
+        ]
+      ],
+      "foreground_polygons": [
+        [
+          [
+            2,
+            367
+          ],
+          [
+            96,
+            323
+          ],
+          [
+            98,
+            316
+          ],
+          [
+            146,
+            292
+          ],
+          [
+            164,
+            331
+          ],
+          [
+            158,
+            336
+          ],
+          [
+            167,
+            346
+          ],
+          [
+            173,
+            358
+          ],
+          [
+            175,
+            370
+          ],
+          [
+            172,
+            380
+          ],
+          [
+            165,
+            387
+          ],
+          [
+            154,
+            393
+          ],
+          [
+            139,
+            397
+          ],
+          [
+            124,
+            398
+          ],
+          [
+            110,
+            396
+          ],
+          [
+            97,
+            391
+          ],
+          [
+            87,
+            385
+          ],
+          [
+            80,
+            377
+          ],
+          [
+            18,
+            401
+          ]
+        ]
+      ]
+    },
+    {
+      "model_id": "moondrop-space-travel-2",
+      "product_url": "https://moondroplab.com/cn/products/space-travel-2",
+      "official_title": "水月雨 SPACE TRAVEL2 太空漫游2 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6875c15aeaaf13e443d94f7a_SPACETRAVEL2.jpg",
+      "source_sha256": "2bb914419341d12d7b2eb47208efdcde491cb02e2882fadcaf4c0c6f99c5bf00",
+      "background_seeds": [],
+      "refine_grabcut": true,
+      "contour_band": 12
+    },
+    {
+      "model_id": "moondrop-golden-ages",
+      "product_url": "https://moondroplab.com/cn/products/golden-ages",
+      "official_title": "水月雨 GOLDEN AGES 梦回1979 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6721a08cb9b2254e21f6cb9d_goldenage.jpg",
+      "source_sha256": "840be6370547440f5639d3fc92d84ef5aade61c818d33a43023cd9a1cc1edd99",
+      "background_seeds": []
+    },
+    {
+      "model_id": "moondrop-moca",
+      "product_url": "https://moondroplab.com/cn/products/moca",
+      "official_title": "水月雨 MOCA 猫咖 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6719f28e91dca3f8a636e3b9_MOCA.jpg",
+      "source_sha256": "f9b2304d161f8c22351a326ed219e6040e9c15e0ed207a469dbd87246569148e",
+      "background_seeds": [],
+      "background_polygons": [
+        [
+          [
+            0,
+            352
+          ],
+          [
+            180,
+            352
+          ],
+          [
+            180,
+            500
+          ],
+          [
+            0,
+            500
+          ]
+        ],
+        [
+          [
+            306,
+            384
+          ],
+          [
+            500,
+            384
+          ],
+          [
+            500,
+            500
+          ],
+          [
+            306,
+            500
+          ]
+        ],
+        [
+          [
+            0,
+            399
+          ],
+          [
+            500,
+            399
+          ],
+          [
+            500,
+            500
+          ],
+          [
+            0,
+            500
+          ]
+        ]
+      ],
+      "background_zones": [
+        [
+          0,
+          380,
+          500,
+          500,
+          210
+        ]
+      ],
+      "refine_grabcut": true,
+      "contour_band": 12
+    },
+    {
+      "model_id": "moondrop-nekocake",
+      "product_url": "https://moondroplab.com/cn/products/nekocake",
+      "official_title": "水月雨 NEKOCAKE 猫饼 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/64409e1471df486c7557d4b4_641d56467c91056a4554bab8_NEKOCAKE.jpeg",
+      "source_sha256": "714cff10126c21b464946e9770326ef609ec6a03787aa955f0973f007cadc1fa",
+      "background_seeds": [],
+      "background_polygons": [
+        [
+          [
+            295,
+            349
+          ],
+          [
+            500,
+            349
+          ],
+          [
+            500,
+            500
+          ],
+          [
+            0,
+            500
+          ],
+          [
+            0,
+            379
+          ],
+          [
+            263,
+            379
+          ],
+          [
+            277,
+            374
+          ],
+          [
+            286,
+            367
+          ],
+          [
+            291,
+            359
+          ]
+        ]
+      ]
+    },
+    {
+      "model_id": "moondrop-pill",
+      "product_url": "https://moondroplab.com/cn/products/pill",
+      "official_title": "水月雨 PILL 音乐胶囊 OWS耳夹式降噪耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/68255ff05342c18c89d4efc6_PILL.jpg",
+      "source_sha256": "b2d0ac8d34413e1932f83dc62ced826847cfb01a563bb2b1d4ac454f82c0a324",
+      "background_seeds": [],
+      "refine_grabcut": false,
+      "contour_band": 12,
+      "background_zones": [
+        [
+          0,
+          367,
+          250,
+          500,
+          220
+        ],
+        [
+          250,
+          474,
+          500,
+          500,
+          220
+        ]
+      ],
+      "foreground_roundrects": [
+        [
+          82,
+          23,
+          243,
+          371,
+          80
+        ],
+        [
+          256,
+          125,
+          418,
+          475,
+          80
+        ]
+      ]
+    },
+    {
+      "model_id": "moondrop-ultrasonic",
+      "product_url": "https://moondroplab.com/cn/products/ultrasonic",
+      "official_title": "水月雨 ULTRASONIC 超声波 真无线耳机（圈铁混合式） | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/66c2dc2333f582caed2b411c_ULTRASONIC.jpg",
+      "source_sha256": "80261cddbce4e12defe4b36010d85151ebc62b1bd0d513bf9ec7cf4658b0ab44",
+      "background_seeds": [],
+      "background_zones": [
+        [
+          0,
+          390,
+          425,
+          500,
+          215
+        ],
+        [
+          425,
+          404,
+          500,
+          500,
+          215
+        ]
+      ],
+      "background_polygons": [
+        [
+          [
+            0,
+            403
+          ],
+          [
+            500,
+            403
+          ],
+          [
+            500,
+            500
+          ],
+          [
+            0,
+            500
+          ]
+        ]
+      ],
+      "refine_grabcut": true,
+      "contour_band": 12
+    },
+    {
+      "model_id": "moondrop-robin",
+      "product_url": "https://moondroplab.com/cn/products/robin",
+      "official_title": "水月雨 x 《崩坏：星穹铁道》 知更鸟定制 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/6719fc0ba182ed52b8f3acba_robin.jpg",
+      "source_sha256": "d44aa2c2f061f35a1487996aaab215d7d6a260a34454f6fe33763dae3f459120",
+      "background_seeds": []
+    },
+    {
+      "model_id": "moondrop-alice",
+      "product_url": "https://moondroplab.com/cn/products/alice",
+      "official_title": "水月雨 ALICE 爱丽丝 真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/64409e10cb742f86b2021d5b_6433a61f637d39568be818bf_ALICE.jpeg",
+      "source_sha256": "3c168bb74d8f85d0e367b827af3318e21a76486cf85a193cce2a50e723d12178",
+      "background_seeds": []
+    },
+    {
+      "model_id": "moondrop-sparks",
+      "product_url": "https://moondroplab.com/cn/products/sparks",
+      "official_title": "水月雨 SPARKS 火花 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/64409e169df5ab3fb49a8167_6426a72d048f9d18f3bb53dc_SPARKS.jpeg",
+      "source_sha256": "0f00d70e3910e756d3a5067c8564faae3244d856b7c2a595ae7907b7f002f18b",
+      "background_seeds": [],
+      "background_polygons": [
+        [
+          [
+            0,
+            430
+          ],
+          [
+            500,
+            430
+          ],
+          [
+            500,
+            500
+          ],
+          [
+            0,
+            500
+          ]
+        ]
+      ],
+      "background_zones": [
+        [
+          0,
+          390,
+          500,
+          500,
+          180
+        ]
+      ],
+      "refine_grabcut": true,
+      "contour_band": 12
+    },
+    {
+      "model_id": "moondrop-voyager",
+      "product_url": "https://moondroplab.com/cn/products/voyager",
+      "official_title": "水月雨 VOYAGER 旅行者 蓝牙无线颈挂耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/64e71c7fce88f4f512725b09_VOYAGER.jpg",
+      "source_sha256": "b813a443738a41a19c918c1ce6b235211f24197fb4a738cb9f43b6213f803b7d",
+      "background_seeds": [
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.72,
+          0.48
+        ]
+      ]
+    },
+    {
+      "model_id": "moondrop-block",
+      "product_url": "https://moondroplab.com/cn/products/block",
+      "official_title": "水月雨 BLOCK 方糖 真无线耳机（平头塞式） | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/66c0415d4a094cea4ba98188_BLOCK.jpg",
+      "source_sha256": "af3c3f295dc41cab58488e491f55fa3bc6ba660609a3f5f24e549984df5a09c2",
+      "background_seeds": [],
+      "background_zones": [
+        [
+          0,
+          380,
+          500,
+          500,
+          215
+        ]
+      ],
+      "refine_grabcut": true,
+      "contour_band": 12
+    },
+    {
+      "model_id": "moondrop-space-travel",
+      "product_url": "https://moondroplab.com/cn/products/space-travel",
+      "official_title": "水月雨 SPACE TRAVEL 太空漫游 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/64c1d6555e63a23d3f3b35da_SPACETRAVEL.jpg",
+      "source_sha256": "bc586665bb904e5c5ae8bf3fe5a0eb2c91ab87c653be4fe8f3a6b4ebf6ebf001",
+      "background_seeds": []
+    },
+    {
+      "model_id": "moondrop-space-travel-2-ultra",
+      "product_url": "https://moondroplab.com/cn/products/space-travel-2-ultra",
+      "official_title": "水月雨 太空漫游2 ULTRA 平板单元 TWS真无线耳机 | 水月雨 MOONDROP 官方网站",
+      "image_url": "https://cdn.prod.website-files.com/627128d862c9a44234848dda/68b01e1185437e2fc1c48484_ST2U.jpg",
+      "source_sha256": "1d3453dd7ab791dfdc0d86b32ee79db0bd8350b07034eea30dae5cda268270dc",
+      "background_seeds": [],
+      "background_zones": [
+        [
+          0,
+          350,
+          500,
+          500,
+          225
+        ]
+      ],
+      "refine_grabcut": true,
+      "contour_band": 12
+    }
+  ]
+}

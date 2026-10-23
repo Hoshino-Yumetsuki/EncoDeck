@@ -161,6 +161,9 @@ public sealed partial class OppoDeviceController : IAdvancedDeviceCommands
             cancellationToken);
     }
 
+    public Task<CommandResult> SetGainAsync(int level, CancellationToken cancellationToken = default) =>
+        Task.FromResult(CommandResult.Unsupported("Gain is not available on this model."));
+
     public Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default)
     {
         if (!IsAvailable(DeviceCapability.BassEngine)) return Task.FromResult(CommandResult.Unsupported("Bass engine is not available on this model."));

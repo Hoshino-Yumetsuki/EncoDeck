@@ -23,7 +23,7 @@
 
 EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把欢律（HeyMelody）里常用的耳机设置搬到了电脑上：查看左右耳和充电盒电量、切换降噪、调整 EQ 和空间音频，以及管理耳机触控等功能。平时可以只留一个托盘图标，不需要一直开着主窗口。
 
-目前以 **OPPO / 一加** 耳机为主要适配对象，也支持部分 **realme / DIZO、vivo / iQOO、华为、小米 / Redmi、索尼、AKG 和漫步者** 耳机。不同型号可用的设置不一样；**目前主要使用 OPPO Enco X4 进行真机验证**，其他型号主要依据协议和型号配置实现，欢迎反馈测试结果。
+目前以 **OPPO / 一加** 耳机为主要适配对象，也支持部分 **realme / DIZO、vivo / iQOO、华为、小米 / Redmi、索尼、AKG、漫步者和水月雨 MOONDROP** 耳机。不同型号可用的设置不一样；**目前主要使用 OPPO Enco X4 进行真机验证**，其他型号主要依据协议和型号配置实现，欢迎反馈测试结果。
 
 ## 界面
 
@@ -113,6 +113,7 @@ EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把欢律�
 | **索尼** | 46 个内置型号名称；电量/充电、降噪/环境声、设备预设 EQ | 官方 MDR 协议及模拟设备测试，未真机验证 |
 | **AKG** | N400NC、N700NCM2、N200NC、Y600：电量、降噪/环境声、入耳自动播放/暂停；N700NC、N5 Hybrid、N9 Hybrid 仅识别和素材 | 官方 APK 核对，未真机验证 |
 | **漫步者** | W820NB、W200BT 及通用识别；电量、部分型号的降噪 / 通透 | 协议移植，未真机验证 |
+| **水月雨 MOONDROP** | 17 个型号档案及通用识别（非完整型号支持）；GAIA BLE / RFCOMM、电量、按型号降噪 / 抗风噪、增益；能力发现后开放 LED、提示音开关 / 音量、双耳 TOUCHV2、LHDC / 双设备互斥 | 参考 MiuixMoondrop；509 项全套测试、实际控制器模拟 GATT 和 WinUI 页面诊断通过，无 Windows MOONDROP 真机验证；推断功能须实验性启用，空间音频 / 头部跟踪不支持；裸可变长 RFCOMM 有分段限制 |
 
 更多型号、具体功能和验证记录见 **[设备兼容性列表](docs/COMPATIBILITY.md)**。如果你的耳机没在已测试列表里，但可以正常使用，欢迎提交型号、固件和测试结果。
 
@@ -161,6 +162,7 @@ pwsh build/build-installer.ps1
 ## 致谢
 
 耳机协议与设备适配参考了 [OppoPodsWindows](https://github.com/3295074384/OppoPodsWindows)、[OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)、[OppoPods](https://github.com/Leaf-lsgtky/OppoPods) 和 [HeyBuds](https://github.com/abaichuan1017/HeyBuds)；托盘功能使用 [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon)。其他第三方组件见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+水月雨型号档案、GAIA 帧格式与控制命令参考 [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop)，支持范围与限制见兼容性列表。
 ## 许可证
 
 [GPL-3.0-only](LICENSE)。

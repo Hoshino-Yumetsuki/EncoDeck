@@ -69,7 +69,7 @@ public partial class App : Application
     internal void CreateViewModelsForDiagnostics(DispatcherQueue dispatcher, IDeviceCommandService? commands = null)
     {
         Device = new DeviceViewModel(Host.Store, commands ?? Host.Devices, Host.Settings, Host.Resources, dispatcher);
-        Features = new FeaturesViewModel(Host.Store, commands ?? Host.Devices, Host.Devices, Device, dispatcher);
+        Features = new FeaturesViewModel(Host.Store, commands ?? Host.Devices, Host.Devices, Host.Settings, Device, dispatcher);
         Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
             Host.StoreUpdates, static () => 0, dispatcher,
             static () => { }, Host.Loggers.CreateLogger<SettingsViewModel>());
@@ -194,7 +194,7 @@ public partial class App : Application
         var theme = new ThemeService(Host.Settings);
         Windows = new WindowManager(theme, () => Host.Settings.Current.KeepRunningInTray, ExitApp, Host.Settings);
         Device = new DeviceViewModel(Host.Store, Host.Devices, Host.Settings, Host.Resources, _dispatcher);
-        Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Device, _dispatcher);
+        Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Host.Settings, Device, _dispatcher);
         Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
             Host.StoreUpdates, () => Windows.MainHandle, _dispatcher,
             ExitApp, Host.Loggers.CreateLogger<SettingsViewModel>());

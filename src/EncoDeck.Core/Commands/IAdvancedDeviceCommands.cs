@@ -26,6 +26,9 @@ public interface IAdvancedDeviceCommands
 
     Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default);
 
+    /// <summary>Sets device gain by ascending level (0 = low, 1 = medium, 2 = high).</summary>
+    Task<CommandResult> SetGainAsync(int level, CancellationToken cancellationToken = default);
+
     Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default);
 
     Task<CommandResult> SetKeyFunctionAsync(KeyFunction assignment, CancellationToken cancellationToken = default);

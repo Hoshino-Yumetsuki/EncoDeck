@@ -103,8 +103,8 @@ public sealed class AppHost : IAsyncDisposable
             store,
             new RfcommChannelConnector(loggers.CreateLogger<RfcommChannelConnector>()),
             preferredDeviceId: () => settings.Current.PreferredDeviceId,
-            // Every offered feature follows the official implementation; nothing is opt-in.
-            allowExperimental: static () => false,
+            // Experimental MOONDROP commands remain opt-in and read this preference dynamically.
+            allowExperimental: () => store.Current.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile && settings.Current.EnableExperimentalFeatures,
             loggers,
             trace: new RawProtocolLog(loggers.CreateLogger("EncoDeck.Protocol.Raw"), () => settings.Current.RawProtocolLogging));
 

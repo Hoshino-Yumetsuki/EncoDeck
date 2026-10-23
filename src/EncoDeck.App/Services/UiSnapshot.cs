@@ -8,6 +8,8 @@ using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Core.Capabilities;
+using EncoDeck.Core.Commands;
+using EncoDeck.Protocol.Brands.Moondrop;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -33,16 +35,54 @@ internal static class UiSnapshot
     public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null, string? artworkDirectory = null, string? profileId = null)
     {
         Directory.CreateDirectory(outDir);
-        var host = AppHost.Create(Path.Combine(outDir, "logs"));
+        var host = AppHost.Create(Path.Combine(outDir, "logs"), Path.Combine(outDir, "state"));
+        host.Settings.Update(s => s with { EnableExperimentalFeatures = false });
         app.SetHostForDiagnostics(host);
         var sample = SampleState(DateTimeOffset.UtcNow);
         if (profileId is not null)
         {
             var profile = BuiltInProfiles.Create().Single(p => p.ModelId == profileId);
+            // Synthetic discovery for Bluetooth-free visual diagnostics, not hardware-support evidence.
+            if (profile is MoondropProfile moondropSample)
+                profile = moondropSample.WithFeatures(moondropSample.ModelId switch
+                {
+                    "moondrop-pudding" => new HashSet<int> { 0, 1, 5, 13, 14, 15, 16, 19, 20, 22, 32 },
+                    "moondrop-golden-ages-2" => new HashSet<int> { 0, 1, 5, 8, 13, 15, 16, 22 },
+                    "moondrop-edge" => new HashSet<int> { 0, 1, 5, 8, 13, 15, 20 },
+                    _ => new HashSet<int> { 0, 1, 5, 13 },
+                });
             sample = DeviceState.Empty with
             {
                 Device = new DeviceIdentity("snapshot", profile.DisplayName, new BluetoothAddress(0)),
-                Profile = profile, Connection = DeviceConnectionState.ControlReady, Battery = sample.Battery,
+                Profile = profile, Connection = DeviceConnectionState.ControlReady,
+                Battery = profile is MoondropProfile batteryProfile
+                    ? new BatteryStatus(
+                        Observed.From(new BatteryReading(70, null), DateTimeOffset.UtcNow, StateSource.QueryResponse),
+                        Observed.From(new BatteryReading(70, null), DateTimeOffset.UtcNow, StateSource.QueryResponse),
+                        batteryProfile.ModelId == "moondrop-pudding"
+                            ? Observed.From(new BatteryReading(100, null), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null)
+                    : sample.Battery,
+                NoiseControl = profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile
+                    ? Observed.From(new NoiseControlState(NoiseControlMode.Off), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
+                PromptVolume = profile.Capabilities.IsAvailable(DeviceCapability.PromptVolume, false)
+                    ? Observed.From(20, DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
+                Gain = profile.Capabilities.IsAvailable(DeviceCapability.Gain, true)
+                    ? Observed.From(1, DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
+                KeyFunctions = profile.Capabilities.IsAvailable(DeviceCapability.TouchCustomization, true)
+                    ? Observed.From<IReadOnlyList<KeyFunction>>(
+                        (from side in new[] { EarSide.Left, EarSide.Right }
+                         from action in new[] { GestureAction.SingleSqueeze, GestureAction.DoubleSqueeze, GestureAction.TripleSqueeze, GestureAction.SqueezeAndHold, GestureAction.LongHold }
+                         select new KeyFunction(side, 0, action, action switch
+                         {
+                             GestureAction.SingleSqueeze => 1,
+                             GestureAction.DoubleSqueeze => side == EarSide.Left ? 2 : 3,
+                             GestureAction.TripleSqueeze => 6,
+                             GestureAction.SqueezeAndHold => 7,
+                             _ => side == EarSide.Left ? 0 : 10, // Unknown native nibble must survive display unchanged.
+                         })).ToArray(), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
+                Toggles = profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile moondrop
+                    ? moondrop.Toggles.ToImmutableDictionary(t => t, t => Observed.From(t is DeviceToggle.IndicatorLight or DeviceToggle.PromptTone, DateTimeOffset.UtcNow, StateSource.QueryResponse))
+                    : ImmutableDictionary<DeviceToggle, Observed<bool>>.Empty,
             };
         }
         host.Store.Reset(sample);
@@ -86,6 +126,77 @@ internal static class UiSnapshot
             {
                 errors.Add($"{page}: {ex}");
             }
+        }
+        if (sample.Profile is MoondropProfile snapshotProfile)
+        {
+            var diagnostics = new List<string> { "Synthetic states; no Bluetooth runtime is started. Visibility is measured through the live visual tree, including collapsed ancestors." };
+            async Task CaptureScenarioAsync(string name, DeviceState state, bool experimental)
+            {
+                host.Settings.Update(s => s with { EnableExperimentalFeatures = experimental });
+                host.Store.Reset(state);
+                await Task.Delay(350);
+                foreach (string page in new[] { "Controls", "Sound" })
+                {
+                    main.Navigate(page);
+                    await Task.Delay(500);
+                    diagnostics.Add($"scenario={name} page={page} experimental={experimental} connection={state.Connection} gain={state.Gain?.Value} error={app.Device.HasError}");
+                    foreach (var element in Descendants(main.Content).OfType<FrameworkElement>().Where(e => e.Name is "GainSection" or "GainBox" or "GestureCard"
+                        || e.Name.StartsWith("Moondrop", StringComparison.Ordinal) || e.Name is "ToggleIndicatorLight" or "TogglePromptTone"))
+                    {
+                        bool visible = true;
+                        for (DependencyObject? ancestor = element; ancestor is not null; ancestor = VisualTreeHelper.GetParent(ancestor))
+                            if (ancestor is UIElement { Visibility: Visibility.Collapsed }) visible = false;
+                        string value = element switch
+                        {
+                            ComboBox box => $"selected={box.SelectedIndex} text={(box.SelectedItem as ComboBoxItem)?.Content ?? box.SelectedItem}",
+                            ToggleSwitch toggle => $"on={toggle.IsOn}",
+                            _ => string.Empty,
+                        };
+                        diagnostics.Add($"{element.Name}: visible={visible} enabled={(element as Control)?.IsEnabled} {value}");
+                        if (element is ComboBox { Name: var boxName } actionBox && boxName.StartsWith("Moondrop", StringComparison.Ordinal))
+                            diagnostics.Add($"{boxName}: inferred4Enabled={((ComboBoxItem)actionBox.Items[4]).IsEnabled} inferred5Enabled={((ComboBoxItem)actionBox.Items[5]).IsEnabled} unknown10Enabled={((ComboBoxItem)actionBox.Items[10]).IsEnabled}");
+                    }
+                    var scroller = FindScrollViewer(main.Content);
+                    int shot = 0;
+                    double offset = 0;
+                    while (true)
+                    {
+                        await CaptureAsync(main, Path.Combine(outDir, $"{name}-{page}-{shot++}.png"));
+                        if (scroller is null || offset >= scroller.ScrollableHeight || shot >= 6) break;
+                        offset = Math.Min(scroller.ScrollableHeight, offset + scroller.ViewportHeight * 0.85);
+                        scroller.ChangeView(null, offset, null, disableAnimation: true);
+                        await Task.Delay(100);
+                    }
+                }
+            }
+            await CaptureScenarioAsync("Moondrop-ExperimentalOff", sample, false);
+            await CaptureScenarioAsync("Moondrop-ExperimentalOn", sample, true);
+            var pending = new[] { "gain", "key-function", "toggle:IndicatorLight", "toggle:PromptTone", "prompt-tone" }
+                .Select(description => new PendingCommand(Guid.NewGuid(), description, DateTimeOffset.UtcNow)).ToImmutableList();
+            await CaptureScenarioAsync("Moondrop-Pending", sample with { PendingCommands = pending }, true);
+            await CaptureScenarioAsync("Moondrop-Disconnected", sample with { Connection = DeviceConnectionState.Disconnected }, true);
+            await CaptureScenarioAsync("Moondrop-UnknownState", sample with
+            {
+                Gain = null, KeyFunctions = null, PromptVolume = null, Toggles = ImmutableDictionary<DeviceToggle, Observed<bool>>.Empty,
+            }, true);
+            // Keep stale reported values: absent feature discovery must still hide the controls.
+            await CaptureScenarioAsync("Moondrop-ExcludedFeatures", sample with { Profile = snapshotProfile.WithFeatures(new HashSet<int> { 0, 1, 5, 13 }) }, true);
+            await CaptureScenarioAsync("Moondrop-Restored", sample, false);
+            main.Navigate("Controls");
+            await Task.Delay(500);
+            if (Descendants(main.Content).OfType<ComboBox>().FirstOrDefault(box => box.Name == "GainBox") is { IsEnabled: true } gainBox)
+            {
+                // Exercise the actual selection handler against the unattached manager, not a fake successful command.
+                gainBox.SelectedIndex = 2;
+                await Task.Delay(350);
+                diagnostics.Add($"selection-handler gain requested=2 rendered={gainBox.SelectedIndex} reported={host.Store.Current.Gain?.Value} error={app.Device.HasError} message={app.Device.ErrorMessage}");
+                await CaptureAsync(main, Path.Combine(outDir, "Moondrop-RejectedGain-Controls-0.png"));
+                app.Device.ErrorMessage = string.Empty;
+                app.Device.HasError = false;
+            }
+            await File.WriteAllLinesAsync(Path.Combine(outDir, "moondrop-controls.txt"), diagnostics);
+            host.Settings.Update(s => s with { EnableExperimentalFeatures = false });
+            host.Store.Reset(sample);
         }
         main.Close();
 

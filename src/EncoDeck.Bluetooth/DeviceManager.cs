@@ -241,6 +241,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetPromptVolumeAsync(int level, CancellationToken cancellationToken = default) => WithController(c => c.SetPromptVolumeAsync(level, cancellationToken));
 
+    public Task<CommandResult> SetGainAsync(int level, CancellationToken cancellationToken = default) => WithController(c => c.SetGainAsync(level, cancellationToken));
+
     public Task<CommandResult> SetBassEngineLevelAsync(int level, CancellationToken cancellationToken = default) => WithController(c => c.SetBassEngineLevelAsync(level, cancellationToken));
 
     public Task<CommandResult> SetKeyFunctionAsync(KeyFunction assignment, CancellationToken cancellationToken = default) => WithController(c => c.SetKeyFunctionAsync(assignment, cancellationToken));
