@@ -610,4 +610,8 @@
   <data name="Moondrop_UnknownAction" xml:space="preserve"><value>Unknown action (0x{0}) — reported only</value></data>
   <data name="Settings_MoondropExperimental.Header" xml:space="preserve"><value>Experimental MOONDROP features</value></data>
   <data name="Settings_MoondropExperimental.Description" xml:space="preserve"><value>Enable unverified MOONDROP commands and inferred gesture actions. Off by default; use at your own risk. Reconnect to query newly enabled features.</value></data>
+  <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Switch device</value></data>
+  <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Switch device</value></data>
+  <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0} (not connected)</value></data>
+  <data name="Home_ManageDevices" xml:space="preserve"><value>Manage devices</value></data>
 </root>

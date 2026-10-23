@@ -27,9 +27,15 @@ public sealed partial class HomePage : Page
         Loaded += (_, _) =>
         {
             Features.Changed += OnFeaturesChanged;
+            App.Instance.Host.Devices.KnownDevicesChanged += OnKnownDevicesChanged;
             Sync();
+            SyncSwitcher();
         };
-        Unloaded += (_, _) => Features.Changed -= OnFeaturesChanged;
+        Unloaded += (_, _) =>
+        {
+            Features.Changed -= OnFeaturesChanged;
+            App.Instance.Host.Devices.KnownDevicesChanged -= OnKnownDevicesChanged;
+        };
     }
 
     public DeviceViewModel ViewModel => App.Instance.Device;
@@ -235,6 +241,48 @@ public sealed partial class HomePage : Page
         _devicesSignature = string.Empty;
         await Features.MultiConnectAsync(MultiConnectOperation.Connect, device);
         Sync();
+    }
+
+    // ---- device switcher ---------------------------------------------------------------------------
+
+    // EncoDeck controls one headset at a time; this switches which one (same as Devices › Use this device).
+    private void OnKnownDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(SyncSwitcher);
+
+    private void SyncSwitcher()
+    {
+        bool several = App.Instance.Host.Devices.KnownDevices.Count > 1;
+        DeviceSwitcher.Visibility = several ? Visibility.Visible : Visibility.Collapsed;
+        DeviceNameText.Visibility = several ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>Built on every open, so the list and the active mark are always current.</summary>
+    private void OnDeviceMenuOpening(object? sender, object e)
+    {
+        DeviceMenu.Items.Clear();
+        foreach (var device in App.Instance.Host.Devices.KnownDevices)
+        {
+            var item = new RadioMenuFlyoutItem
+            {
+                Text = device.IsConnected ? device.Identity.Name : Loc.Format("Home_SwitchDevice_NotConnected", device.Identity.Name),
+                GroupName = "ActiveDevice",
+                IsChecked = device.IsActive,
+                Tag = device.Identity.DeviceId,
+            };
+            item.Click += OnSwitchDevice;
+            DeviceMenu.Items.Add(item);
+        }
+        DeviceMenu.Items.Add(new MenuFlyoutSeparator());
+        var manage = new MenuFlyoutItem { Text = Loc.Get("Home_ManageDevices"), Icon = new FontIcon { Glyph = "\uE713" } };
+        manage.Click += (_, _) => App.Instance.Windows.ShowMain("Devices");
+        DeviceMenu.Items.Add(manage);
+    }
+
+    private async void OnSwitchDevice(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioMenuFlyoutItem { Tag: string deviceId }) return;
+        if (App.Instance.Host.Devices.KnownDevices.Any(d => d.IsActive && d.Identity.DeviceId == deviceId)) return;
+        App.Instance.Host.Settings.Update(s => s with { PreferredDeviceId = deviceId });
+        await App.Instance.Host.Devices.SelectDeviceAsync(deviceId);
     }
 
     // ---- sound -----------------------------------------------------------------------------------

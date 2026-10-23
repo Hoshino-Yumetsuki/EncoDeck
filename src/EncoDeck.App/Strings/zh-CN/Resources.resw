@@ -610,4 +610,8 @@
   <data name="Moondrop_UnknownAction" xml:space="preserve"><value>未知动作 (0x{0}) — 仅显示读回值</value></data>
   <data name="Settings_MoondropExperimental.Header" xml:space="preserve"><value>水月雨实验性功能</value></data>
   <data name="Settings_MoondropExperimental.Description" xml:space="preserve"><value>启用未经验证的水月雨命令及推断的手势动作。默认关闭，风险自负。开启后请重新连接以读取新功能。</value></data>
+  <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>切换设备</value></data>
+  <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>切换设备</value></data>
+  <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未连接）</value></data>
+  <data name="Home_ManageDevices" xml:space="preserve"><value>管理设备</value></data>
 </root>
