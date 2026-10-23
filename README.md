@@ -168,9 +168,3 @@ pwsh build/build-installer.ps1
 [GPL-3.0-only](LICENSE)。
 
 EncoDeck 是非官方开源项目，与上述耳机品牌及其所属厂商无隶属、合作或背书关系。品牌和产品名称仅用于说明兼容性。
-
-### 新增适配（开发分支）
-
-AKG N5/N9 Hybrid 新增 Airoha RACE 控制会话；森海塞尔新增 11 个 GAIA v3 型号配置；HECATE / DAREU / RAPOO 新增 18 个 USB 接收器型号记录及条件性标准 HID 电量读取。USB 专有控制尚未完成，新型号均未在本机真机验证。
-
-迈从 / 雷蛇另新增 16 个 USB 型号识别；X9、BlackShark V2 Pro 2020/2023 提供按精确接收器限定的专用电量读取。新型号仍待真机验证。

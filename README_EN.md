@@ -169,9 +169,3 @@ MOONDROP model data, GAIA framing and commands draw on [MiuixMoondrop](https://g
 [GPL-3.0-only](LICENSE).
 
 EncoDeck is an unofficial open-source project with no affiliation, partnership or endorsement from the brands above or their manufacturers. Brand and product names are used only to describe compatibility.
-
-### Headset adapter development branch
-
-AKG N5/N9 Hybrid now use an Airoha RACE control session. Eleven Sennheiser GAIA v3 profiles and eighteen HECATE / DAREU / RAPOO USB receiver records are added. USB support covers receiver discovery and descriptor-declared standard HID battery percentages only; proprietary USB controls and hardware validation remain incomplete.
-
-MCHOSE/Razer add 16 USB model identities and exact-receiver battery queries for X9 and BlackShark V2 Pro 2020/2023. No hardware verification is claimed.
