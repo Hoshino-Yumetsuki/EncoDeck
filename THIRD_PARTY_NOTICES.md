@@ -74,25 +74,14 @@ described below are not EncoDeck original artwork and are not GPL-licensed.
 
 Device images and animations are obtained through EncoAPI (https://encoapi.vercel.app), an independent community service, and cached locally. The artwork remains the property of its respective rights holders. These downloaded files are not included in the installer.
 
-### Local MOONDROP product photographs
+### MOONDROP product photographs
 
-At the user's request, this workspace includes 17 matching official MOONDROP product
-photographs as transparent PNGs in `src/EncoDeck.App/Assets/Devices/moondrop-*.png`.
-Sources were retrieved from https://moondroplab.com/cn/headphones,
-https://moondroplab.com/cn/tws and the exact official product pages on 2026-10-23.
-`src/EncoDeck.App/Assets/Devices/moondrop-artwork.json` records each exact product URL,
-official image URL, original SHA-256 and reviewed background-removal settings.
-`tools/assets/make_moondrop_artwork.py` reproduces the local transparent assets;
-untouched originals and visual-review sheets remain under `artifacts/moondrop-artwork`.
-
-The photographs, product designs, trademarks and ROBIN collaboration artwork remain
-the property of their respective rights holders (including MOONDROP and applicable
-collaboration licensors). Removing a white background does not create or imply a
-redistribution license. No permissive license or general redistribution permission
-was found or is asserted. These files are a requested local-workspace exception;
-the normal Assets copy rules include them in local builds. Public release maintainers
-must obtain appropriate permission or omit these photographs and retain the generic
-fallback. They must not describe these images as covered by EncoDeck's GPL license.
+The 17 MOONDROP product photographs and their provenance manifest were migrated
+from EncoDeck PR #1 to EncoAPI (`data/moondrop-artwork.json`). They are downloaded
+at runtime and are no longer included in EncoDeck build or publish output.
+Photographs, product designs, trademarks and ROBIN collaboration artwork remain
+the property of their respective rights holders. Background removal does not imply
+a redistribution license; these photographs are not covered by the code's GPL.
 
 # 多品牌动画与素材目录
 

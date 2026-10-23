@@ -51,10 +51,10 @@ public sealed record DeviceResourceKey(string ModelId, uint? ProductId, int? Col
 {
     public string ProductIdText => ProductId is { } pid ? pid.ToString("X6") : string.Empty;
     public string Brand => ModelId.Split('-', ':')[0].ToLowerInvariant();
-    public bool UsesOplusId => Brand is not ("vivo" or "iqoo" or "huawei" or "xiaomi" or "redmi" or "edifier" or "realme" or "dizo" or "sony" or "akg");
+    public bool UsesOplusId => Brand is not ("vivo" or "iqoo" or "huawei" or "xiaomi" or "redmi" or "edifier" or "realme" or "dizo" or "sony" or "akg" or "moondrop");
     public bool CanDownload => UsesOplusId
         ? ProductId is <= 0xFFFFFF && ColorId is >= 0 and <= 16
-        : (Brand is "vivo" or "iqoo" or "huawei" or "xiaomi" or "redmi" or "edifier" or "realme" or "dizo" or "sony" or "akg")
+        : (Brand is "vivo" or "iqoo" or "huawei" or "xiaomi" or "redmi" or "edifier" or "realme" or "dizo" or "sony" or "akg" or "moondrop")
           && (ColorId is null or (>= 0 and <= 255)) && (!string.IsNullOrWhiteSpace(DeviceName) || !string.IsNullOrWhiteSpace(ModelName));
 
     // Family profiles (e.g. Xiaomi) can serve many devices. Their caches must never share artwork.

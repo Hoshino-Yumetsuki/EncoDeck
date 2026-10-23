@@ -335,6 +335,35 @@ public sealed class EncoApiResourceTests : IDisposable
     }
 
     [Fact]
+    public async Task MoondropArtworkDownloadsByExactModelWithoutSendingPrivateBluetoothName()
+    {
+        var key = new DeviceResourceKey("moondrop-edge", null, null, "Private nickname", "MOONDROP EDGE");
+        Assert.True(key.CanDownload);
+        Assert.False(key.UsesOplusId);
+        Assert.Equal("moondrop-edge", OfficialArtworkCatalog.Lookup(key)!.Value.ModelId);
+        var packs = new Dictionary<string, byte[]>
+        {
+            ["control"] = Pack(("config.json", """{"detailImageRes":{"path":"device.png"}}"""), ("device.png", "image")),
+        };
+        var handler = new Handler(request =>
+        {
+            Assert.DoesNotContain("Private", request.RequestUri!.OriginalString);
+            if (request.RequestUri.AbsolutePath == "/v1/resolve")
+            {
+                Assert.Contains("modelId=moondrop-edge", request.RequestUri.Query);
+                return new(HttpStatusCode.OK) { Content = new StringContent("""{"productId":"moondrop-edge","colorId":0,"colorSelection":"model-specific"}""") };
+            }
+            if (request.RequestUri.AbsolutePath.Contains("resources"))
+                return new(HttpStatusCode.OK) { Content = new StringContent(Metadata(packs, "moondrop-edge", 0)) };
+            return new(HttpStatusCode.OK) { Content = new ByteArrayContent(packs["control"]) };
+        });
+        using var client = new EncoApiResourceClient(new HttpClient(handler), _root, () => { }, Api);
+        Assert.Equal(1, (await client.EnsureAsync(key, cancellationToken: Ct)).Files);
+        Assert.True((await client.EnsureAsync(key, cancellationToken: Ct)).FromCache);
+        Assert.Equal(3, handler.Requests.Count);
+    }
+
+    [Fact]
     public async Task FrameAnimationAndHomeModelHaveSeparateResourceRoles()
     {
         var packs = new Dictionary<string, byte[]>
