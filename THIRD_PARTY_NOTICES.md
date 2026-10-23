@@ -55,6 +55,7 @@ vectors such as a single-earbud battery event) are credited here. No source file
 | OppoPodsManager — https://github.com/Zhaoyi-ya/OppoPodsManager, Copyright (C) 2026 Zhaoyi-ya | GPL-3.0-or-later | Capability bitmap, feature ids, multi-device and firmware commands |
 | OppoPods — https://github.com/Leaf-lsgtky/OppoPods (Leaf-lsgtky), derived from Art-Chen/HyperPods | GPL-3.0 (stated in README) | Protocol notes (variable-length LEN, link control byte, ANC indices) |
 | Microsoft WinUI Gallery — https://github.com/microsoft/WinUI-Gallery | MIT | Control usage patterns only |
+| moondrop-control — https://github.com/FEAKEuser/moondrop-control, revision `1ec9c77a2387c698d77fb2bf25d2c62ec7ae3d5e` | GPL-3.0-or-later | EDGE RFCOMM channel 1, BASIC application-version query and four-byte AudioCuration response protocol facts; Windows socket implementation written independently |
 
 Interoperability analysis of the official HeyMelody (欢律) Android client was performed locally on a
 copy supplied by a user, solely to make EncoDeck work with that user's own earbuds. EncoDeck does

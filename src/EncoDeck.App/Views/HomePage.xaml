@@ -96,12 +96,12 @@
                         <TextBlock Text="{x:Bind ViewModel.Left.LevelText, Mode=OneWay}" Style="{StaticResource LevelTextStyle}" />
                         <FontIcon Glyph="&#xE945;" FontSize="12" Visibility="{x:Bind ViewModel.Left.IsCharging, Mode=OneWay}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Right.HasValue, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Right.HasVisibleValue, Mode=OneWay}">
                         <Border Style="{StaticResource BadgeStyle}"><TextBlock Text="R" Style="{StaticResource BadgeTextStyle}" /></Border>
                         <TextBlock Text="{x:Bind ViewModel.Right.LevelText, Mode=OneWay}" Style="{StaticResource LevelTextStyle}" />
                         <FontIcon Glyph="&#xE945;" FontSize="12" Visibility="{x:Bind ViewModel.Right.IsCharging, Mode=OneWay}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Case.HasValue, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Case.HasVisibleValue, Mode=OneWay}">
                         <Border Style="{StaticResource BadgeStyle}"><FontIcon Glyph="&#xE7F6;" FontSize="11" Foreground="{ThemeResource SolidBackgroundFillColorBaseBrush}" /></Border>
                         <TextBlock Text="{x:Bind ViewModel.Case.LevelText, Mode=OneWay}" Style="{StaticResource LevelTextStyle}" />
                         <FontIcon Glyph="&#xE945;" FontSize="12" Visibility="{x:Bind ViewModel.Case.IsCharging, Mode=OneWay}" />

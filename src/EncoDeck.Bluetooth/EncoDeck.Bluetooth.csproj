@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Windows Bluetooth layer (WinRT public APIs only): discovery, SDP, RFCOMM transport, channel supervision. -->
+  <!-- Windows Bluetooth layer (public WinRT / Winsock APIs): discovery, SDP, RFCOMM / GATT transport, channel supervision. -->
   <PropertyGroup>
     <TargetFramework>$(EncoDeckWindowsTfm)</TargetFramework>
     <SupportedOSPlatformVersion>$(EncoDeckMinWindows)</SupportedOSPlatformVersion>

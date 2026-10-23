@@ -22,7 +22,7 @@ public sealed partial class BatteryItemViewModel(BatteryComponent component) : O
     };
 
     /// <summary>False for the right earbud and case of headphones, which report a single battery.</summary>
-    [ObservableProperty]
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasVisibleValue))]
     public partial bool IsVisible { get; set; } = true;
 
     /// <summary>Headphones report one battery, carried in the left reading.</summary>
@@ -32,8 +32,10 @@ public sealed partial class BatteryItemViewModel(BatteryComponent component) : O
         else IsVisible = !single;
     }
 
-    [ObservableProperty]
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasVisibleValue))]
     public partial bool HasValue { get; set; }
+
+    public bool HasVisibleValue => IsVisible && HasValue;
 
     [ObservableProperty]
     public partial double Percent { get; set; }
