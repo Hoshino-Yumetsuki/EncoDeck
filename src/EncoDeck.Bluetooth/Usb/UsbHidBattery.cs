@@ -2,10 +2,11 @@
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Storage;
+using EncoDeck.Protocol.Brands.Usb;
 
 namespace EncoDeck.Bluetooth.Usb;
 
-/// <summary>Standard, descriptor-declared percentages only. No guessed vendor commands or report offsets.</summary>
+/// <summary>Descriptor-declared percentages and individually documented receiver queries.</summary>
 public static class UsbHidBattery
 {
     public static bool IsPercentage(ushort page, ushort usage, long minimum, long maximum) =>
@@ -19,6 +20,15 @@ public static class UsbHidBattery
             ct.ThrowIfCancellationRequested();
             try
             {
+                // Read-write access is requested only after exact hardware ID filtering.
+                // Unrelated collections in the same container still receive no vendor command.
+                if (System.Text.RegularExpressions.Regex.IsMatch(info.Id,
+                    @"VID_3837&PID_6045|VID_1532&PID_(?:0528|0555)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    using var vendorDevice = await HidDevice.FromIdAsync(info.Id, FileAccessMode.ReadWrite).AsTask(ct).ConfigureAwait(false);
+                    if (vendorDevice is not null && UsbVendorBatteryProtocol.IsCollection(vendorDevice.VendorId, vendorDevice.ProductId, vendorDevice.UsagePage, vendorDevice.UsageId))
+                        if (await UsbVendorBattery.ReadAsync(vendorDevice, ct).ConfigureAwait(false) is { } level) return level;
+                }
                 using var device = await HidDevice.FromIdAsync(info.Id, FileAccessMode.Read).AsTask(ct).ConfigureAwait(false);
                 if (device is null) continue;
                 foreach (var (page, usage) in new (ushort, ushort)[] { (0x06, 0x20), (0x85, 0x64) })

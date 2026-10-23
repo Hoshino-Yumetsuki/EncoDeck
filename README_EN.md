@@ -173,3 +173,5 @@ EncoDeck is an unofficial open-source project with no affiliation, partnership o
 ### Headset adapter development branch
 
 AKG N5/N9 Hybrid now use an Airoha RACE control session. Eleven Sennheiser GAIA v3 profiles and eighteen HECATE / DAREU / RAPOO USB receiver records are added. USB support covers receiver discovery and descriptor-declared standard HID battery percentages only; proprietary USB controls and hardware validation remain incomplete. See [scope and provenance](docs/HEADSET_ADAPTERS.md).
+
+MCHOSE/Razer add 16 USB model identities and exact-receiver battery queries for X9 and BlackShark V2 Pro 2020/2023. No hardware verification is claimed. MOONDROP official APK animation inspection and scope: [report](docs/MCHOSE_RAZER_MOONDROP.md).

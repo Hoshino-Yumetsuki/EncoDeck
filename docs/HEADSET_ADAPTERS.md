@@ -48,6 +48,8 @@ dotnet run --project tools/EncoDeck.Probe -c Release -- monitor --seconds 30
 
 验证机只发现 OPPO Enco X4 与手机，未发现上述新型号。模拟设备回归不等于真机验证，USB 的标准电量路径亦不能证明上述全部接收器都提供该报告。
 
-最终本地验证：EncoDeck 534/534 测试通过；x64 Release 构建及自包含测试包生成成功。EncoAPI 48/48 测试通过，20 个有图的新型号均完成实际取包和哈希验证，9 个无图型号明确保留缺失状态。
+最终本地验证：EncoDeck 549/549 测试通过；x64 Release 构建及自包含测试包生成成功。EncoAPI 50/50 测试通过，28 个有图的新型号均完成本地实际取包和哈希验证，17 个无图型号明确保留缺失状态。模拟测试不构成真机验证。
 
-本地测试包：`artifacts/EncoDeck-headset-adapters-test-win-x64.zip`。SHA-256：`a6d1703ea245d9a1b48142470d59acebbd0eb297c154f799c4ff6c1d1b011812`。这不是 GitHub Release 或商店提交。
+本地测试包：`artifacts/EncoDeck-headset-adapters-test-win-x64.zip`。SHA-256：`cad2e55c2b352f7abc8d00101923e9a2cb3d1d4f2a29f8ae7ececd7506a763cc`。这不是 GitHub Release 或商店提交。
+
+后续新增迈从 / 雷蛇及水月雨 APK 动画检查见 [补充报告](MCHOSE_RAZER_MOONDROP.md)。最终验证数据以该补充工作完成后的结果为准。

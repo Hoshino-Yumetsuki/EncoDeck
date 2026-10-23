@@ -4,6 +4,8 @@
 
 ## [Unreleased] — headset adapters
 
+- 迈从与雷蛇新增 16 个 USB 型号识别；X9、BlackShark V2 Pro 2020/2023 按精确接收器提供专用电量读取；未知报告和旧缓存不显示为新电量。
+- 自行检查水月雨官方 MOONDROP 2.25 APK，记录产品连接动画资源的检查范围；连接弹窗使用现有产品图入场路径，未冒充官方开盖动画。见 docs/MCHOSE_RAZER_MOONDROP.md。
 - AKG N5/N9 Hybrid 新增 Airoha RACE 会话及电量读取，按实际 ANC 配置布局和回读开放控制。
 - 森海塞尔新增 11 个 GAIA v3 型号配置、RFCOMM / BLE 回退及电量/固件读取，头戴三款按设备回读开放 ANC/通透。
 - 新增 HECATE / DAREU / RAPOO USB 接收器发现与条件性标准 HID 电量；不宣称完整厂商控制或无线链路就绪。

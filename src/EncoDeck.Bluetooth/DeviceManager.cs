@@ -333,6 +333,12 @@ public sealed class DeviceManager : IDeviceManager
     {
         var identity = _usbIdentity;
         if (identity is null || _usbWatcher.Container(identity.DeviceId) is not { } container) return CommandResult.NotConnected;
+        void ClearBattery() => _store.TryUpdate(identity.DeviceId, s => s with
+        {
+            Profile = s.Profile is UsbHeadsetProfile profile ? profile.WithBattery(false) : s.Profile,
+            Battery = BatteryStatus.Unknown,
+            LastResponseAt = null,
+        });
         await _usbReadGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -345,12 +351,13 @@ public sealed class DeviceManager : IDeviceManager
                 Battery = level.HasValue ? new(Observed.From(new BatteryReading(level, null), DateTimeOffset.UtcNow, StateSource.QueryResponse), null, null) : BatteryStatus.Unknown,
                 LastResponseAt = level.HasValue ? DateTimeOffset.UtcNow : null,
             });
-            return level.HasValue ? CommandResult.Ok : CommandResult.Unsupported("The USB receiver does not expose a standard HID battery percentage; proprietary controls are not implemented.");
+            return level.HasValue ? CommandResult.Ok : CommandResult.Unsupported("No valid battery reply from a documented receiver query or standard HID percentage report.");
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested && !_lifetime.IsCancellationRequested)
-        { return new(CommandStatus.Timeout, "USB battery read timed out."); }
+        { ClearBattery(); return new(CommandStatus.Timeout, "USB battery read timed out."); }
         catch (Exception ex) when (ex is not OperationCanceledException and not OutOfMemoryException)
         {
+            ClearBattery();
             _logger.LogWarning("USB battery read failed: 0x{HResult:X8}", ex.HResult);
             return new(CommandStatus.TransportError, "USB battery access is unavailable.");
         }
