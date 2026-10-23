@@ -64,6 +64,7 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                     var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
                     if (result.Status == ChannelOpenStatus.Opened) return result;
                     gattFailure = result;
+                    _logger.LogInformation("Sennheiser GAIA GATT connect failed: {Detail}", result.Detail);
                     continue;
                 }
                 if (uuid == MoondropConstants.GattServiceId)

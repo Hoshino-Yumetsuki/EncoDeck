@@ -19,7 +19,15 @@ public sealed class UsbHeadsetWatcher : IDisposable
     private long _revision;
     private readonly CancellationTokenSource _stop = new();
     private DeviceWatcher? _watcher;
-    public IReadOnlyList<PairedDevice> Devices { get { lock (_gate) return _devices.Values.ToList(); } }
+    // One receiver often exposes several render endpoints (game/chat); list it once per container.
+    public IReadOnlyList<PairedDevice> Devices
+    {
+        get
+        {
+            lock (_gate) return _devices.GroupBy(d => _containers[d.Key])
+                .Select(g => g.OrderBy(d => d.Key, StringComparer.Ordinal).First().Value).ToList();
+        }
+    }
     public bool IsEnumerated { get; private set; }
     public event EventHandler? Changed;
     public Guid? Container(string id) { lock (_gate) return _containers.TryGetValue(id, out var value) ? value : null; }
@@ -72,13 +80,19 @@ public sealed class UsbHeadsetWatcher : IDisposable
                 { identity = identity with { Name = exact.DisplayName }; named = true; }
                 valid = named && hardware.Any(h => h.StartsWith("USB\\VID_", StringComparison.OrdinalIgnoreCase));
             }
+            bool changed;
             lock (_gate)
             {
                 if (_stop.IsCancellationRequested || !_revisions.TryGetValue(info.Id, out var current) || current != revision) return;
-                if (valid) { _devices[info.Id] = new(identity, true); _containers[info.Id] = container; }
-                else { _devices.Remove(info.Id); _containers.Remove(info.Id); }
+                if (valid)
+                {
+                    changed = !_devices.TryGetValue(info.Id, out var old) || old.Identity != identity || _containers[info.Id] != container;
+                    _devices[info.Id] = new(identity, true); _containers[info.Id] = container;
+                }
+                else { changed = _devices.Remove(info.Id); _containers.Remove(info.Id); }
             }
-            Changed?.Invoke(this, EventArgs.Empty);
+            // Every audio endpoint is verified; only supported receivers may trigger device reselection.
+            if (changed) Changed?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {

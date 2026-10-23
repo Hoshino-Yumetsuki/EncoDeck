@@ -121,7 +121,8 @@ public sealed partial class DevicesPage : Page
         string model = device.Profile.DisplayName;
         text.Children.Add(new TextBlock
         {
-            Text = $"{model} · {status} · {device.Identity.Address.ToRedactedString()}",
+            // USB receivers carry no Bluetooth address; a redacted zero address would look real.
+            Text = $"{model} · {status} · {(device.Identity.Transport == EncoDeck.Core.Devices.DeviceTransport.Usb ? "USB" : device.Identity.Address.ToRedactedString())}",
             Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
         });
         Grid.SetColumn(text, 1);

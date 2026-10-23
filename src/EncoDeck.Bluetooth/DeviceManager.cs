@@ -98,6 +98,8 @@ public sealed class DeviceManager : IDeviceManager
             return _watcher.Devices.Concat(_usbWatcher.Devices)
                 .Select(d => (Device: d, Profile: _profiles.Match(d.Identity)))
                 .Where(x => x.Profile is not null)
+                // A USB endpoint name can also contain a Bluetooth model name; never open Bluetooth control for it.
+                .Where(x => x.Device.Identity.Transport != DeviceTransport.Usb || x.Profile is UsbHeadsetProfile)
                 // The read-only generic profile matches by name ("OPPO …"), which also hits phones and
                 // watches; only accept it for audio devices. Exact model profiles are trusted as-is.
                 .Where(x => !IsGeneric(x.Profile!) || x.Device.IsAudioDevice)
@@ -129,7 +131,8 @@ public sealed class DeviceManager : IDeviceManager
     private void OnPairedDevicesChanged(object? sender, EventArgs e)
     {
         KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
-        if (!_watcher.IsEnumerated && !_usbWatcher.IsEnumerated) return;
+        // Wait for Bluetooth enumeration so a USB receiver found first does not briefly take over.
+        if (!_watcher.IsEnumerated) return;
         _ = ReselectAsync(_lifetime.Token);
     }
 
@@ -149,11 +152,14 @@ public sealed class DeviceManager : IDeviceManager
             var candidates = KnownDevices;
             string? preferred = _manualSelection ?? _preferredDeviceId();
             var choice = candidates.FirstOrDefault(c => c.Identity.DeviceId == preferred)
-                ?? candidates.Where(c => c.IsConnected).OrderByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault()
+                // A USB receiver is always "connected" even with the headset off, so connected
+                // Bluetooth devices win automatic selection; the user can still pick USB manually.
+                ?? candidates.Where(c => c.IsConnected).OrderBy(c => c.Identity.Transport == DeviceTransport.Usb)
+                    .ThenByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault()
                 ?? candidates.FirstOrDefault(c => c.Identity.DeviceId == _active?.Identity.DeviceId)
                 ?? candidates.OrderByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault();
 
-            if (choice is not null && choice.Identity.DeviceId == (_usbIdentity?.DeviceId ?? _active?.Identity.DeviceId)) return;
+            if (choice?.Identity.DeviceId == (_usbIdentity?.DeviceId ?? _active?.Identity.DeviceId)) return;
 
             await StopUsbAsync().ConfigureAwait(false);
 
