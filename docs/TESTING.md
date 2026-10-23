@@ -28,6 +28,22 @@ dotnet test tests/EncoDeck.Tests --filter "FullyQualifiedName~Xiaomi|FullyQualif
 
 `XiaomiFeaturesTests` 覆盖官方配置报文、写后回读、拒绝写入、通知 ACK 和未知型号；`HuaweiDeviceControllerTests` 覆盖独立空间音频、错误应答和非法 TLV；`SonyAkgTests` 覆盖 MDR v1/v2、EQ 能力及 BES 自动播放/暂停。协议模拟器通过不代表全部型号实机可用。
 
+### MOONDROP 控制通道回归
+
+```powershell
+dotnet test tests/EncoDeck.Tests -c Debug --filter "FullyQualifiedName~ControlChannelSupervisorTests|FullyQualifiedName~Moondrop|FullyQualifiedName~Gaia"
+```
+
+2026-10-24：43 项控制通道 / MOONDROP 定向测试和全套 516 项测试通过；新增 EDGE 四字节 ANC 回包与写后回读回归，覆盖 GATT 和 RFCOMM。其他控制器生命周期、错误释放和手动恢复覆盖保留。
+
+Windows EDGE 优先通过公共 Winsock `AF_BTH/SOCK_STREAM/BTHPROTO_RFCOMM` 打开所选经典蓝牙地址的已验证通道 1。`Socket.ConnectAsync` 使用的 ConnectEx 被蓝牙提供程序拒绝，因此使用线程池上的普通 `Socket.Connect`，10 秒超时 / 取消时释放 socket。连接后以 GAIA 应用版本、能力与实际状态响应判定就绪；不扫描通道、不按附近同名 BLE 猜测、不改配对或音频连接。其他型号保留 WinRT SDP / GATT 路径。
+
+支持页面仅显示本地化二元标签，隐藏未知项及未移植 MOONDROP 功能，但不修改协议能力与写入门控。UI 状态检查需区分控制就绪、音频已连接但控制不可用、以及未选择设备；隔离状态诊断不能证明真实蓝牙已连接。
+
+真实 EDGE 固件 1.3.0 场景见 `artifacts/verification/windows-control-channel.txt`：实际生产 supervisor 约 4.39 秒进入 `ControlReady`，二次刷新成功，读到电量 40%、降噪关闭、增益低、双设备关闭。现有 `EncoDeck.Probe monitor --seconds 15 --verbose` 同样自动选中并进入控制就绪。设置写入数为 0，经典音频链路保持已连接。其他型号与 BLE 不同地址端点的跨协议绑定未验证。
+
+最终发布版正常启动后，真实 EDGE 主页可见“已连接”、单个 40% 电量以及降噪 / 通透 / 关闭入口；UI Automation 确认无左右耳标记，控制页可见增益与双设备入口，未点击任何设置写入控件。截图为 `artifacts/verification/windows-live-edge-home-fixed.png`。同一发布版的隔离 OPPO 页面仍显示左 / 右 / 盒三组电量，见 `artifacts/verification/windows-published-oppo/Home-0.png`；该 OPPO 检查不是真机验证。
+
 以下 Probe 命令示例主要面向 OPPO。其他品牌的 `monitor` 可用于观察统一设备运行时，不能把 OPPO 专用写入命令直接用于其他品牌。
 
 ## 2. 用 EncoDeck.Probe 验证真实耳机

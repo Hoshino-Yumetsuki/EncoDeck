@@ -269,7 +269,10 @@ public sealed partial class DeviceViewModel : ObservableObject
         {
             OppoDeviceProfile oppo => oppo.Definition.ProfileKey,
             EncoDeck.Protocol.Brands.Moondrop.MoondropProfile moondrop => moondrop.ProfileKey,
-            _ => profile?.ModelId ?? string.Empty,
+            // Other brands keep their model id while live answers add features (Xiaomi configs,
+            // Sony EQ, HUAWEI spatial), so the key must change with what the profile offers.
+            { } other => $"{other.ModelId}|{OfferSignature(other)}",
+            null => string.Empty,
         };
         Connection = state.Connection;
         ConnectionText = DescribeConnection(state.Connection);
@@ -329,7 +332,7 @@ public sealed partial class DeviceViewModel : ObservableObject
 
         if (state.LastError is { } error && state.Connection is DeviceConnectionState.ControlUnavailable && !HasError)
         {
-            ErrorMessage = error.Message;
+            ErrorMessage = error.ResourceKey is { } key ? Loc.Get(key) : error.Message;
         }
 
         TrayToolTip = BuildToolTip();
@@ -341,6 +344,12 @@ public sealed partial class DeviceViewModel : ObservableObject
             OnPropertyChanged(nameof(IsAdaptiveSelected));
         }
     }
+
+    private static string OfferSignature(IDeviceProfile profile) => string.Join(';',
+        string.Concat(Enum.GetValues<DeviceCapability>().Select(c => (char)('0' + (int)profile.Capabilities.Get(c).Support))),
+        string.Join(',', profile.NoiseControlOptions.Select(o => $"{o.Mode}/{o.LevelId}/{o.Support}")),
+        string.Join(',', profile.EqualizerPresets.Select(p => $"{p.Id}/{p.Support}")),
+        profile is IControllableProfile controllable ? string.Join(',', controllable.Toggles.Order()) : string.Empty);
 
     private void RebuildOptionsIfNeeded(IDeviceProfile? profile)
     {

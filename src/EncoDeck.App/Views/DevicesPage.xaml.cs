@@ -18,6 +18,7 @@ public sealed partial class DevicesPage : Page
         {
             App.Instance.Host.Devices.KnownDevicesChanged += OnDevicesChanged;
             ViewModel.PropertyChanged += OnViewModelChanged;
+            App.Instance.Host.Settings.Changed += OnSettingsChanged;
             Build();
             BuildCapabilities();
         };
@@ -25,12 +26,24 @@ public sealed partial class DevicesPage : Page
         {
             App.Instance.Host.Devices.KnownDevicesChanged -= OnDevicesChanged;
             ViewModel.PropertyChanged -= OnViewModelChanged;
+            App.Instance.Host.Settings.Changed -= OnSettingsChanged;
         };
     }
 
     public DeviceViewModel ViewModel => App.Instance.Device;
 
+    private bool _syncingSwitch;
+
+    private void OnMoondropExperimentalToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncingSwitch || ViewModel.Profile is not EncoDeck.Protocol.Brands.Moondrop.MoondropProfile) return;
+        bool on = MoondropExperimentalSwitch.IsOn;
+        App.Instance.Host.Settings.Update(s => s with { EnableExperimentalFeatures = on });
+    }
+
     private void OnDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(Build);
+
+    private void OnSettingsChanged(object? sender, EncoDeck.Core.Configuration.AppSettings settings) => DispatcherQueue.TryEnqueue(BuildCapabilities);
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -39,25 +52,48 @@ public sealed partial class DevicesPage : Page
 
     private void BuildCapabilities()
     {
+        bool moondrop = ViewModel.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile;
+        bool experimental = moondrop && App.Instance.Host.Settings.Current.EnableExperimentalFeatures;
+        MoondropCard.Visibility = moondrop ? Visibility.Visible : Visibility.Collapsed;
+        if (MoondropExperimentalSwitch.IsOn != experimental && moondrop)
+        {
+            _syncingSwitch = true;
+            try { MoondropExperimentalSwitch.IsOn = experimental; }
+            finally { _syncingSwitch = false; }
+        }
         CapabilityHost.Children.Clear();
         CapabilityCard.Visibility = ViewModel.Profile is null ? Visibility.Collapsed : Visibility.Visible;
         if (ViewModel.Profile is not { } profile) return;
         foreach (var (capability, entry) in profile.Capabilities.All)
         {
-            var grid = new Grid { ColumnSpacing = 12 };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var name = new TextBlock { Text = Loc.Get($"Cap_{capability}") };
-            var support = new TextBlock { Text = Loc.Get($"Support_{entry.Support}"), FontWeight = entry.Support == CapabilitySupport.Supported ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal };
-            var evidence = new TextBlock { Text = entry.Evidence, TextWrapping = TextWrapping.Wrap, Style = (Style)Application.Current.Resources["SecondaryTextStyle"] };
-            Grid.SetColumn(support, 1);
-            Grid.SetColumn(evidence, 2);
-            grid.Children.Add(name);
-            grid.Children.Add(support);
-            grid.Children.Add(evidence);
-            CapabilityHost.Children.Add(grid);
+            if (entry.Support == CapabilitySupport.Unknown) continue;
+            if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile && capability is not (
+                DeviceCapability.BatteryLevel or DeviceCapability.NoiseCancellation or
+                DeviceCapability.AdaptiveNoiseCancellation or DeviceCapability.NoiseCancellationLevel or
+                DeviceCapability.PromptVolume or DeviceCapability.DualDeviceConnection or
+                DeviceCapability.Gain or DeviceCapability.IndicatorLight or DeviceCapability.PromptTone or
+                DeviceCapability.TouchCustomization)) continue;
+            // Experimental features read as supported once opted in, never as unsupported before.
+            string support = entry.Support switch
+            {
+                CapabilitySupport.Supported => "Support_Supported",
+                CapabilitySupport.Experimental => experimental ? "Support_Supported" : "Support_Experimental",
+                _ => "Support_Unsupported",
+            };
+            var row = new Controls.SettingRow
+            {
+                Header = Loc.Get($"Cap_{capability}"),
+                Action = new TextBlock
+                {
+                    Text = Loc.Get(support),
+                    Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            };
+            if (!string.IsNullOrWhiteSpace(entry.Evidence)) ToolTipService.SetToolTip(row, entry.Evidence);
+            CapabilityHost.Children.Add(row);
         }
+        CapabilityCard.Visibility = CapabilityHost.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void Build()

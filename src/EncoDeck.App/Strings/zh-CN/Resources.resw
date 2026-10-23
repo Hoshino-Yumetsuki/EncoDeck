@@ -46,7 +46,7 @@
   <data name="Connection_UsbReceiverConnected" xml:space="preserve"><value>USB 接收器已连接，耳机无线状态待确认</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>正在连接控制通道…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>已连接</value></data>
-  <data name="Connection_ControlUnavailable" xml:space="preserve"><value>控制通道不可用</value></data>
+  <data name="Connection_ControlUnavailable" xml:space="preserve"><value>蓝牙已连接，控制通道不可用</value></data>
   <data name="Connection_Reconnecting" xml:space="preserve"><value>正在重新连接…</value></data>
   <data name="Connection_Disconnected" xml:space="preserve"><value>已断开</value></data>
   <data name="Error_Timeout" xml:space="preserve"><value>耳机没有响应，设置未改变。</value></data>
@@ -54,6 +54,7 @@
   <data name="Error_Rejected" xml:space="preserve"><value>耳机拒绝了这项设置。</value></data>
   <data name="Error_Unsupported" xml:space="preserve"><value>这款耳机不支持该功能。</value></data>
   <data name="Error_NotConnected" xml:space="preserve"><value>耳机控制通道未连接。</value></data>
+  <data name="Error_ControlEndpointNotFound" xml:space="preserve"><value>未找到耳机的蓝牙低功耗控制端点。请让耳机进入可发现状态后重试，音频连接不受影响。</value></data>
   <data name="Status_UpdatedAt" xml:space="preserve"><value>更新于 {0}</value></data>
   <data name="Noise_Unknown" xml:space="preserve"><value>降噪状态未知</value></data>
   <data name="NoiseMode_Off" xml:space="preserve"><value>关闭</value></data>
@@ -97,6 +98,7 @@
   <data name="Home_FirmwareLabel" xml:space="preserve"><value>固件版本</value></data>
   <data name="Cap_FirmwareInformation" xml:space="preserve"><value>固件信息</value></data>
   <data name="Support_Supported" xml:space="preserve"><value>支持</value></data>
+  <data name="Support_Experimental" xml:space="preserve"><value>实验性（未开启）</value></data>
   <data name="Support_Unknown" xml:space="preserve"><value>未知</value></data>
   <data name="Support_Unsupported" xml:space="preserve"><value>不支持</value></data>
   <data name="Devices_StatusConnected" xml:space="preserve"><value>已连接</value></data>

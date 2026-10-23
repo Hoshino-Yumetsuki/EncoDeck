@@ -174,10 +174,6 @@
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="12">
                     <TextBlock x:Uid="Settings_Advanced" Text="Advanced" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <controls:SettingRow x:Uid="Settings_MoondropExperimental" Header="Experimental MOONDROP features"
-                                         Description="Enable unverified MOONDROP commands and inferred gesture actions. Off by default; use at your own risk.">
-                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.EnableExperimentalFeatures, Mode=TwoWay}" />
-                    </controls:SettingRow>
                     <controls:SettingRow x:Uid="Settings_RawLogging" Header="Log control-channel traffic (diagnostics)"
                                          Description="Writes protocol frames to the log. Frames containing other devices' names or addresses are masked.">
                         <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.RawProtocolLogging, Mode=TwoWay}" />

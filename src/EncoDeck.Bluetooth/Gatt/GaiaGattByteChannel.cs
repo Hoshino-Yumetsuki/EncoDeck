@@ -70,9 +70,15 @@ internal sealed class GaiaGattByteChannel : IDuplexByteChannel
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
         try
         {
-            // The discovery ID belongs to classic Bluetooth, not the BLE device interface.
-            device = await BluetoothLEDevice.FromBluetoothAddressAsync(bluetoothAddress).AsTask(timeout.Token).ConfigureAwait(false);
-            if (device is null) return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "BLE device not found.");
+            // Classic pairing does not populate Windows' LE cache. Discover the selected public
+            // address first, rather than treating a cache miss as an unreachable audio device.
+            string? endpointId = await DiscoverEndpointAsync(bluetoothAddress, timeout.Token).ConfigureAwait(false);
+            if (endpointId is null)
+                return ChannelOpenResult.Failed(ChannelOpenStatus.ControlEndpointNotFound,
+                    "The selected headset's Bluetooth LE control endpoint was not found. Audio can remain connected; make the headset discoverable and retry controls.");
+            device = await BluetoothLEDevice.FromIdAsync(endpointId).AsTask(timeout.Token).ConfigureAwait(false);
+            if (device is null)
+                return ChannelOpenResult.Failed(ChannelOpenStatus.ControlEndpointNotFound, "Windows could not open the discovered Bluetooth LE control endpoint.");
             var access = await device.RequestAccessAsync().AsTask(timeout.Token).ConfigureAwait(false);
             if (access != DeviceAccessStatus.Allowed)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"BLE device access: {access}");
@@ -135,6 +141,36 @@ internal sealed class GaiaGattByteChannel : IDuplexByteChannel
             if (channel is not null) await channel.DisposeAsync().ConfigureAwait(false);
             service?.Dispose();
             device?.Dispose();
+        }
+    }
+
+    private static async Task<string?> DiscoverEndpointAsync(ulong bluetoothAddress, CancellationToken cancellationToken)
+    {
+        var found = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Public address equality binds LE discovery to the selected classic device. A name,
+        // nearby GAIA advertisement, or random address is not proof of the same headset.
+        var watcher = DeviceInformation.CreateWatcher(
+            BluetoothLEDevice.GetDeviceSelectorFromBluetoothAddress(bluetoothAddress, BluetoothAddressType.Public),
+            [], DeviceInformationKind.AssociationEndpoint);
+        void OnAdded(DeviceWatcher sender, DeviceInformation info) => found.TrySetResult(info.Id);
+        void OnStopped(DeviceWatcher sender, object args) => found.TrySetResult(null);
+        watcher.Added += OnAdded;
+        watcher.Stopped += OnStopped;
+        try
+        {
+            watcher.Start();
+            return await found.Task.WaitAsync(TimeSpan.FromSeconds(6), cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            return null;
+        }
+        finally
+        {
+            watcher.Added -= OnAdded;
+            watcher.Stopped -= OnStopped;
+            if (watcher.Status is DeviceWatcherStatus.Started or DeviceWatcherStatus.EnumerationCompleted)
+                watcher.Stop();
         }
     }
 

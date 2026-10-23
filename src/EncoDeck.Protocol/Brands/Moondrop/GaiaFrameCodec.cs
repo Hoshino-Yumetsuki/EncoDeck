@@ -40,8 +40,8 @@ public static class GaiaFrameCodec
             return new(-1, 2, 0, pdu[4..].ToArray());
         if (pdu.Length < 4 || pdu[0] != 0 || pdu[1] != 0x1D) return null;
         int value = BinaryPrimitives.ReadUInt16BigEndian(pdu[2..]);
-        int type = (value >> 7) & 3;
-        return type == 3 ? null : new GaiaFrame(value >> 9, type, value & 0x7F, pdu[4..].ToArray());
+        // Type 3 is an error reply; its payload is the status code.
+        return new GaiaFrame(value >> 9, (value >> 7) & 3, value & 0x7F, pdu[4..].ToArray());
     }
 }
 
@@ -68,7 +68,9 @@ public sealed class GaiaFrameDecoder
             {
                 int feature = _buffer[consumed + 2] >> 1;
                 int command = _buffer[consumed + 3] & 0x7F;
-                int payloadLength = _buffer[consumed + 1] == 0x0A ? 4 : (feature, command) switch
+                bool error = (_buffer[consumed + 2] & 1) != 0 && (_buffer[consumed + 3] & 0x80) != 0;
+                // Error replies carry a status code instead of the known response body.
+                int payloadLength = _buffer[consumed + 1] == 0x0A ? 4 : error ? -1 : (feature, command) switch
                 {
                     (14, 1) => 3,
                     (22, 2) => 5,

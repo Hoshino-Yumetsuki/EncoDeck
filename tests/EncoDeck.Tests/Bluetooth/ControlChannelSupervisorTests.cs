@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.Core.Capabilities;
+using EncoDeck.Core.Profiles;
+using EncoDeck.Core.Commands;
+using EncoDeck.Protocol.Oppo;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Bluetooth.Control;
 using EncoDeck.Core.Connection;
 using EncoDeck.Core.Devices;
@@ -48,12 +53,37 @@ public class ControlChannelSupervisorTests
         }
     }
 
-    private static (ControlChannelSupervisor Supervisor, DeviceStateStore Store) Create(FakeLink link, FakeConnector connector)
+    private static (ControlChannelSupervisor Supervisor, DeviceStateStore Store) Create(FakeLink link, FakeConnector connector, IControllableProfile? profile = null)
     {
         var store = new DeviceStateStore();
         store.Reset(DeviceState.Empty with { Device = X4 });
-        var supervisor = new ControlChannelSupervisor(X4, new OppoDeviceProfile(OppoModels.EncoX4), link, connector, store, FastPolicy, linkSettleDelay: TimeSpan.FromMilliseconds(20));
+        var supervisor = new ControlChannelSupervisor(X4, profile ?? new OppoDeviceProfile(OppoModels.EncoX4), link, connector, store, FastPolicy, linkSettleDelay: TimeSpan.FromMilliseconds(20));
         return (supervisor, store);
+    }
+
+    private sealed class StartupProfile(Func<Task<bool>> initialize, bool throwOnCreate = false) : IControllableProfile
+    {
+        private readonly OppoDeviceProfile _inner = new(OppoModels.EncoX4);
+        public string Brand => _inner.Brand;
+        public bool IsGeneric => false;
+        public string ModelId => _inner.ModelId;
+        public string DisplayName => _inner.DisplayName;
+        public string ImageKey => _inner.ImageKey;
+        public IDeviceCapabilities Capabilities => _inner.Capabilities;
+        public IReadOnlyList<NoiseControlOption> NoiseControlOptions => _inner.NoiseControlOptions;
+        public IReadOnlyList<EqualizerPreset> EqualizerPresets => _inner.EqualizerPresets;
+        public IReadOnlyList<Guid> ControlServiceUuids => _inner.ControlServiceUuids;
+        public int MatchScore(DeviceIdentity identity) => _inner.MatchScore(identity);
+        public IDeviceController CreateController(IDuplexByteChannel channel, ControllerContext context) => throwOnCreate
+            ? throw new IOException("controller creation failed") : new StartupController(channel, context, initialize);
+    }
+
+    private sealed class StartupController(IDuplexByteChannel channel, ControllerContext context, Func<Task<bool>> initialize)
+        : BrandControllerBase(channel, context)
+    {
+        protected override Task<bool> StartSessionAsync(CancellationToken cancellationToken) => initialize();
+        protected override void OnReceived(ReadOnlySpan<byte> data) { }
+        public override Task<CommandResult> RefreshAsync(CancellationToken cancellationToken) => Task.FromResult(CommandResult.Ok);
     }
 
     private static Task WaitFor(DeviceStateStore store, DeviceConnectionState state, int timeoutMs = 3000) =>
@@ -154,6 +184,68 @@ public class ControlChannelSupervisorTests
         await WaitFor(store, DeviceConnectionState.ControlUnavailable);
         await Task.Delay(150, TestContext.Current.CancellationToken);
         Assert.Equal(1, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task MissingLeEndpoint_StopsConnectingWithoutRetrying_AndManualRetryCanRecover()
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector { FailWith = ChannelOpenStatus.ControlEndpointNotFound };
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlUnavailable);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
+        Assert.True(link.IsConnected);
+        Assert.Null(supervisor.Controller);
+        Assert.Equal(1, connector.Attempts);
+        Assert.Equal("fake failure", store.Current.LastError?.Message);
+        Assert.Equal("Error_ControlEndpointNotFound", store.Current.LastError?.ResourceKey);
+
+        connector.FailWith = null;
+        supervisor.RequestReconnect();
+        await WaitFor(store, DeviceConnectionState.ControlReady);
+        Assert.Null(store.Current.LastError);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ControllerStartupThrows_ReleasesChannelAndEndsConnecting(bool throwOnCreate)
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector();
+        var profile = new StartupProfile(() => throw new IOException("handshake failed"), throwOnCreate);
+        var (supervisor, store) = Create(link, connector, profile);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlUnavailable);
+        Assert.Null(supervisor.Controller);
+        Assert.NotNull(store.Current.LastError);
+        Assert.Equal(FastPolicy.MaxAttempts + 1, connector.Attempts);
+        Assert.True(connector.LastDevice!.Channel.IsDisposed);
+    }
+
+    [Fact]
+    public async Task LinkDropsDuringHandshake_DoesNotBecomeControlReady()
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finish = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var profile = new StartupProfile(() => { started.TrySetResult(); return finish.Task; });
+        var (supervisor, store) = Create(link, connector, profile);
+        await using var _ = supervisor;
+        var transitions = new List<DeviceConnectionState>();
+        store.StateChanged += (_, state) => { lock (transitions) transitions.Add(state.Current.Connection); };
+        supervisor.Start();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+        link.Set(false);
+        finish.SetResult(true);
+        await WaitFor(store, DeviceConnectionState.Disconnected);
+        Assert.Null(supervisor.Controller);
+        Assert.True(connector.LastDevice!.Channel.IsDisposed);
+        lock (transitions) Assert.DoesNotContain(DeviceConnectionState.ControlReady, transitions);
     }
 
     [Fact]

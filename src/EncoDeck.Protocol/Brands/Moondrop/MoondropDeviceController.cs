@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Protocol adapted from huime180/MiuixMoondrop, GPL-3.0-or-later.
 using System.Buffers.Binary;
+using System.Text;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
@@ -20,6 +21,8 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private readonly SemaphoreSlim _requests = new(1, 1);
     private readonly SemaphoreSlim _operations = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
+    // Cached: in-flight requests may outlive DisposeCoreAsync, and a disposed source's Token throws.
+    private readonly CancellationToken _stopToken;
     private (int Feature, int Command, TaskCompletionSource<GaiaFrame> Completion)? _pending;
     private MoondropProfile _profile;
     private byte[] _batteries = [0, 1, 2, 3];
@@ -31,12 +34,19 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     {
         _rfcomm = channel.Description.StartsWith("RFCOMM", StringComparison.OrdinalIgnoreCase);
         _profile = profile;
+        _stopToken = _stop.Token;
         // Bare RFCOMM has no message boundaries; variable-length responses require a quiet burst.
         _burstTimer = Context.Time.CreateTimer(_ => Receive([], true), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 
     private async Task NegotiateRfcommAsync(CancellationToken ct)
     {
+        // EDGE answers the framed BASIC application-version query without a CSR API probe.
+        if (_profile.RfcommChannel is not null && await RequestAsync(0, 5, [], ct).ConfigureAwait(false) is { } version)
+        {
+            Apply(version, StateSource.QueryResponse);
+            return;
+        }
         // Upstream's read-only CSR API-version probe: official framing first, bare PDU second.
         if (await RequestAsync(-1, 0, [], ct).ConfigureAwait(false) is not null) return;
         _usesHeader = false;
@@ -84,7 +94,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             _batteries = supported.Payload.Distinct().ToArray();
         var refresh = await RefreshAsync(cancellationToken).ConfigureAwait(false);
         if (!complete && !refresh.IsSuccess) return false;
-        _poll = PollAsync(_stop.Token);
+        _poll = PollAsync(_stopToken);
         return true;
     }
 
@@ -100,12 +110,12 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
         }
         foreach (var frame in frames)
         {
-            if (frame.Type is not (1 or 2)) continue;
+            if (frame.Type is not (1 or 2 or 3)) continue;
             Touch();
             TaskCompletionSource<GaiaFrame>? completion = null;
             lock (_gate)
             {
-                if (frame.Type == 2 && _pending is { } pending && pending.Feature == frame.Feature && pending.Command == frame.Command)
+                if (frame.Type is 2 or 3 && _pending is { } pending && pending.Feature == frame.Feature && pending.Command == frame.Command)
                     completion = pending.Completion;
             }
             if (completion is not null) completion.TrySetResult(frame);
@@ -115,7 +125,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
 
     private async Task<GaiaFrame?> RequestAsync(int feature, int command, byte[] payload, CancellationToken ct)
     {
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stopToken);
         await _requests.WaitAsync(linked.Token).ConfigureAwait(false);
         var completion = new TaskCompletionSource<GaiaFrame>(TaskCreationOptions.RunContinuationsAsynchronously);
         try
@@ -129,7 +139,9 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             byte[] packet = feature == -1 ? GaiaFrameCodec.EncodeVersionProbe(_rfcomm && _usesHeader)
                 : GaiaFrameCodec.Encode(feature, command, payload, _rfcomm && _usesHeader);
             if (!await WriteAsync(packet, linked.Token).ConfigureAwait(false)) return null;
-            return await completion.Task.WaitAsync(TimeSpan.FromSeconds(2), Context.Time, linked.Token).ConfigureAwait(false);
+            var response = await completion.Task.WaitAsync(TimeSpan.FromSeconds(2), Context.Time, linked.Token).ConfigureAwait(false);
+            // A GAIA error reply ends the wait at once instead of after the timeout.
+            return response.Type == 3 ? null : response;
         }
         catch (TimeoutException) { return null; }
         finally
@@ -176,6 +188,13 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private bool Apply(GaiaFrame frame, StateSource source)
     {
         byte[] p = frame.Payload;
+        if (frame.Feature == 0 && frame.Command == 5 && p.Length is > 0 and <= 128)
+        {
+            string version = Encoding.UTF8.GetString(p).TrimEnd('\0');
+            if (string.IsNullOrWhiteSpace(version) || version.Any(char.IsControl)) return false;
+            Store.TryUpdate(DeviceId, s => s with { Firmware = Observed.From(FirmwareInfo.Empty with { Version = version }, Now, source), LastUpdateSource = source });
+            return true;
+        }
         if (ApplySettings(frame, source)) return true;
         if (frame.Feature == 13 && frame.Command == 1 && p.Length >= 2 && p.Length % 2 == 0)
         {
@@ -204,7 +223,8 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             });
             return updated;
         }
-        if (frame.Feature == _profile.AncFeature && frame.Command == (frame.Feature == 2 ? 1 : 3) && p.Length == 1 && _profile.DecodeNoise(p[0]) is { } noise)
+        if (frame.Feature == _profile.AncFeature && frame.Command == (frame.Feature == 2 ? 1 : 3) &&
+            (p.Length == 1 || frame.Feature == 8 && p.Length == 4) && _profile.DecodeNoise(p[0]) is { } noise)
         {
             Store.TryUpdate(DeviceId, s => s with { NoiseControl = Observed.From(noise, Now, source), LastUpdateSource = source });
             return true;
@@ -297,7 +317,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private async Task<CommandResult> RunWriteAsync(string description, Func<CancellationToken, Task<CommandResult>> action, CancellationToken ct)
     {
         if (Closed.IsCompleted) return CommandResult.NotConnected;
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stopToken);
         var pending = new PendingCommand(Guid.NewGuid(), description, Now);
         bool entered = false;
         try

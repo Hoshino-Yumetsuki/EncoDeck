@@ -26,7 +26,7 @@ internal static class MonitorCommand
         await using var manager = new DeviceManager(
             registry,
             store,
-            new RfcommChannelConnector(loggers.CreateLogger<RfcommChannelConnector>()),
+            new RfcommChannelConnector(registry, loggers.CreateLogger<RfcommChannelConnector>()),
             preferredDeviceId: () => null,
             allowExperimental: static () => false,
             loggers);

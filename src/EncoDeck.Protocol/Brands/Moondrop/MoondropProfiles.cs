@@ -24,6 +24,7 @@ public static class MoondropProfiles
     private static readonly IReadOnlyList<Guid> Ble = [MoondropConstants.GattServiceId];
     private static readonly IReadOnlyList<Guid> Spp = [MoondropConstants.SppServiceId];
     private static readonly IReadOnlyList<Guid> BleThenSpp = [MoondropConstants.GattServiceId, MoondropConstants.SppServiceId];
+    private static readonly IReadOnlyList<Guid> SppThenBle = [MoondropConstants.SppServiceId, MoondropConstants.GattServiceId];
     private static readonly byte[] AcThreeSet = [1, 2, 4];
     private static readonly byte[] AcThreeGet = [0, 1, 2];
     private static readonly byte[] Ga2Set = [1, 2, 4, 3];
@@ -35,7 +36,7 @@ public static class MoondropProfiles
     [
         // Only these four model entries are marked verified by the reference catalog.
         new MoondropProfile(new("edge", "MOONDROP EDGE", ["MOONDROP EDGE", "EDGE", "羽翼 EDGE"],
-            Ble, true, 8, AcThreeSet, AcThreeGet, SingleDeviceBattery: true, Lhdc: true, PromptVolume: true, DualConnection: true, Form: DeviceForm.Headphones)),
+            SppThenBle, true, 8, AcThreeSet, AcThreeGet, SingleDeviceBattery: true, Lhdc: true, PromptVolume: true, DualConnection: true, Form: DeviceForm.Headphones)),
         new MoondropProfile(new("pudding", "MOONDROP PUDDING", ["PUDDING", "MD-TWS-056", "布丁"],
             Spp, true, 32, PuddingMap, PuddingMap, Lhdc: true, PromptVolume: true, DualConnection: true)),
         new MoondropProfile(new("golden_ages_2", "MOONDROP GOLDEN AGES 2", ["GOLDEN AGES 2", "GOLDENAGES2", "GOLDEN AGES2", "梦回2", "GA2"],
@@ -170,10 +171,25 @@ public sealed class MoondropProfile : IControllableProfile
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions { get; }
     public IReadOnlyList<EqualizerPreset> EqualizerPresets => [];
     public IReadOnlyList<Guid> ControlServiceUuids => _model.Services;
+    /// <summary>Known EDGE channel, confirmed by Windows firmware query; never a channel scan.</summary>
+    public uint? RfcommChannel => _model.Id == "edge" ? 1u : null;
     public IReadOnlyCollection<DeviceToggle> Toggles { get; }
     public byte? EncodeGain(int level) => _gainMap is not null && (uint)level < (uint)_gainMap.Length ? _gainMap[level] : null;
     public int? DecodeGain(byte value) => _gainMap is not null && Array.IndexOf(_gainMap, value) is var level && level >= 0 ? level : null;
     public bool HasFeature(int feature) => _features?.Contains(feature) == true;
+
+    /// <summary>GAIA features the catalog implies for this model; what a full discovery would report.</summary>
+    internal IReadOnlySet<int> CatalogFeatures()
+    {
+        var features = new HashSet<int> { 0, 13 };
+        if (_model.AncFeature is { } anc) features.Add(anc);
+        if (_gainMap is not null) features.Add(15);
+        if (_model.Lhdc) features.Add(16);
+        if (_model.PromptVolume) features.Add(14);
+        if (_model.DualConnection) features.Add(20);
+        if (_model.Id == "pudding") features.UnionWith([19, 22]);
+        return features;
+    }
 
     private CapabilitySupport DiscoveredSupport(int feature, bool confirmed) => _features is null ? CapabilitySupport.Unknown
         : !_features.Contains(feature) ? CapabilitySupport.Unsupported

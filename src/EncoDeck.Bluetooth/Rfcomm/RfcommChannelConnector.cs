@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Gatt;
+using EncoDeck.Core.Devices;
+using EncoDeck.Core.Privacy;
+using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Transport;
@@ -13,14 +16,14 @@ using Windows.Networking.Sockets;
 namespace EncoDeck.Bluetooth.Rfcomm;
 
 /// <summary>Opens the first matching control service over RFCOMM or GAIA GATT.</summary>
-public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
+public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
 {
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
     private readonly ILogger _logger = logger ?? NullLogger<RfcommChannelConnector>.Instance;
 
     public async Task<ChannelOpenResult> OpenAsync(string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
     {
-        ChannelOpenResult? gattFailure = null;
+        ChannelOpenResult? gattFailure = null, connectFailure = null;
         BluetoothDevice? device;
         try
         {
@@ -41,6 +44,16 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
             if (access != DeviceAccessStatus.Allowed)
             {
                 return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"Device access: {access}");
+            }
+
+            var identity = new DeviceIdentity(deviceId, device.Name, new BluetoothAddress(device.BluetoothAddress));
+            if (serviceUuids.Contains(MoondropConstants.SppServiceId) &&
+                profiles.Match(identity) is MoondropProfile { RfcommChannel: { } channel })
+            {
+                var result = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, channel, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                connectFailure = result;
+                _logger.LogInformation("Known MOONDROP RFCOMM channel failed: {Detail}", result.Detail);
             }
 
             foreach (var uuid in serviceUuids)
@@ -93,12 +106,15 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
                     var result = await TryConnectAsync(service, uuid, cancellationToken).ConfigureAwait(false);
                     service.Dispose();
                     if (result.Status == ChannelOpenStatus.Opened) return result;
+                    connectFailure = result;
                     _logger.LogInformation("RFCOMM connect to {Service} failed: {Detail}", uuid, result.Detail);
                 }
             }
         }
 
-        return gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
+        // A control socket that exists but failed to connect is usually busy right after audio
+        // connects; report it (retryable) rather than a permanent GATT or SDP outcome.
+        return connectFailure ?? gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
     }
 
     private static async Task<ChannelOpenResult> TryConnectAsync(RfcommDeviceService service, Guid uuid, CancellationToken cancellationToken)

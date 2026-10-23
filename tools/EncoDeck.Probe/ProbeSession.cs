@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Discovery;
 using EncoDeck.Bluetooth.Rfcomm;
+using EncoDeck.Core.Profiles;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Transport;
 
@@ -22,7 +24,7 @@ internal static class ProbeSession
 
         IReadOnlyList<Guid> uuids = options.Get("uuid") is { } custom ? [Guid.Parse(custom)] : OppoServiceUuids.Candidates;
         Console.WriteLine($"Opening control channel to {device.Name} ({device.Address}) ...");
-        var connector = new RfcommChannelConnector();
+        var connector = new RfcommChannelConnector(new DeviceProfileRegistry(BuiltInProfiles.Create()));
         var result = await connector.OpenAsync(device.DeviceId, uuids, ct);
         if (result.Status != ChannelOpenStatus.Opened)
         {

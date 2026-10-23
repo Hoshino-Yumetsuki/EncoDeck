@@ -33,6 +33,8 @@ public enum ChannelOpenStatus
     AccessDenied,
     /// <summary>The service exists but the socket could not be connected.</summary>
     ConnectFailed,
+    /// <summary>The selected device's LE control endpoint was not found during bounded discovery.</summary>
+    ControlEndpointNotFound,
 }
 
 public sealed record ChannelOpenResult(ChannelOpenStatus Status, IDuplexByteChannel? Channel, Guid? ServiceUuid, string? Detail)

@@ -221,31 +221,32 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             {
                 ChannelOpenStatus.ServiceNotFound => "The earbuds do not expose a supported control service.",
                 ChannelOpenStatus.AccessDenied => "Windows denied access to the Bluetooth device.",
+                ChannelOpenStatus.ControlEndpointNotFound => open.Detail ?? "The Bluetooth LE control endpoint was not found.",
                 _ => "Could not open the control channel.",
-            });
-            return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied ? ServeOutcome.Permanent : ServeOutcome.Failed;
+            }, open.Status == ChannelOpenStatus.ControlEndpointNotFound ? "Error_ControlEndpointNotFound" : null);
+            return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ControlEndpointNotFound ? ServeOutcome.Permanent : ServeOutcome.Failed;
         }
 
         // Reconnecting: start from the model and settings the earbuds had (the UI keeps showing them).
         var profile = _store.Current is { Profile: IControllableProfile current } state && state.Device?.DeviceId == _identity.DeviceId && current.Brand == _profile.Brand ? current : _profile;
-        var controller = profile.CreateController(open.Channel, new ControllerContext(_identity, _store, _allowExperimental, _loggers, _time, _trace));
-        var closed = controller.Closed;
-        controller.CaseLidOpened += (_, _) => CaseLidOpened?.Invoke(this, EventArgs.Empty);
+        IDeviceController? controller = null;
         try
         {
-            bool initialized;
-            try
-            {
-                initialized = await controller.InitializeAsync(ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return ServeOutcome.EndedByLinkOrUser;
-            }
+            controller = profile.CreateController(open.Channel, new ControllerContext(_identity, _store, _allowExperimental, _loggers, _time, _trace));
+            var closed = controller.Closed;
+            controller.CaseLidOpened += (_, _) => CaseLidOpened?.Invoke(this, EventArgs.Empty);
+            bool initialized = await controller.InitializeAsync(ct).ConfigureAwait(false);
 
             if (!initialized)
             {
                 SetError("The earbuds did not answer the control handshake.");
+                return ServeOutcome.Failed;
+            }
+
+            if (!_link.IsConnected || ct.IsCancellationRequested) return ServeOutcome.EndedByLinkOrUser;
+            if (closed.IsCompleted)
+            {
+                SetError("The control channel closed during the handshake.");
                 return ServeOutcome.Failed;
             }
 
@@ -268,10 +269,21 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 // Spurious wake (e.g. duplicate link-up event): keep serving.
             }
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return ServeOutcome.EndedByLinkOrUser;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Initializing or serving the control channel failed");
+            SetError("The control handshake failed.");
+            return ServeOutcome.Failed;
+        }
         finally
         {
             lock (_gate) _controller = null;
-            await controller.DisposeAsync().ConfigureAwait(false);
+            if (controller is not null) await controller.DisposeAsync().ConfigureAwait(false);
+            else await open.Channel.DisposeAsync().ConfigureAwait(false);
         }
     }
 
@@ -290,9 +302,9 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         _store.TryUpdate(_identity.DeviceId, s => s.Connection == state ? s : s with { Connection = state });
     }
 
-    private void SetError(string message)
+    private void SetError(string message, string? resourceKey = null)
     {
-        _store.TryUpdate(_identity.DeviceId, s => s with { LastError = new DeviceError(message, CommandStatus.TransportError, _time.GetUtcNow()) });
+        _store.TryUpdate(_identity.DeviceId, s => s with { LastError = new DeviceError(message, CommandStatus.TransportError, _time.GetUtcNow(), resourceKey) });
     }
 
     private TaskCompletionSource CurrentWake()

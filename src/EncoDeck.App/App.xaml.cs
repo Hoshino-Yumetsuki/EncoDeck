@@ -69,7 +69,7 @@ public partial class App : Application
     internal void CreateViewModelsForDiagnostics(DispatcherQueue dispatcher, IDeviceCommandService? commands = null)
     {
         Device = new DeviceViewModel(Host.Store, commands ?? Host.Devices, Host.Settings, Host.Resources, dispatcher);
-        Features = new FeaturesViewModel(Host.Store, commands ?? Host.Devices, Host.Devices, Host.Settings, Device, dispatcher);
+        Features = new FeaturesViewModel(Host.Store, commands ?? Host.Devices, commands as IAdvancedDeviceCommands ?? Host.Devices, Host.Settings, Device, dispatcher);
         Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
             Host.StoreUpdates, static () => 0, dispatcher,
             static () => { }, Host.Loggers.CreateLogger<SettingsViewModel>());
@@ -93,7 +93,8 @@ public partial class App : Application
             _brandDemo = new BrandDemo(this, commandLine[demo + 1], _dispatcher);
             int demoBrand = Array.FindIndex(commandLine, a => string.Equals(a, "--demo-brand", StringComparison.OrdinalIgnoreCase));
             _brandDemo.Show(commandLine.Contains("--demo-check", StringComparer.OrdinalIgnoreCase),
-                demoBrand >= 0 && demoBrand + 1 < commandLine.Length ? commandLine[demoBrand + 1] : null);
+                demoBrand >= 0 && demoBrand + 1 < commandLine.Length ? commandLine[demoBrand + 1] : null,
+                commandLine.Contains("--demo-exit", StringComparer.OrdinalIgnoreCase));
             return;
         }
 

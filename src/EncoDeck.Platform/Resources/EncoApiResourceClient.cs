@@ -253,7 +253,15 @@ public sealed class EncoApiResourceClient(HttpClient http, string cacheRoot, Act
             await File.WriteAllBytesAsync(Path.Combine(stage, "source.zip"), bytes, ct).ConfigureAwait(false);
             // A corrupt older copy is left untouched; publish a new unique folder instead.
             if (Directory.Exists(target)) target += $"-{Guid.NewGuid():N}";
-            Directory.Move(stage, target);
+            for (int attempt = 0; ; attempt++)
+            {
+                // Antivirus or the indexer may still hold the files just written; that clears in moments.
+                try { Directory.Move(stage, target); break; }
+                catch (Exception ex) when (attempt < 5 && ex is IOException or UnauthorizedAccessException && !Directory.Exists(target))
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(150 * (attempt + 1)), ct).ConfigureAwait(false);
+                }
+            }
             return target;
         }
         finally { if (Directory.Exists(stage)) Directory.Delete(stage, recursive: true); }
