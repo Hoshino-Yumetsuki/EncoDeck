@@ -32,6 +32,15 @@ public sealed partial class DevicesPage : Page
 
     public DeviceViewModel ViewModel => App.Instance.Device;
 
+    private bool _syncingSwitch;
+
+    private void OnMoondropExperimentalToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncingSwitch || ViewModel.Profile is not EncoDeck.Protocol.Brands.Moondrop.MoondropProfile) return;
+        bool on = MoondropExperimentalSwitch.IsOn;
+        App.Instance.Host.Settings.Update(s => s with { EnableExperimentalFeatures = on });
+    }
+
     private void OnDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(Build);
 
     private void OnSettingsChanged(object? sender, EncoDeck.Core.Configuration.AppSettings settings) => DispatcherQueue.TryEnqueue(BuildCapabilities);
@@ -43,6 +52,15 @@ public sealed partial class DevicesPage : Page
 
     private void BuildCapabilities()
     {
+        bool moondrop = ViewModel.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile;
+        bool experimental = moondrop && App.Instance.Host.Settings.Current.EnableExperimentalFeatures;
+        MoondropCard.Visibility = moondrop ? Visibility.Visible : Visibility.Collapsed;
+        if (MoondropExperimentalSwitch.IsOn != experimental && moondrop)
+        {
+            _syncingSwitch = true;
+            try { MoondropExperimentalSwitch.IsOn = experimental; }
+            finally { _syncingSwitch = false; }
+        }
         CapabilityHost.Children.Clear();
         CapabilityCard.Visibility = ViewModel.Profile is null ? Visibility.Collapsed : Visibility.Visible;
         if (ViewModel.Profile is not { } profile) return;
@@ -56,7 +74,7 @@ public sealed partial class DevicesPage : Page
                 DeviceCapability.Gain or DeviceCapability.IndicatorLight or DeviceCapability.PromptTone or
                 DeviceCapability.TouchCustomization)) continue;
             bool supported = entry.Support == CapabilitySupport.Supported ||
-                entry.Support == CapabilitySupport.Experimental && App.Instance.Host.Settings.Current.EnableExperimentalFeatures;
+                entry.Support == CapabilitySupport.Experimental && experimental;
             CapabilityHost.Children.Add(new Controls.SettingRow
             {
                 Header = Loc.Get($"Cap_{capability}"),

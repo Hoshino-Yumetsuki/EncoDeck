@@ -309,7 +309,7 @@ internal sealed class BrandDemo
                     themeMedia = UiSnapshot.Descendants(main.Content).OfType<Controls.DeviceMedia>().Select(m => m.DiagnosticState).ToArray();
                 }
                 var features = new Dictionary<string, string[]>();
-                foreach (string page in new[] { "Sound", "Controls" })
+                foreach (string page in new[] { "Sound", "Controls", "Devices" })
                 {
                     main.Navigate(page);
                     await Task.Delay(700);
