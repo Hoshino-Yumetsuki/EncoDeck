@@ -45,7 +45,7 @@
   <data name="Connection_AudioConnected" xml:space="preserve"><value>Connected, preparing controls</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>Connecting controls…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>Connected</value></data>
-  <data name="Connection_ControlUnavailable" xml:space="preserve"><value>Controls unavailable</value></data>
+  <data name="Connection_ControlUnavailable" xml:space="preserve"><value>Audio connected · controls unavailable</value></data>
   <data name="Connection_Reconnecting" xml:space="preserve"><value>Reconnecting…</value></data>
   <data name="Connection_Disconnected" xml:space="preserve"><value>Disconnected</value></data>
   <data name="Error_Timeout" xml:space="preserve"><value>The earbuds did not respond. Nothing was changed.</value></data>
@@ -53,6 +53,7 @@
   <data name="Error_Rejected" xml:space="preserve"><value>The earbuds rejected this setting.</value></data>
   <data name="Error_Unsupported" xml:space="preserve"><value>These earbuds do not support this feature.</value></data>
   <data name="Error_NotConnected" xml:space="preserve"><value>The earbuds' control channel is not connected.</value></data>
+  <data name="Error_ControlEndpointNotFound" xml:space="preserve"><value>The headset's Bluetooth LE controls were not found. Make the headset discoverable and retry; audio can stay connected.</value></data>
   <data name="Status_UpdatedAt" xml:space="preserve"><value>Updated {0}</value></data>
   <data name="Noise_Unknown" xml:space="preserve"><value>Noise control unknown</value></data>
   <data name="NoiseMode_Off" xml:space="preserve"><value>Off</value></data>

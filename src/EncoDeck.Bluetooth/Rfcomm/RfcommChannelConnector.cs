@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Gatt;
+using EncoDeck.Core.Devices;
+using EncoDeck.Core.Privacy;
+using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
@@ -12,7 +15,7 @@ using Windows.Networking.Sockets;
 namespace EncoDeck.Bluetooth.Rfcomm;
 
 /// <summary>Opens the first matching control service over RFCOMM or GAIA GATT.</summary>
-public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
+public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
 {
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
     private readonly ILogger _logger = logger ?? NullLogger<RfcommChannelConnector>.Instance;
@@ -40,6 +43,15 @@ public sealed class RfcommChannelConnector(ILogger<RfcommChannelConnector>? logg
             if (access != DeviceAccessStatus.Allowed)
             {
                 return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"Device access: {access}");
+            }
+
+            var identity = new DeviceIdentity(deviceId, device.Name, new BluetoothAddress(device.BluetoothAddress));
+            if (serviceUuids.Contains(MoondropConstants.SppServiceId) &&
+                profiles.Match(identity) is MoondropProfile { RfcommChannel: { } channel })
+            {
+                var result = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, channel, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                _logger.LogInformation("Known MOONDROP RFCOMM channel failed: {Detail}", result.Detail);
             }
 
             foreach (var uuid in serviceUuids)
