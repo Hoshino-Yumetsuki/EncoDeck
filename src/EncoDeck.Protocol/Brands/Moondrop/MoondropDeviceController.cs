@@ -20,6 +20,8 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private readonly SemaphoreSlim _requests = new(1, 1);
     private readonly SemaphoreSlim _operations = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
+    // Cached: in-flight requests may outlive DisposeCoreAsync, and a disposed source's Token throws.
+    private readonly CancellationToken _stopToken;
     private (int Feature, int Command, TaskCompletionSource<GaiaFrame> Completion)? _pending;
     private MoondropProfile _profile;
     private byte[] _batteries = [0, 1, 2, 3];
@@ -31,6 +33,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     {
         _rfcomm = channel.Description.StartsWith("RFCOMM", StringComparison.OrdinalIgnoreCase);
         _profile = profile;
+        _stopToken = _stop.Token;
         // Bare RFCOMM has no message boundaries; variable-length responses require a quiet burst.
         _burstTimer = Context.Time.CreateTimer(_ => Receive([], true), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
@@ -84,7 +87,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             _batteries = supported.Payload.Distinct().ToArray();
         var refresh = await RefreshAsync(cancellationToken).ConfigureAwait(false);
         if (!complete && !refresh.IsSuccess) return false;
-        _poll = PollAsync(_stop.Token);
+        _poll = PollAsync(_stopToken);
         return true;
     }
 
@@ -100,12 +103,12 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
         }
         foreach (var frame in frames)
         {
-            if (frame.Type is not (1 or 2)) continue;
+            if (frame.Type is not (1 or 2 or 3)) continue;
             Touch();
             TaskCompletionSource<GaiaFrame>? completion = null;
             lock (_gate)
             {
-                if (frame.Type == 2 && _pending is { } pending && pending.Feature == frame.Feature && pending.Command == frame.Command)
+                if (frame.Type is 2 or 3 && _pending is { } pending && pending.Feature == frame.Feature && pending.Command == frame.Command)
                     completion = pending.Completion;
             }
             if (completion is not null) completion.TrySetResult(frame);
@@ -115,7 +118,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
 
     private async Task<GaiaFrame?> RequestAsync(int feature, int command, byte[] payload, CancellationToken ct)
     {
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stopToken);
         await _requests.WaitAsync(linked.Token).ConfigureAwait(false);
         var completion = new TaskCompletionSource<GaiaFrame>(TaskCreationOptions.RunContinuationsAsynchronously);
         try
@@ -129,7 +132,9 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             byte[] packet = feature == -1 ? GaiaFrameCodec.EncodeVersionProbe(_rfcomm && _usesHeader)
                 : GaiaFrameCodec.Encode(feature, command, payload, _rfcomm && _usesHeader);
             if (!await WriteAsync(packet, linked.Token).ConfigureAwait(false)) return null;
-            return await completion.Task.WaitAsync(TimeSpan.FromSeconds(2), Context.Time, linked.Token).ConfigureAwait(false);
+            var response = await completion.Task.WaitAsync(TimeSpan.FromSeconds(2), Context.Time, linked.Token).ConfigureAwait(false);
+            // A GAIA error reply ends the wait at once instead of after the timeout.
+            return response.Type == 3 ? null : response;
         }
         catch (TimeoutException) { return null; }
         finally
@@ -297,7 +302,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private async Task<CommandResult> RunWriteAsync(string description, Func<CancellationToken, Task<CommandResult>> action, CancellationToken ct)
     {
         if (Closed.IsCompleted) return CommandResult.NotConnected;
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stopToken);
         var pending = new PendingCommand(Guid.NewGuid(), description, Now);
         bool entered = false;
         try

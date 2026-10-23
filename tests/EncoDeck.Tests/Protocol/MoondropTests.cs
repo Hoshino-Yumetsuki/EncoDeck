@@ -146,6 +146,40 @@ public sealed partial class MoondropTests
         Assert.Null(device.LastNoiseWrite);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ErrorReplyEndsRequestWithoutWaitingForTimeout(bool rfcomm, bool rawRfcomm)
+    {
+        var identity = new DeviceIdentity("moondrop-test", "MOONDROP PUDDING", new BluetoothAddress(0));
+        var profile = (MoondropProfile)new DeviceProfileRegistry(BuiltInProfiles.Create()).Match(identity)!;
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = identity, Profile = profile });
+        var device = new PodChannel(rfcomm, rawRfcomm);
+        await using var controller = profile.CreateController(device, new ControllerContext(identity, store, () => false, NullLoggerFactory.Instance, TimeProvider.System));
+        Assert.True(await controller.InitializeAsync(Ct));
+        device.Errors.Add((15, 1));
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Equal(CommandStatus.Timeout, (await controller.SetGainAsync(2, Ct)).Status);
+        // SET acknowledgement plus the rejected read-back; each would otherwise wait 2 s.
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1.5), $"took {watch.Elapsed}");
+        device.Errors.Clear();
+        Assert.True((await controller.SetGainAsync(1, Ct)).IsSuccess);
+    }
+
+    [Fact]
+    public void BareStreamErrorReplyIsNotReadAsKnownResponseBody()
+    {
+        byte[] error = Reply(14, 1, [1], false);
+        error[3] |= 0x80; // QTiL ERROR = 3 << 7.
+        var decoder = new GaiaFrameDecoder();
+        Assert.Empty(decoder.Feed(error, true, burstEnd: false));
+        var frame = Assert.Single(decoder.Feed([], true));
+        Assert.Equal((14, 3, 1), (frame.Feature, frame.Type, frame.Command));
+        Assert.Equal(new byte[] { 1 }, frame.Payload);
+    }
+
     private static byte[] Reply(int feature, int command, byte[] payload, bool rfcomm)
     {
         byte[] data = GaiaFrameCodec.Encode(feature, command, payload, rfcomm);
@@ -177,6 +211,7 @@ public sealed partial class MoondropTests
         public bool RejectVoiceIndex { get; set; }
         public bool SuppressGainRead { get; set; }
         public HashSet<int> OmittedFeatures { get; } = [];
+        public HashSet<(int Feature, int Command)> Errors { get; } = [];
         public int SettingWrites { get; private set; }
         public int FramedProbes { get; private set; }
         public int RawProbes { get; private set; }
@@ -217,6 +252,11 @@ public sealed partial class MoondropTests
                 _ => [],
             };
             byte[] reply = Reply(request.Feature, request.Command, payload, rfcomm && !rawRfcomm);
+            if (Errors.Contains((request.Feature, request.Command)))
+            {
+                reply = Reply(request.Feature, request.Command, [1], rfcomm && !rawRfcomm);
+                reply[(rfcomm && !rawRfcomm ? 4 : 0) + 3] |= 0x80; // QTiL ERROR = 3 << 7.
+            }
             if (rfcomm)
             {
                 _responses.Writer.TryWrite(reply[..3]);
