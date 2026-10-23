@@ -97,6 +97,7 @@
   <data name="Home_FirmwareLabel" xml:space="preserve"><value>固件版本</value></data>
   <data name="Cap_FirmwareInformation" xml:space="preserve"><value>固件信息</value></data>
   <data name="Support_Supported" xml:space="preserve"><value>支持</value></data>
+  <data name="Support_Experimental" xml:space="preserve"><value>实验性（未开启）</value></data>
   <data name="Support_Unknown" xml:space="preserve"><value>未知</value></data>
   <data name="Support_Unsupported" xml:space="preserve"><value>不支持</value></data>
   <data name="Devices_StatusConnected" xml:space="preserve"><value>已连接</value></data>

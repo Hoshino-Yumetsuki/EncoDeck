@@ -35,4 +35,5 @@ public sealed record CommandResult(CommandStatus Status, string? Detail = null)
 public sealed record PendingCommand(Guid Id, string Description, DateTimeOffset StartedAt);
 
 /// <summary>Last error worth surfacing to the user.</summary>
-public sealed record DeviceError(string Message, CommandStatus? Status, DateTimeOffset Timestamp);
+/// <param name="ResourceKey">Localized text for the UI; <paramref name="Message"/> stays the logged English detail.</param>
+public sealed record DeviceError(string Message, CommandStatus? Status, DateTimeOffset Timestamp, string? ResourceKey = null);

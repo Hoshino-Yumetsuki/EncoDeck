@@ -73,18 +73,25 @@ public sealed partial class DevicesPage : Page
                 DeviceCapability.PromptVolume or DeviceCapability.DualDeviceConnection or
                 DeviceCapability.Gain or DeviceCapability.IndicatorLight or DeviceCapability.PromptTone or
                 DeviceCapability.TouchCustomization)) continue;
-            bool supported = entry.Support == CapabilitySupport.Supported ||
-                entry.Support == CapabilitySupport.Experimental && experimental;
-            CapabilityHost.Children.Add(new Controls.SettingRow
+            // Experimental features read as supported once opted in, never as unsupported before.
+            string support = entry.Support switch
+            {
+                CapabilitySupport.Supported => "Support_Supported",
+                CapabilitySupport.Experimental => experimental ? "Support_Supported" : "Support_Experimental",
+                _ => "Support_Unsupported",
+            };
+            var row = new Controls.SettingRow
             {
                 Header = Loc.Get($"Cap_{capability}"),
                 Action = new TextBlock
                 {
-                    Text = Loc.Get(supported ? "Support_Supported" : "Support_Unsupported"),
+                    Text = Loc.Get(support),
                     Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
                     VerticalAlignment = VerticalAlignment.Center,
                 },
-            });
+            };
+            if (!string.IsNullOrWhiteSpace(entry.Evidence)) ToolTipService.SetToolTip(row, entry.Evidence);
+            CapabilityHost.Children.Add(row);
         }
         CapabilityCard.Visibility = CapabilityHost.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
     }

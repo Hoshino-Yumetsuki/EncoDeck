@@ -223,7 +223,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 ChannelOpenStatus.AccessDenied => "Windows denied access to the Bluetooth device.",
                 ChannelOpenStatus.ControlEndpointNotFound => open.Detail ?? "The Bluetooth LE control endpoint was not found.",
                 _ => "Could not open the control channel.",
-            });
+            }, open.Status == ChannelOpenStatus.ControlEndpointNotFound ? "Error_ControlEndpointNotFound" : null);
             return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ControlEndpointNotFound ? ServeOutcome.Permanent : ServeOutcome.Failed;
         }
 
@@ -302,9 +302,9 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         _store.TryUpdate(_identity.DeviceId, s => s.Connection == state ? s : s with { Connection = state });
     }
 
-    private void SetError(string message)
+    private void SetError(string message, string? resourceKey = null)
     {
-        _store.TryUpdate(_identity.DeviceId, s => s with { LastError = new DeviceError(message, CommandStatus.TransportError, _time.GetUtcNow()) });
+        _store.TryUpdate(_identity.DeviceId, s => s with { LastError = new DeviceError(message, CommandStatus.TransportError, _time.GetUtcNow(), resourceKey) });
     }
 
     private TaskCompletionSource CurrentWake()

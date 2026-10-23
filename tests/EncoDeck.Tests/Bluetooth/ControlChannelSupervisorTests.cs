@@ -200,6 +200,7 @@ public class ControlChannelSupervisorTests
         Assert.Null(supervisor.Controller);
         Assert.Equal(1, connector.Attempts);
         Assert.Equal("fake failure", store.Current.LastError?.Message);
+        Assert.Equal("Error_ControlEndpointNotFound", store.Current.LastError?.ResourceKey);
 
         connector.FailWith = null;
         supervisor.RequestReconnect();
