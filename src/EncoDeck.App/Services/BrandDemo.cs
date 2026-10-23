@@ -7,6 +7,7 @@ using EncoDeck.Core.Profiles;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
+using EncoDeck.Core.Resources;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Brands.Moondrop;
@@ -23,8 +24,10 @@ namespace EncoDeck.App.Services;
 /// <summary>Explicitly launched, persistent manual previews; the Bluetooth runtime is never started.</summary>
 internal sealed class BrandDemo
 {
-    internal sealed record Entry(string Brand, string Name, string Directory, string? ProfileId = null,
+    /// <summary>A demo model. Without <see cref="Directory"/> its artwork comes from EncoAPI like a real connection.</summary>
+    internal sealed record Entry(string Brand, string Name, string? Directory = null, string? ProfileId = null, int? ColorId = null,
         string? Popup = null, string? PopupDark = null, string? Model = null, string? Motion = null, string? MotionDark = null);
+    internal sealed record ArtworkReport(string? Key, int? Color, bool Ok, int Files, bool FromCache, string? Failure, string[] Roles);
     private readonly App _app;
     private readonly Entry[] _entries;
     private readonly Window _picker = new() { Title = "EncoDeck · 多品牌手动演示" };
@@ -32,6 +35,7 @@ internal sealed class BrandDemo
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TrayIconService _tray;
     private Entry? _current;
+    private ArtworkReport? _artwork;
     private bool _exiting;
 
     public BrandDemo(App app, string manifest, DispatcherQueue dispatcher)
@@ -42,6 +46,8 @@ internal sealed class BrandDemo
         if (_entries.Length == 0) throw new InvalidDataException("No demo models.");
         string root = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(manifest))!, "session");
         app.SetHostForDiagnostics(AppHost.Create(rootOverride: root));
+        // Downloaded artwork lands in the demo session's own cache and is picked up by the watcher.
+        app.Host.Resources.StartWatching();
         app.CreateViewModelsForDiagnostics(dispatcher, new DemoCommands(app));
         app.Windows = ForDemoWindows(app);
         _tray = new TrayIconService(app.Device, app.Host.Settings, app.Windows, Exit);
@@ -49,7 +55,7 @@ internal sealed class BrandDemo
 
         var content = new StackPanel { Padding = new Thickness(24), Spacing = 14 };
         content.Children.Add(new TextBlock { Text = "多品牌耳机 · 手动演示", FontSize = 24, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
-        content.Children.Add(new TextBlock { Text = "选择品牌后查看实际 WinUI 页面。电量与连接状态为演示数据，素材来自对应型号；本模式不连接蓝牙。", TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock { Text = "选择型号后查看实际 WinUI 页面。电量与连接状态为演示数据；素材与真机连接时一样通过 EncoAPI 拉取（缓存在演示会话目录）；本模式不连接蓝牙。", TextWrapping = TextWrapping.Wrap });
         foreach (var entry in _entries) _brands.Items.Add($"{entry.Brand} · {entry.Name}");
         _brands.SelectionChanged += async (_, _) =>
         {
@@ -96,16 +102,20 @@ internal sealed class BrandDemo
         var profiles = BuiltInProfiles.Create();
         var profile = entry.ProfileId is { } id ? profiles.Single(p => p.ModelId == id)
             : profiles.OrderByDescending(p => p.MatchScore(device)).First(p => p.MatchScore(device) > 0);
-        // Without prepared artwork the normal resolver runs, so the previous model's art never lingers.
-        _app.Device.ArtworkPinned = Directory.Exists(entry.Directory);
+        bool local = entry.Directory is { } folder && Directory.Exists(folder);
+        // Prepared folders stay pinned; otherwise the normal resolver shows what EncoAPI provided.
+        _app.Device.ArtworkPinned = local;
         // Demo state simulates a successful session; no Bluetooth session runs.
-        _app.Host.Store.Reset(CreateState(DemoDiscovery.AfterSession(profile, entry.Name), device, DateTimeOffset.UtcNow));
-        await Task.Delay(150);
+        var state = CreateState(DemoDiscovery.AfterSession(profile, entry.Name), device, DateTimeOffset.UtcNow) with { ColorId = entry.ColorId };
+        _app.Host.Store.Reset(state);
+        _artwork = null;
+        _status.Text = $"当前：{entry.Name}\n素材：{(local ? "本地素材文件夹" : "正在从 EncoAPI 拉取…")}";
+        if (!local) _artwork = await FetchArtworkAsync(entry, state);
+        await Task.Delay(300);
         if (_current != entry || _exiting) return;
-        ApplyArtwork(entry);
-        _status.Text = $"当前：{entry.Name}\n首页：{(entry.Model is null ? entry.Motion is null ? "通用产品悬浮动效（非原厂开盖）" : entry.Motion.EndsWith(".device-once.mp4", StringComparison.OrdinalIgnoreCase) ? "官方首页动画（播放一次，保留末帧）" : "官方循环产品动画" : Path.GetExtension(entry.Model) == ".vfxms" ? "官方 3D 场景，可拖动旋转" : "官方动态转盘，可拖动旋转")}；弹窗："
-            + (Path.GetExtension(entry.Popup) == ".json" ? "官方 Lottie 动画" : Path.GetExtension(entry.Popup) == ".webp" ? "官方逐帧开盖动画" : IsVideo(entry.Popup) ? "官方连接视频" : "通用产品入场动效（非原厂开盖）")
-            + "。可重复打开弹窗；托盘图标提示当前型号。基础降噪、EQ 与开关操作只修改演示状态。";
+        ApplyArtwork(entry, local);
+        _status.Text = $"当前：{entry.Name}\n素材：{DescribeArtwork(local)}\n首页：{DescribeHome()}；弹窗：{DescribePopup()}。"
+            + "可重复打开弹窗；托盘图标提示当前型号。所有设置只修改演示状态。";
         if (show)
         {
             _app.Windows.ShowMain("Home");
@@ -136,6 +146,7 @@ internal sealed class BrandDemo
         return DeviceState.Empty with
         {
             Device = device, Profile = profile, Connection = DeviceConnectionState.ControlReady,
+            ProductId = model?.ProductIds.Count > 0 ? model.ProductIds[0] : null,
             Battery = new BatteryStatus(O(new BatteryReading(85, false)), earbuds ? O(new BatteryReading(80, false)) : null,
                 earbuds ? O(new BatteryReading(65, false)) : null),
             Wear = O(new WearStatus(true, true, false, false, false)),
@@ -187,10 +198,69 @@ internal sealed class BrandDemo
     private static CustomEqualizer DemoCustomEqualizer(OppoCustomEqualizerSpec spec, int id, bool selected) =>
         new(id, $"自定义{id}", spec.MinGain, spec.MaxGain, selected, spec.BandFrequencies.Select(f => new EqualizerBand(f, 0)).ToArray());
 
-    private void ApplyArtwork(Entry entry)
+    /// <summary>
+    /// Downloads through the app's own <see cref="Platform.Resources.DeviceResourceSync"/>, with the key a real
+    /// connection would report. OPPO-family keys need a colour; without one the common colour ids are tried.
+    /// </summary>
+    private async Task<ArtworkReport> FetchArtworkAsync(Entry entry, DeviceState state)
     {
-        UiSnapshot.ApplyArtworkDirectory(_app, entry.Directory);
+        if (DeviceResourceKey.FromState(state, state.ProductId) is not { } key) return new(null, null, false, 0, false, "No resource identity", []);
+        int?[] colors = key.UsesOplusId && entry.ColorId is null ? [1, 0, 2, 3, 4, 5] : [entry.ColorId];
+        string? failure = null;
+        foreach (int? color in colors)
+        {
+            var attempt = key with { ColorId = color };
+            if (!attempt.CanDownload) { failure = "Key is not downloadable"; continue; }
+            if (_current != entry) break;
+            if (color != _app.Host.Store.Current.ColorId) _app.Host.Store.Reset(_app.Host.Store.Current with { ColorId = color });
+            try
+            {
+                var result = await _app.Host.ResourceSync.RefreshAsync(attempt);
+                _app.Host.Resources.Invalidate();
+                var roles = Enum.GetValues<DeviceResourceRole>().Where(r => _app.Host.Resources.Resolve(attempt, r) is not null).Select(r => r.ToString()).ToArray();
+                return new(attempt.CacheIdentity, color, true, result.Files, result.FromCache, null, roles);
+            }
+            catch (Exception ex)
+            {
+                failure = $"{Platform.Resources.DeviceResourceStatus.Classify(ex)}: {ex.Message}";
+            }
+        }
+        return new(key.CacheIdentity, entry.ColorId, false, 0, false, failure, []);
+    }
+
+    private string DescribeArtwork(bool local) => local ? "本地素材文件夹" : _artwork switch
+    {
+        { Ok: true } a => $"EncoAPI {(a.FromCache ? "缓存" : "已下载")} {a.Files} 个文件{(a.Color is { } c ? $"（颜色 {c}）" : "")}",
+        { } a => $"EncoAPI 未取得（{a.Failure}），使用通用插画",
+        null => "未请求",
+    };
+
+    private string DescribeHome()
+    {
+        var d = _app.Device;
+        return d.DeviceModelPath is { } model ? Path.GetExtension(model) == ".vfxms" ? "官方 3D 场景，可拖动旋转" : "官方动态转盘，可拖动旋转"
+            : d.DeviceMotionPath is not null ? "官方产品动画"
+            : d.HasDeviceImage || d.HasComponentArtwork ? "官方产品图（通用悬浮动效，非原厂开盖）" : "通用插画";
+    }
+
+    private string DescribePopup()
+    {
+        var d = _app.Device;
+        if (d.PopupMediaPath is not { } popup || popup == d.DeviceImagePath) return d.HasDeviceImage ? "产品图入场动效（非原厂开盖）" : "通用插画";
+        return Path.GetExtension(popup).ToLowerInvariant() switch
+        {
+            ".json" => "官方 Lottie 动画",
+            ".webp" => "官方逐帧开盖动画",
+            _ when d.PopupMediaIsVideo => "官方连接视频",
+            _ => "官方弹窗图",
+        };
+    }
+
+    private void ApplyArtwork(Entry entry, bool local)
+    {
         _app.Device.DeviceName = entry.Name;
+        if (!local) return;
+        UiSnapshot.ApplyArtworkDirectory(_app, entry.Directory);
         _app.Device.DeviceModelPath = entry.Model;
         _app.Device.DeviceMotionIsVideo = IsVideo(entry.Motion);
         _app.Device.DeviceMotionPath = entry.Motion;
@@ -266,7 +336,7 @@ internal sealed class BrandDemo
                 await Task.Delay(400);
                 await UiSnapshot.CaptureAsync(panel, Path.Combine(output, entry.Brand + "-tray.png"));
                 panel.Close();
-                results.Add(new { entry.Brand, entry.Name, Profile = _app.Host.Store.Current.Profile?.ModelId, Ok = true, Features = features, ModelBefore = modelBefore, ModelAfter = modelAfter, HomeMediaBefore = mediaBefore, HomeMedia = homeMedia, ThemeMedia = themeMedia, Popup = state });
+                results.Add(new { entry.Brand, entry.Name, Profile = _app.Host.Store.Current.Profile?.ModelId, Ok = true, Artwork = _artwork, Home = DescribeHome(), PopupKind = DescribePopup(), Features = features, ModelBefore = modelBefore, ModelAfter = modelAfter, HomeMediaBefore = mediaBefore, HomeMedia = homeMedia, ThemeMedia = themeMedia, Popup = state });
             }
             catch (Exception ex)
             {
