@@ -93,6 +93,9 @@ internal sealed class BrandDemo
         var profiles = BuiltInProfiles.Create();
         var profile = entry.ProfileId is { } id ? profiles.Single(p => p.ModelId == id)
             : profiles.OrderByDescending(p => p.MatchScore(device)).First(p => p.MatchScore(device) > 0);
+        // Demo state simulates a successful parameter query; no Bluetooth session runs.
+        if (profile is EncoDeck.Protocol.Brands.Sony.SonyAkgProfile sonyAkg)
+            profile = sonyAkg.WithNoiseSupport(true);
         var now = DateTimeOffset.UtcNow;
         Observed<T> O<T>(T value) => Observed.From(value, now, StateSource.QueryResponse);
         bool Has(DeviceCapability cap) => profile.Capabilities.IsAvailable(cap, false);

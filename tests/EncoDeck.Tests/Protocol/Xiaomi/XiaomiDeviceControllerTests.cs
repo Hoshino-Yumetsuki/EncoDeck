@@ -67,18 +67,21 @@ public class XiaomiDeviceControllerTests
             switch (f.OpCode)
             {
                 case XiaomiProtocol.OpTargetInfo when f.Sequence == XiaomiProtocol.AuthSequence:
-                    return f with { Kind = 0x00, Payload = [1, .. XiaomiAuth.GetEncryptedAuthCheckData(f.Payload.AsSpan(1))] };
+                    return Response(f, [1, .. XiaomiAuth.GetEncryptedAuthCheckData(f.Payload.AsSpan(1))]);
                 case XiaomiProtocol.OpTargetInfo:
-                    return f with { Kind = 0x00, Payload = [2, 2, 4, 7, 50, 60, 70] };
+                    return Response(f, [2, 2, 4, 7, 50, 60, 70]);
                 case XiaomiProtocol.OpSetConfig when f.Payload is [3, 0, 47, var value]:
                     if (AcceptWrites) LowLatency = value;
                     return null;
-                case XiaomiProtocol.OpGetConfig when f.Payload is [2, 0, 47]:
-                    return f with { Kind = 0x00, Payload = [3, 0, 47, LowLatency] };
+                case XiaomiProtocol.OpGetConfig:
+                    return Response(f, [3, 0, 47, LowLatency]);
                 default:
                     return null;
             }
         }
+
+        private static XiaomiFrame Response(XiaomiFrame request, byte[] payload) =>
+            new(0x04, request.OpCode, 0, [request.Sequence, .. payload]);
 
         public async ValueTask DisposeAsync()
         {

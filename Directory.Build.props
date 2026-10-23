@@ -1,7 +1,7 @@
 <Project>
   <!--
     EncoDeck - unofficial Windows control center for OPPO Bluetooth earbuds.
-    Copyright (C) 2026 EncoDeck contributors
+    Copyright (C) 2026 Tianli
     SPDX-License-Identifier: GPL-3.0-only
   -->
   <PropertyGroup>
@@ -14,13 +14,13 @@
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
 
     <Product>EncoDeck</Product>
-    <Company>EncoDeck contributors</Company>
-    <Authors>EncoDeck contributors</Authors>
-    <Copyright>Copyright (C) 2026 EncoDeck contributors</Copyright>
+    <Company>Tianli</Company>
+    <Authors>Tianli</Authors>
+    <Copyright>Copyright (C) 2026 Tianli</Copyright>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/TIANLI0/EncoDeck</RepositoryUrl>
 
-    <VersionPrefix>1.3.0</VersionPrefix>
+    <VersionPrefix>1.4.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
 
     <!-- Single source of truth for the Windows TFM used by every Windows-specific project. -->

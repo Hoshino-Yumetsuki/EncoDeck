@@ -11,14 +11,17 @@ public class BuiltInProfilesTests
     private static readonly DeviceProfileRegistry Registry = new(BuiltInProfiles.Create());
 
     private static IControllableProfile? Match(string name) =>
-        (IControllableProfile?)Registry.Match(new DeviceIdentity("dev", name, new BluetoothAddress(0x0011223344AA)));
+        Registry.Match(new DeviceIdentity("dev", name, new BluetoothAddress(0x0011223344AA))) as IControllableProfile;
 
     [Fact]
     public void Model_ids_are_unique_across_brands()
     {
         var ids = Registry.Profiles.Select(p => p.ModelId).ToList();
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.All(Registry.Profiles, p => Assert.IsAssignableFrom<IControllableProfile>(p));
+        Assert.All(Registry.Profiles, p =>
+        {
+            if (p is not IControllableProfile) Assert.Empty(p.ControlServiceUuids);
+        });
     }
 
     [Theory]
@@ -29,6 +32,8 @@ public class BuiltInProfilesTests
     [InlineData("HUAWEI FreeBuds Pro 3", "huawei", false)]
     [InlineData("Redmi Buds 6 Pro", "xiaomi", true)]
     [InlineData("EDIFIER W820NB", "edifier", false)]
+    [InlineData("WH-1000XM5", "sony", false)]
+    [InlineData("AKG N400NC", "akg", false)]
     public void Names_resolve_to_their_brand(string name, string brand, bool generic)
     {
         var profile = Match(name);
@@ -39,7 +44,6 @@ public class BuiltInProfilesTests
 
     [Theory]
     [InlineData("Galaxy Buds2 Pro")]
-    [InlineData("WH-1000XM5")]
     [InlineData("AirPods Pro")]
     public void Other_brands_are_not_claimed(string name) => Assert.Null(Match(name));
 }

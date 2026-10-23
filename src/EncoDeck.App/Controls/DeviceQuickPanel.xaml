@@ -9,11 +9,11 @@
         <!-- Header -->
         <Grid ColumnSpacing="12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="56" />
+                <ColumnDefinition x:Name="ArtworkColumn" Width="56" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <controls:DeviceImage Height="48" SourcePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
+            <controls:DeviceImage x:Name="HeaderArtwork" Height="48" SourcePath="{x:Bind ViewModel.DeviceImagePath, Mode=OneWay}" IsHeadphones="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -28,7 +28,8 @@
         </Grid>
 
         <!-- Battery -->
-        <Grid ColumnSpacing="8" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
+        <controls:HeadphoneBattery Item="{x:Bind ViewModel.Left}" Visibility="{x:Bind ViewModel.IsHeadphones, Mode=OneWay}" />
+        <Grid ColumnSpacing="8" Visibility="{x:Bind EarbudBatteryVisibility(ViewModel.HasDevice, ViewModel.IsHeadphones), Mode=OneWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />

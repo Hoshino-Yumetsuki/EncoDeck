@@ -69,6 +69,20 @@ public static class HuaweiWire
         return fields;
     }
 
+    /// <summary>Strict parser for control responses; incomplete and duplicate fields cannot confirm a write.</summary>
+    internal static bool TryParseTlv(ReadOnlySpan<byte> payload, out Dictionary<byte, byte[]> fields)
+    {
+        fields = [];
+        while (!payload.IsEmpty)
+        {
+            if (payload.Length < 2 || payload.Length < payload[1] + 2) return false;
+            int length = payload[1];
+            if (!fields.TryAdd(payload[0], payload.Slice(2, length).ToArray())) return false;
+            payload = payload[(2 + length)..];
+        }
+        return fields.Count > 0;
+    }
+
     public static IHuaweiFrameCodec CreateCodec(HuaweiProtocol protocol) =>
         protocol == HuaweiProtocol.Mbb ? new MbbFrameCodec() : new LegacyHuaweiFrameCodec();
 

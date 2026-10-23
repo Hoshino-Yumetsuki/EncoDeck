@@ -106,6 +106,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         set => Update(s => s with { ShowAboveQuickSettings = value }, nameof(ShowAboveQuickSettings));
     }
 
+    public bool HideQuickSettingsPanelWhenBluetoothOff
+    {
+        get => S.HideQuickSettingsPanelWhenBluetoothOff != false;
+        set => Update(s => s with { HideQuickSettingsPanelWhenBluetoothOff = value }, nameof(HideQuickSettingsPanelWhenBluetoothOff));
+    }
+
+    public int QuickSettingsPanelThemeIndex
+    {
+        get => (int)S.QuickSettingsPanelTheme;
+        set => Update(s => s with { QuickSettingsPanelTheme = (AppTheme)Math.Clamp(value, 0, 2) }, nameof(QuickSettingsPanelThemeIndex));
+    }
+
     /// <summary>The action's hotkey as stored (<see cref="Hotkey"/> text), or null.</summary>
     public string? GetHotkey(HotkeyAction action) => S.Hotkeys?.Get(action);
 

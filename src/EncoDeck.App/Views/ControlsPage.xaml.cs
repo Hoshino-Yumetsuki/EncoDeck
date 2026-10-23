@@ -148,8 +148,6 @@ public sealed partial class ControlsPage : Page
         var (minVolume, maxVolume) = model?.PromptVolumeRange ?? (1, 10);
         PromptVolumeSlider.Minimum = minVolume;
         PromptVolumeSlider.Maximum = maxVolume;
-
-        BuildCapabilities();
     }
 
     private Grid GestureRow(OppoGestureRow row)
@@ -165,28 +163,6 @@ public sealed partial class ControlsPage : Page
         grid.Children.Add(box);
         _gestureBoxes.Add((row, box));
         return grid;
-    }
-
-    private void BuildCapabilities()
-    {
-        CapabilityHost.Children.Clear();
-        if (ViewModel.Profile is not { } profile) return;
-        foreach (var (capability, entry) in profile.Capabilities.All)
-        {
-            var grid = new Grid { ColumnSpacing = 12 };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var name = new TextBlock { Text = Loc.Get($"Cap_{capability}") };
-            var support = new TextBlock { Text = Loc.Get($"Support_{entry.Support}"), FontWeight = entry.Support == CapabilitySupport.Supported ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal };
-            var evidence = new TextBlock { Text = entry.Evidence, TextWrapping = TextWrapping.Wrap, Style = (Style)Application.Current.Resources["SecondaryTextStyle"] };
-            Grid.SetColumn(support, 1);
-            Grid.SetColumn(evidence, 2);
-            grid.Children.Add(name);
-            grid.Children.Add(support);
-            grid.Children.Add(evidence);
-            CapabilityHost.Children.Add(grid);
-        }
     }
 
     // ---- syncing -------------------------------------------------------------------------------
@@ -295,7 +271,12 @@ public sealed partial class ControlsPage : Page
         grid.Children.Add(new FontIcon { Glyph = glyph, FontSize = 20, VerticalAlignment = VerticalAlignment.Center });
         var text = new StackPanel { Spacing = 0, VerticalAlignment = VerticalAlignment.Center };
         text.Children.Add(new TextBlock { Text = DisplayName(device), TextTrimming = TextTrimming.CharacterEllipsis });
-        text.Children.Add(new TextBlock { Text = DescribeSource(device), Style = (Style)Application.Current.Resources["SecondaryTextStyle"] });
+        text.Children.Add(new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(device.Name) ? DescribeSource(device) : $"{DescribeSource(device)} · {device.AddressText}",
+            Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
+            IsTextSelectionEnabled = true,
+        });
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 

@@ -128,13 +128,11 @@
   <data name="NoiseSelector_Adaptive.Text" xml:space="preserve"><value>自适应</value></data>
   <data name="NoiseSelector_Transparency.Text" xml:space="preserve"><value>通透</value></data>
   <data name="Sound_Title.Text" xml:space="preserve"><value>音效</value></data>
-  <data name="Sound_DeviceEq.Text" xml:space="preserve"><value>耳机端 EQ（在耳机内部生效）</value></data>
-  <data name="Sound_DeviceEq_Note.Text" xml:space="preserve"><value>这些预设由耳机执行。EncoDeck 不会修改 Windows 的音频处理，也不提供 Windows 端均衡器。</value></data>
+  <data name="Sound_DeviceEq.Text" xml:space="preserve"><value>耳机端 EQ</value></data>
   <data name="Sound_Spatial.Text" xml:space="preserve"><value>空间音频</value></data>
   <data name="Controls_Title.Text" xml:space="preserve"><value>控制</value></data>
   <data name="Controls_Settings.Text" xml:space="preserve"><value>更多设置</value></data>
-  <data name="Controls_Capabilities.Text" xml:space="preserve"><value>功能支持情况</value></data>
-  <data name="Controls_Capabilities_Note.Text" xml:space="preserve"><value>所有功能均按欢律对此型号的官方实现方式工作，耳机确认后才会显示新状态。</value></data>
+  <data name="Devices_Capabilities.Text" xml:space="preserve"><value>功能支持情况</value></data>
   <data name="Devices_Title.Text" xml:space="preserve"><value>设备</value></data>
   <data name="Devices_Paired.Text" xml:space="preserve"><value>已配对的耳机</value></data>
   <data name="Devices_None.Text" xml:space="preserve"><value>没有 EncoDeck 支持的已配对耳机。请在 Windows 蓝牙设置中配对。</value></data>
@@ -150,8 +148,12 @@
   <data name="Settings_KeepInTray.Header" xml:space="preserve"><value>关闭窗口后继续在通知区域运行</value></data>
   <data name="Settings_QuickSettingsPanel.Header" xml:space="preserve"><value>在快速设置上方显示耳机面板</value></data>
   <data name="Settings_QuickSettingsPanel.Description" xml:space="preserve"><value>需要 Windows 11 24H2 或更高版本。随快速设置（Win+A）一起打开和关闭。</value></data>
+  <data name="Settings_QuickSettingsBluetoothOff.Header" xml:space="preserve"><value>蓝牙关闭时不随快速设置显示耳机面板</value></data>
+  <data name="Settings_QuickSettingsBluetoothOff.Description" xml:space="preserve"><value>关闭蓝牙后打开快速设置（Win+A），不在上方显示耳机面板。</value></data>
+  <data name="Settings_QuickSettingsTheme.Header" xml:space="preserve"><value>快速设置耳机面板主题</value></data>
+  <data name="Settings_QuickSettingsTheme.Description" xml:space="preserve"><value>独立于应用主题，方便与快速设置的外观保持一致。</value></data>
   <data name="Settings_Hotkeys.Text" xml:space="preserve"><value>快捷键</value></data>
-  <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>在任何程序中都能切换降噪模式，EncoDeck 只在通知区域运行时也可以。点击按钮，然后按下要使用的按键组合。</value></data>
+  <data name="Settings_HotkeysSummary.Text" xml:space="preserve"><value>在任何程序中都能切换降噪模式。点击按钮，然后按下要使用的按键组合。</value></data>
   <data name="Settings_HotkeyToggle.Header" xml:space="preserve"><value>降噪 / 通透切换</value></data>
   <data name="Settings_HotkeyToggle.Description" xml:space="preserve"><value>在降噪和通透之间切换；处于其他模式时切换到降噪。</value></data>
   <data name="Settings_HotkeyCycle.Header" xml:space="preserve"><value>下一个模式</value></data>
@@ -303,7 +305,7 @@
   <data name="Spatial_HiRes_Message" xml:space="preserve"><value>为提供最佳音效体验，开启空间音频将关闭 Hi-Res 模式</value></data>
   <data name="Settings_Language.Description" xml:space="preserve"><value>重新启动 EncoDeck 后生效。</value></data>
   <data name="Settings_PopupDuration.Description" xml:space="preserve"><value>带有时间信息的动画会使用自身时长；此设置用于其他图片和视频。</value></data>
-  <data name="Settings_SuppressFullscreen.Description" xml:space="preserve"><value>关闭后，全屏应用或游戏在前台时也会显示弹窗，但以鼠标穿透方式显示：不抢焦点，所有点击都直接作用到游戏。独占全屏游戏中从不显示。</value></data>
+  <data name="Settings_SuppressFullscreen.Description" xml:space="preserve"><value>关闭后，全屏应用或游戏在前台时也会显示弹窗，但以鼠标穿透方式显示：所有点击都直接作用到游戏。独占全屏游戏中从不显示。</value></data>
   <data name="Settings_RawLogging.Description" xml:space="preserve"><value>把协议帧写入日志。包含其他设备名称或地址的帧会被遮盖。</value></data>
   <data name="Prompt_Title.Header" xml:space="preserve"><value>耳机提示音</value></data>
   <data name="Dual_Preferred.Header" xml:space="preserve"><value>优先设备设置</value></data>
@@ -326,7 +328,6 @@
   <data name="Home_Eq.Text" xml:space="preserve"><value>耳机端 EQ</value></data>
   <data name="Home_Spatial.Text" xml:space="preserve"><value>空间音频</value></data>
   <data name="Home_GameMode.Header" xml:space="preserve"><value>游戏模式</value></data>
-  <data name="Home_DragHint.Text" xml:space="preserve"><value>拖动可旋转耳机</value></data>
   <data name="Home_Model_Name" xml:space="preserve"><value>耳机 3D 模型，左右拖动或按方向键旋转</value></data>
   <data name="Home_GenericModel_Message" xml:space="preserve"><value>欢律的型号列表中也没有这款耳机（产品 ID {0}），无法得知它的设置方式，因此只显示电量与固件信息。</value></data>
   <data name="Error_CycleAtLeastOne" xml:space="preserve"><value>最少选择 1 项</value></data>
@@ -418,7 +419,7 @@
   <data name="Settings_ArtworkUpdated.Header" xml:space="preserve"><value>上次更新</value></data>
   <data name="Settings_ArtworkCache.Header" xml:space="preserve"><value>本地缓存</value></data>
   <data name="Settings_ArtworkSource.Header" xml:space="preserve"><value>来源</value></data>
-  <data name="Settings_ArtworkSource.Description" xml:space="preserve"><value>独立社区服务，与 OPPO 无关。请求只包含产品 ID 和颜色。</value></data>
+  <data name="Settings_ArtworkSource.Description" xml:space="preserve"><value>独立社区服务。</value></data>
   <data name="Artwork_Device" xml:space="preserve"><value>{0} · 产品 ID {1} · 颜色 {2}</value></data>
   <data name="Artwork_NoDevice" xml:space="preserve"><value>尚未识别耳机</value></data>
   <data name="Artwork_Checking" xml:space="preserve"><value>正在检查素材…</value></data>
@@ -528,8 +529,55 @@
   <data name="Lhdc_Help.Header" xml:space="preserve"><value>LHDC 使用说明</value></data>
   <data name="Lhdc_HelpRestore.Text" xml:space="preserve"><value>4. 停用 LHDC 或卸载 EncoDeck 前，选择对应耳机，点击“恢复 Windows 音频”，允许管理员操作并等待完成。退出 EncoDeck 不会停止 LHDC 后台服务，也不会自动恢复 Windows 音频。</value></data>
   <data name="Lhdc_Disclaimer.Text" xml:space="preserve"><value>免责声明：LHDC 为基于第三方开源项目 LHDC-Win 的实验性功能，实际播放、重连和恢复仍待实机验证，不保证适用于所有设备或系统。使用中可能出现无声、卡顿或需要手动恢复音频的情况。请在了解驱动安装及系统设置变更风险后自行决定是否使用，并自行承担相关风险；EncoDeck 及其开发者在适用法律允许的范围内不对由此造成的损失承担责任。</value></data>
-  <data name="DeviceConnect.Content" xml:space="preserve"><value>连接设备</value></data>
-  <data name="Devices_Connecting" xml:space="preserve"><value>正在连接…</value></data>
-  <data name="Devices_ConnectFailed" xml:space="preserve"><value>未能连接耳机。请确认耳机已开机、在附近且可连接，然后重试。若仍失败，请在 Windows 蓝牙设置中连接。</value></data>
+  <data name="DeviceConnect.Content" xml:space="preserve"><value>在 Windows 中连接</value></data>
   <data name="Lhdc_Guide.Content" xml:space="preserve"><value>查看详细教程（驱动加载与恢复）</value></data>
+  <data name="Xiaomi_Level_0" xml:space="preserve"><value>档位 1</value></data>
+  <data name="Xiaomi_Level_1" xml:space="preserve"><value>档位 2</value></data>
+  <data name="Xiaomi_Level_2" xml:space="preserve"><value>档位 3</value></data>
+  <data name="Xiaomi_Level_3" xml:space="preserve"><value>档位 4</value></data>
+  <data name="Xiaomi_Level_4" xml:space="preserve"><value>档位 5</value></data>
+  <data name="Xiaomi_Level_5" xml:space="preserve"><value>档位 6</value></data>
+  <data name="Xiaomi_Level_6" xml:space="preserve"><value>档位 7</value></data>
+  <data name="Xiaomi_Level_7" xml:space="preserve"><value>档位 8</value></data>
+  <data name="Xiaomi_Level_8" xml:space="preserve"><value>档位 9</value></data>
+  <data name="Xiaomi_Level_9" xml:space="preserve"><value>档位 10</value></data>
+  <data name="Xiaomi_Level_10" xml:space="preserve"><value>档位 11</value></data>
+  <data name="Xiaomi_Level_11" xml:space="preserve"><value>档位 12</value></data>
+  <data name="Xiaomi_Level_12" xml:space="preserve"><value>档位 13</value></data>
+  <data name="Xiaomi_Level_13" xml:space="preserve"><value>档位 14</value></data>
+  <data name="Xiaomi_Level_14" xml:space="preserve"><value>档位 15</value></data>
+  <data name="Xiaomi_Level_15" xml:space="preserve"><value>档位 16</value></data>
+  <data name="Xiaomi_Level_16" xml:space="preserve"><value>档位 17</value></data>
+  <data name="Xiaomi_Level_17" xml:space="preserve"><value>档位 18</value></data>
+  <data name="Xiaomi_Level_18" xml:space="preserve"><value>档位 19</value></data>
+  <data name="Xiaomi_Level_19" xml:space="preserve"><value>档位 20</value></data>
+  <data name="Xiaomi_Level_20" xml:space="preserve"><value>档位 21</value></data>
+  <data name="Xiaomi_Level_21" xml:space="preserve"><value>档位 22</value></data>
+  <data name="Xiaomi_Level_22" xml:space="preserve"><value>档位 23</value></data>
+  <data name="Xiaomi_Level_23" xml:space="preserve"><value>档位 24</value></data>
+  <data name="Xiaomi_Level_24" xml:space="preserve"><value>档位 25</value></data>
+  <data name="Xiaomi_Level_25" xml:space="preserve"><value>档位 26</value></data>
+  <data name="Xiaomi_Level_26" xml:space="preserve"><value>档位 27</value></data>
+  <data name="Xiaomi_Level_27" xml:space="preserve"><value>档位 28</value></data>
+  <data name="Xiaomi_Level_28" xml:space="preserve"><value>档位 29</value></data>
+  <data name="Xiaomi_Level_29" xml:space="preserve"><value>档位 30</value></data>
+  <data name="Xiaomi_Level_30" xml:space="preserve"><value>档位 31</value></data>
+  <data name="Xiaomi_Level_31" xml:space="preserve"><value>档位 32</value></data>
+  <data name="Xiaomi_Eq_0" xml:space="preserve"><value>默认</value></data>
+  <data name="Xiaomi_Eq_1" xml:space="preserve"><value>人声</value></data>
+  <data name="Xiaomi_Eq_2" xml:space="preserve"><value>摇滚</value></data>
+  <data name="Xiaomi_Eq_3" xml:space="preserve"><value>古典</value></data>
+  <data name="Xiaomi_Eq_4" xml:space="preserve"><value>流行</value></data>
+  <data name="Xiaomi_Eq_5" xml:space="preserve"><value>低音</value></data>
+  <data name="Xiaomi_Eq_6" xml:space="preserve"><value>高音</value></data>
+  <data name="Xiaomi_Eq_7" xml:space="preserve"><value>音量增强</value></data>
+  <data name="Xiaomi_Eq_11" xml:space="preserve"><value>经典聆听</value></data>
+  <data name="Xiaomi_Eq_12" xml:space="preserve"><value>传奇聆听</value></data>
+  <data name="Xiaomi_Eq_13" xml:space="preserve"><value>舒缓低音</value></data>
+  <data name="Xiaomi_Eq_14" xml:space="preserve"><value>哈曼</value></data>
+  <data name="Xiaomi_Eq_15" xml:space="preserve"><value>哈曼大师</value></data>
+  <data name="Xiaomi_Eq_16" xml:space="preserve"><value>标准</value></data>
+  <data name="Xiaomi_Eq_17" xml:space="preserve"><value>户外</value></data>
+  <data name="Xiaomi_Eq_18" xml:space="preserve"><value>水下</value></data>
+  <data name="Xiaomi_Eq_21" xml:space="preserve"><value>均衡聆听</value></data>
 </root>

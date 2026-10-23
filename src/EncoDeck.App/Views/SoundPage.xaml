@@ -27,7 +27,7 @@
             <!-- EQ presets and custom EQ -->
             <Border x:Name="EqCard" Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Uid="Sound_DeviceEq" Text="Earbud EQ (applied inside the earbuds)" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock x:Uid="Sound_DeviceEq" Text="Earbud EQ" Style="{StaticResource BodyStrongTextBlockStyle}" />
                     <StackPanel x:Name="PresetHost" Spacing="4" />
                     <StackPanel x:Name="CustomHost" Spacing="4" />
                     <Button x:Name="AddCustomButton" x:Uid="Eq_AddCustom" Content="Add custom EQ" Click="OnAddCustomClick" />

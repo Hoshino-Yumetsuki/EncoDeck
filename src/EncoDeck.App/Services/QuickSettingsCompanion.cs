@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.App.ViewModels;
+using EncoDeck.Bluetooth.Discovery;
 using EncoDeck.Platform.Settings;
 using EncoDeck.Platform.Shell;
 using Microsoft.UI.Dispatching;
@@ -8,7 +9,8 @@ namespace EncoDeck.App.Services;
 
 /// <summary>
 /// Puts the device panel on top of Windows 11 Quick Settings while it is open, when the user has
-/// that switched on and earbuds are paired. The shell hooks only run while the setting is on.
+/// that switched on and earbuds are paired (and, unless the user opted out, Bluetooth is on).
+/// The shell hooks only run while the setting is on.
 /// </summary>
 public sealed class QuickSettingsCompanion : IDisposable
 {
@@ -22,15 +24,17 @@ public sealed class QuickSettingsCompanion : IDisposable
     private readonly WindowManager _windows;
     private readonly DeviceViewModel _device;
     private readonly QuickSettingsWatcher _watcher;
+    private readonly BluetoothRadioMonitor _radio;
     private readonly DispatcherQueue _dispatcher;
     private readonly DispatcherQueueTimer _timer;
 
-    public QuickSettingsCompanion(ISettingsStore settings, WindowManager windows, DeviceViewModel device, QuickSettingsWatcher watcher, DispatcherQueue dispatcher)
+    public QuickSettingsCompanion(ISettingsStore settings, WindowManager windows, DeviceViewModel device, QuickSettingsWatcher watcher, BluetoothRadioMonitor radio, DispatcherQueue dispatcher)
     {
         _settings = settings;
         _windows = windows;
         _device = device;
         _watcher = watcher;
+        _radio = radio;
         _dispatcher = dispatcher;
         _timer = dispatcher.CreateTimer();
         _timer.Interval = FollowInterval;
@@ -50,6 +54,7 @@ public sealed class QuickSettingsCompanion : IDisposable
         _settings.Changed -= OnSettingsChanged;
         _timer.Stop();
         _watcher.Dispose();
+        _radio.Dispose();
     }
 
     private void OnSettingsChanged(object? sender, Core.Configuration.AppSettings e) => _dispatcher.TryEnqueue(Apply);
@@ -76,7 +81,8 @@ public sealed class QuickSettingsCompanion : IDisposable
             Leave();
             return;
         }
-        if (_device.HasDevice && _watcher.GetCards() is { } cards) _windows.TrackQuickSettings(cards);
+        bool hiddenForRadio = _radio.IsOff && _settings.Current.HideQuickSettingsPanelWhenBluetoothOff != false;
+        if (_device.HasDevice && !hiddenForRadio && _watcher.GetCards() is { } cards) _windows.TrackQuickSettings(cards);
         else _windows.LeaveQuickSettings();
     }
 

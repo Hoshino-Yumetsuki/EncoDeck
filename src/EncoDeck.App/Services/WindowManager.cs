@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.App.Views;
+using EncoDeck.Platform.Settings;
 using EncoDeck.Platform.Shell;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -9,8 +10,9 @@ namespace EncoDeck.App.Services;
 /// <summary>
 /// Creates windows lazily and guarantees at most one of each. Closing the main window releases
 /// it entirely (the app keeps running in the tray when the user wants that).
+/// The main window's size and position are remembered in <paramref name="settings"/>, when given.
 /// </summary>
-public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTray, Action exit)
+public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTray, Action exit, ISettingsStore? settings = null)
 {
     private static readonly TimeSpan ReopenGuard = TimeSpan.FromMilliseconds(400);
     /// <summary>How long nothing may be on screen before the UI's memory is given back.</summary>
@@ -32,12 +34,16 @@ public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTr
     public void ShowMain(string? page = null)
     {
         _panel?.HidePanel();
+        bool created = _main is null;
         if (_main is null)
         {
-            _main = new MainWindow();
-            theme.Register(_main);
-            _main.Closed += (_, _) =>
+            var main = new MainWindow();
+            _main = main;
+            theme.Register(main);
+            if (settings?.Current.MainWindowBounds is { } saved) main.RestoreBounds(saved);
+            main.Closed += (_, _) =>
             {
+                if (settings is not null && main.SavedBounds is { } bounds) settings.Update(s => s with { MainWindowBounds = bounds });
                 _main = null;
                 if (!keepRunningInTray()) exit();
                 else TrimWhenIdle();
@@ -49,6 +55,7 @@ public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTr
         if (appWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter) presenter.Restore();
         appWindow.Show(activateWindow: true);
         _main.Activate();
+        if (created) _main.ApplyMaximized();
         WindowInterop.BringToForeground(_main);
     }
 
@@ -93,7 +100,7 @@ public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTr
         if (_quickSettings is null)
         {
             _quickSettings = new QuickSettingsPanelWindow();
-            theme.Register(_quickSettings);
+            theme.Register(_quickSettings, static s => s.QuickSettingsPanelTheme);
             _quickSettings.Closed += (_, _) => _quickSettings = null;
             _quickSettings.Hidden += (_, _) => TrimWhenIdle();
         }

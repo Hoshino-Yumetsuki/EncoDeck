@@ -6,7 +6,7 @@
 dotnet test tests/EncoDeck.Tests -c Debug
 ```
 
-覆盖范围（112 个测试，2026-10-20 全部通过）：
+最近一次多品牌改动全量测试：480 项通过（2026-10-23）。覆盖范围如下，当前数量以实际运行结果为准：
 
 | 领域 | 测试 |
 |---|---|
@@ -18,7 +18,17 @@ dotnet test tests/EncoDeck.Tests -c Debug
 | 重连状态机 | 链路断开等待、链路循环、通道掉线重连、有界重试→不可用→手动重试、无服务不重试、释放 |
 | 其他 | 状态存储、能力过滤、弹窗冷却/全屏抑制、低电量迟滞、弹窗定位（四边/多屏/负坐标）、日志脱敏、设置持久化、缓存恢复、SDP 解析 |
 
-`FakeByteChannel` / `FakeOppoDevice` 只存在于测试项目中；应用本身没有任何模拟设备或 Demo 数据路径。
+`FakeByteChannel` / `FakeOppoDevice` 用于测试；应用另有显式启用的品牌 UI 演示模式，演示不运行真实蓝牙会话，不能用作实机兼容证据。
+
+多品牌回归可单独运行：
+
+```powershell
+dotnet test tests/EncoDeck.Tests --filter "FullyQualifiedName~Xiaomi|FullyQualifiedName~Huawei|FullyQualifiedName~SonyAkg"
+```
+
+`XiaomiFeaturesTests` 覆盖官方配置报文、写后回读、拒绝写入、通知 ACK 和未知型号；`HuaweiDeviceControllerTests` 覆盖独立空间音频、错误应答和非法 TLV；`SonyAkgTests` 覆盖 MDR v1/v2、EQ 能力及 BES 自动播放/暂停。协议模拟器通过不代表全部型号实机可用。
+
+以下 Probe 命令示例主要面向 OPPO。其他品牌的 `monitor` 可用于观察统一设备运行时，不能把 OPPO 专用写入命令直接用于其他品牌。
 
 ## 2. 用 EncoDeck.Probe 验证真实耳机
 

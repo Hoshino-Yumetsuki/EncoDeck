@@ -36,8 +36,6 @@ public interface IDeviceManager : IDeviceCommandService, IAdvancedDeviceCommands
 
     /// <summary>Call after the system resumes from sleep: re-validates the control channel.</summary>
     void NotifySystemResumed();
-
-    Task<CommandResult> ConnectDeviceAsync(string deviceId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -266,15 +264,6 @@ public sealed class DeviceManager : IDeviceManager
     public Task<CommandResult> AddCustomEqualizerAsync(CancellationToken cancellationToken = default) => WithController(c => c.AddCustomEqualizerAsync(cancellationToken));
 
     public Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => WithController(c => c.DeleteCustomEqualizerAsync(id, cancellationToken));
-
-    public async Task<CommandResult> ConnectDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
-    {
-        if (!KnownDevices.Any(d => d.Identity.DeviceId == deviceId)) return CommandResult.NotConnected;
-        await SelectDeviceAsync(deviceId, cancellationToken).ConfigureAwait(false);
-        var active = _active;
-        if (active?.Identity.DeviceId != deviceId) return CommandResult.NotConnected;
-        return await active.Supervisor.ConnectAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default)
     {

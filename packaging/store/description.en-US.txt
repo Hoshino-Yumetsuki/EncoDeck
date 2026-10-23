@@ -1,0 +1,35 @@
+Manage your Bluetooth earbuds right from Windows — no need to pick up your phone just to switch noise cancellation.
+
+EncoDeck brings the everyday settings of your earbuds' phone app to the PC: check battery, switch noise control, adjust sound, and manage touch gestures. It lives quietly in the system tray and is one click away when you need it.
+
+OPPO and OnePlus earbuds are the primary focus, with partial support for earbuds from several other major brands. Available features vary by model; EncoDeck shows only the settings your earbuds actually support.
+
+BATTERY & STATUS
+• Left, right and case battery; a single level for headphones
+• Charging, wear status and firmware version (model dependent)
+• Low-battery alerts; stale case readings are labelled "last read"
+
+NOISE CONTROL
+• Noise cancelling / Transparency / Off / Adaptive, plus ANC strength
+• Stays in sync when you change modes with gestures or your phone
+• Global hotkeys to switch modes, even in full-screen games
+
+SOUND
+• Built-in EQ presets; custom EQ on supported models
+• Spatial audio and head tracking, dynamic bass, low-latency game mode
+
+EARBUD SETTINGS
+• Touch gestures, wear detection, prompt volume
+• Find my earbuds, ear-tip fit test
+• Dual-device connection management
+
+WINDOWS INTEGRATION
+• Tray quick panel with light and dark themes
+• On Windows 11, a panel docks above Quick Settings (Win + A)
+• Connection pop-up with device card and animation; stays quiet in full screen
+• Product images or a rotatable 3D model on the home page
+• Runs in the background, starts with Windows, updates through the Microsoft Store
+
+Pair and connect your earbuds in Windows Bluetooth settings first. Some product images and animations are downloaded on first use.
+
+EncoDeck is an open-source, unofficial tool and is not affiliated with any earbud brand. Apart from the OPPO Enco X4, most models have not yet been tested on real hardware — feedback is welcome on GitHub: https://github.com/TIANLI0/EncoDeck

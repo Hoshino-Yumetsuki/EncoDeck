@@ -13,15 +13,18 @@ public sealed class HuaweiDeviceProfile : IControllableProfile
 {
     private const string Evidence = "OppoPodsManager/OpenFreebuds per-model table; not verified on hardware by EncoDeck.";
 
-    public HuaweiDeviceProfile(HuaweiModel model)
+    public HuaweiDeviceProfile(HuaweiModel model, bool spatialConfirmed = false)
     {
         Model = model;
         NoiseControlOptions = BuildNoiseOptions(model);
         EqualizerPresets = [.. model.EqPresets.Select(p => new EqualizerPreset(p.PresetId, p.DisplayName, p.ResourceKey, CapabilitySupport.Supported))];
-        Capabilities = BuildCapabilities(model);
+        SpatialConfirmed = spatialConfirmed;
+        Capabilities = BuildCapabilities(model, spatialConfirmed);
     }
 
     public HuaweiModel Model { get; }
+    public bool SpatialConfirmed { get; }
+    internal HuaweiDeviceProfile WithSpatial() => SpatialConfirmed ? this : new(Model, true);
 
     public string Brand => "huawei";
 
@@ -83,7 +86,7 @@ public sealed class HuaweiDeviceProfile : IControllableProfile
         return [.. options];
     }
 
-    private static DeviceCapabilities BuildCapabilities(HuaweiModel model)
+    private static DeviceCapabilities BuildCapabilities(HuaweiModel model, bool spatialConfirmed)
     {
         static CapabilitySupport S(bool on) => on ? CapabilitySupport.Supported : CapabilitySupport.Unsupported;
         return DeviceCapabilities.CreateBuilder()
@@ -97,7 +100,8 @@ public sealed class HuaweiDeviceProfile : IControllableProfile
             .Set(DeviceCapability.InEarDetection, S(model.WearDetection), Evidence)
             .Set(DeviceCapability.GamingMode, S(model.LowLatency), Evidence)
             .Set(DeviceCapability.DualDeviceConnection, S(model.DualConnect), Evidence)
-            .Set(DeviceCapability.SpatialAudio, CapabilitySupport.Unsupported, "MBB spatial-audio TLVs are unverified upstream.")
+            .Set(DeviceCapability.SpatialAudio, S(spatialConfirmed), "Official audio plugin 16.0.9.330 MBB feature 24, enabled after live readback.")
+            .Set(DeviceCapability.HeadTracking, S(spatialConfirmed), "Independent spatial audio mode 1, confirmed by device.")
             .Set(DeviceCapability.FindMyEarbuds, CapabilitySupport.Unsupported, "MBB find-device TLVs are unverified upstream.")
             .Build();
     }

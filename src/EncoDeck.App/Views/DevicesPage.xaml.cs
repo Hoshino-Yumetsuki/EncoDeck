@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using System.ComponentModel;
 using EncoDeck.App.Services;
 using EncoDeck.App.ViewModels;
 using EncoDeck.Bluetooth;
+using EncoDeck.Core.Capabilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -17,6 +19,7 @@ public sealed partial class DevicesPage : Page
             App.Instance.Host.Devices.KnownDevicesChanged += OnDevicesChanged;
             ViewModel.PropertyChanged += OnViewModelChanged;
             Build();
+            BuildCapabilities();
         };
         Unloaded += (_, _) =>
         {
@@ -29,9 +32,32 @@ public sealed partial class DevicesPage : Page
 
     private void OnDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(Build);
 
-    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(DeviceViewModel.IsConnectingDevice)) Build();
+        if (e.PropertyName is nameof(DeviceViewModel.ProfileKey)) BuildCapabilities();
+    }
+
+    private void BuildCapabilities()
+    {
+        CapabilityHost.Children.Clear();
+        CapabilityCard.Visibility = ViewModel.Profile is null ? Visibility.Collapsed : Visibility.Visible;
+        if (ViewModel.Profile is not { } profile) return;
+        foreach (var (capability, entry) in profile.Capabilities.All)
+        {
+            var grid = new Grid { ColumnSpacing = 12 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var name = new TextBlock { Text = Loc.Get($"Cap_{capability}") };
+            var support = new TextBlock { Text = Loc.Get($"Support_{entry.Support}"), FontWeight = entry.Support == CapabilitySupport.Supported ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal };
+            var evidence = new TextBlock { Text = entry.Evidence, TextWrapping = TextWrapping.Wrap, Style = (Style)Application.Current.Resources["SecondaryTextStyle"] };
+            Grid.SetColumn(support, 1);
+            Grid.SetColumn(evidence, 2);
+            grid.Children.Add(name);
+            grid.Children.Add(support);
+            grid.Children.Add(evidence);
+            CapabilityHost.Children.Add(grid);
+        }
     }
 
     private void Build()
@@ -67,14 +93,10 @@ public sealed partial class DevicesPage : Page
         UIElement action;
         if (!device.IsConnected)
         {
-            action = new Button
-            {
-                Content = Loc.Get(device.IsActive && ViewModel.IsConnectingDevice ? "Devices_Connecting" : "DeviceConnect/Content"),
-                Command = ViewModel.ConnectDeviceCommand,
-                CommandParameter = device.Identity.DeviceId,
-                IsEnabled = !ViewModel.IsConnectingDevice,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+            // Windows connects audio and the link together; the supervisor attaches control once the link is up.
+            var button = new Button { Content = Loc.Get("DeviceConnect/Content"), VerticalAlignment = VerticalAlignment.Center };
+            button.Click += OnOpenBluetoothSettings;
+            action = button;
         }
         else if (device.IsActive)
         {

@@ -16,7 +16,8 @@
 param(
     [Parameter(Mandatory)] [string] $Package,
     [string] $AppId = "9PN6D8G1K9WZ",
-    [string] $ReleaseNotes
+    [string] $ReleaseNotes,
+    [string] $DescriptionDirectory = (Join-Path $PSScriptRoot "..\packaging\store")
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +50,23 @@ $submission.applicationPackages = @($submission.applicationPackages) + [pscustom
 }
 if ($ReleaseNotes) {
     foreach ($listing in $submission.listings.PSObject.Properties) { $listing.Value.baseListing.releaseNotes = $ReleaseNotes }
+}
+# Store descriptions live in packaging\store\description.<lang>.txt and ride along with the package, so
+# the listing never needs a separate Partner Center edit (a pending draft would block this script).
+if ($DescriptionDirectory) {
+    foreach ($listing in $submission.listings.PSObject.Properties) {
+        # Listing keys may be "zh-cn" or "zh-hans-cn"; fall back to the first file of the same language.
+        $file = Join-Path $DescriptionDirectory "description.$($listing.Name).txt"
+        if (-not (Test-Path -LiteralPath $file)) {
+            $language = $listing.Name.Split('-')[0]
+            $file = Get-ChildItem -LiteralPath $DescriptionDirectory -Filter "description.$language-*.txt" -ErrorAction SilentlyContinue |
+                Select-Object -First 1 -ExpandProperty FullName
+        }
+        if ($file -and (Test-Path -LiteralPath $file)) {
+            $listing.Value.baseListing.description = (Get-Content -LiteralPath $file -Raw -Encoding utf8).Trim()
+            Write-Host "Description updated for $($listing.Name)"
+        }
+    }
 }
 $body = $submission | ConvertTo-Json -Depth 20
 $submission = Invoke-RestMethod -Method Put "$api/submissions/$($submission.id)" -Headers $headers -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body))

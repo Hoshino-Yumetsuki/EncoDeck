@@ -1,76 +1,116 @@
-# 兼容性（COMPATIBILITY）
+# 设备兼容性
 
-EncoDeck 为每个型号提供的功能都按欢律对该型号的官方实现工作：发送、等待耳机确认、再按官方方式回读，耳机确认后界面才显示新状态。没有“实验性”开关，也不提供没有官方实现依据的功能。
+以下为当前开发版的设备与功能列表；正式版以对应版本为准。同一行设备具有相同的功能范围。实际可用项仍取决于固件和设备返回的能力；目前主要在 OPPO Enco X4 上完成实机验证。
 
-证据分三级：
+## OPPO / 一加 / realme / DIZO
 
-- **真机读写**：在真实设备上用 EncoDeck 或 EncoDeck.Probe 完成写入、确认与回读。
-- **真机读取**：会话启动时从真实设备读到并正确解析（`EncoDeck.Probe monitor`）；写入路径与欢律一致并有单元测试，尚未对真机写入。
-- **官方实现**：按欢律代码实现并有单元测试，真机尚未触发。
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| OPPO Enco X4、OPPO Enco Bohr、OnePlus Buds Pro 4、OnePlus Buds Bohr | 电量、充电状态、降噪、通透、自适应降噪、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、动态低音、固件信息 |
+| OPPO Enco M31、OPPO Enco W31、realme Buds Wireless 2S、realme Buds Wireless 3、realme Buds Wireless 3 Neo、realme Buds Wireless 5 ANC、realme Buds Wireless 6 ANC、realme Buds Air 3、realme Buds Q2s、realme Buds T100、realme Buds Air 3 Neo、realme Buds T110、realme Buds T01、realme Buds T200 Lite、realme Buds T200x、realme Buds Air 2 Neo、realme Buds Air、realme Cobble Speaker、realme Buds Q2、realme Buds Air Pro、realme Brick Speaker、realme Buds Air 2、realme Buds Wireless 2、realme Buds Wireless 2 Neo、DIZO Wireless、DIZO GoPods D、DIZO GoPods、realme Pocket Speaker、realme Buds Wireless Pro、realme Buds Air Neo | 电量、充电状态、固件信息 |
+| OPPO Enco M33 | 电量、充电状态、降噪、通透、预设 EQ、手势设置、查找耳机、贴合度检测、动态低音、固件信息 |
+| OnePlus BulletsWireless Z2 ANC | 电量、充电状态、降噪、通透、预设 EQ、自定义 EQ、手势设置、查找耳机、贴合度检测、动态低音、固件信息 |
+| OnePlus Bullets Wireless Z3 | 电量、充电状态、预设 EQ、空间音频、手势设置、动态低音、固件信息 |
+| OPPO Enco Free、OnePlus Buds、OnePlus Buds Z、OPPO Enco Air、OPPO Enco Play | 电量、充电状态、手势设置、查找耳机、固件信息 |
+| OPPO Enco W51 | 电量、充电状态、佩戴检测开关、手势设置、查找耳机、固件信息 |
+| OnePlus Buds Pro | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OnePlus Buds Z2 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、佩戴检测开关、手势设置、查找耳机、贴合度检测、固件信息 |
+| OPPO Enco X | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、手势设置、查找耳机、贴合度检测、固件信息 |
+| OnePlus Buds N、OnePlus Nord Buds 2r、OnePlus Buds V | 电量、充电状态、预设 EQ、自定义 EQ、游戏模式、手势设置、查找耳机、固件信息 |
+| OnePlus Nord Buds CE、OPPO Enco R、OPPO Enco Air2、OPPO Enco Air2i、OPPO Enco Buds2、OPPO Enco Air 3i | 电量、充电状态、预设 EQ、游戏模式、手势设置、固件信息 |
+| OPPO Enco Free2、OPPO Enco Free2i | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OnePlus Buds Pro 2、OnePlus Buds Pro 2（轻享版）、OnePlus Buds Pro 2R | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、动态低音、固件信息 |
+| OPPO Enco Buds、OPPO Enco Air Lite | 电量、充电状态、游戏模式、手势设置、固件信息 |
+| OnePlus Nord Buds 2、OnePlus Buds Ace | 电量、充电状态、降噪、通透、预设 EQ、自定义 EQ、游戏模式、手势设置、查找耳机、动态低音、固件信息 |
+| OPPO Enco Air2 Pro、OPPO Enco R Pro | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、佩戴检测开关、手势设置、查找耳机、固件信息 |
+| OPPO Enco X2 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OnePlus Buds 3、OnePlus Nord Buds 3 Pro | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、动态低音、固件信息 |
+| OnePlus Buds Pro 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、动态低音、固件信息 |
+| OPPO Enco Air3、OPPO Enco R2、OPPO Enco Air3s | 电量、充电状态、预设 EQ、空间音频、游戏模式、手势设置、双设备连接、查找耳机、固件信息 |
+| OnePlus Buds Ace 2、OnePlus Nord Buds 3 | 电量、充电状态、降噪、通透、预设 EQ、自定义 EQ、空间音频、游戏模式、手势设置、双设备连接、查找耳机、动态低音、固件信息 |
+| OnePlus Buds 4 | 电量、充电状态、降噪、通透、自适应降噪、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、动态低音、固件信息 |
+| OnePlus Nord Buds 3r、OnePlus Buds 3V、OnePlus Nord Curie DO、OPPO Enco Air4i、OPPO Enco Buds3 Pro、OPPO Enco R4、OPPO Enco Buds3s | 电量、充电状态、预设 EQ、自定义 EQ、空间音频、游戏模式、手势设置、双设备连接、查找耳机、提示音量、固件信息 |
+| OPPO Enco Air3 Pro、OPPO Enco Free3、OPPO Enco Air4 Pro、OPPO Enco R3 Pro | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OnePlus Open Buds、OPPO Enco Clip、OPPO Enco Clip2、OPPO Enco Nobel、OnePlus Buds Clip、OnePlus Open Nobel | 电量、充电状态、预设 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、提示音量、固件信息 |
+| OnePlus Buds Ace 3、OnePlus Nord Buds Einstein 1、OnePlus Nord Buds 4 Pro、OnePlus Nord Buds Einstein 2、OnePlus Nord Buds 4、OnePlus Nord Buds ohm EX、OPPO Enco Air5 Pro、OPPO Enco Einstein 1、OPPO Enco Einstein 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、动态低音、固件信息 |
+| OPPO Enco X3i | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、动态低音、固件信息 |
+| OPPO Enco Air2（新声版）、OPPO Enco Air3i、OPPO Enco R3 | 电量、充电状态、预设 EQ、空间音频、游戏模式、手势设置、固件信息 |
+| OPPO Enco X3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OnePlus Flow Buds、OnePlus Nord Buds Laplace 4、OPPO Enco Air5s、OPPO Enco Laplace 1、OPPO Enco Laplace 2、OPPO Enco Air5s（星光版）、OPPO Enco Laplace 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、提示音量、动态低音、固件信息 |
+| OPPO Enco Buds2 Pro | 电量、充电状态、预设 EQ、游戏模式、手势设置、查找耳机、固件信息 |
+| OPPO Enco Free4、OPPO Enco X3s、OPPO Enco Free4（丹拿版） | 电量、充电状态、降噪、通透、自适应降噪、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、固件信息 |
+| OPPO Enco Air4、OPPO Enco Buds3 Pro+、OPPO Enco Air4s | 电量、充电状态、降噪、通透、预设 EQ、空间音频、游戏模式、手势设置、双设备连接、查找耳机、固件信息 |
+| OPPO Enco Buds3、OPPO Enco Air4（新声版）、OPPO Enco R5、OPPO Enco xiapu OF | 电量、充电状态、预设 EQ、空间音频、游戏模式、手势设置、双设备连接、查找耳机、提示音量、固件信息 |
+| OPPO Enco Air5、OPPO Enco ohm DO、OPPO Enco ohm EX、OPPO Enco ohm | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、固件信息 |
+| realme Buds Wireless 6 Neo、realme Buds Wireless 6、realme Buds Air 3S、realme Buds T300、realme Buds N1 Pro、realme Buds T310、realme Buds N1、realme Buds T200、realme Buds Clip、realme TechLife Buds、realme Buds T500 | 电量、充电状态、查找耳机、固件信息 |
+| OnePlus Buds N | 电量、充电状态、预设 EQ、自定义 EQ、手势设置、查找耳机、固件信息 |
+| realme Buds Air 5 Pro、realme Buds Air 5、realme Buds Air6 Pro、realme Buds Air6、realme Buds Air7、realme Buds Air7 Pro、realme Buds T500 Pro、realme Buds Air8、realme Buds Air8 Pro、realme Buds T500 Pro Harry Potter Edition | 电量、充电状态、佩戴检测开关、查找耳机、固件信息 |
 
-## 已测试设备
+## vivo / iQOO
 
-| 型号 | 产品 ID | 固件（左/右/盒） | Windows | 测试日期 | 结论 |
-|---|---|---|---|---|---|
-| OPPO Enco X4 | `06EC10` | 116 / 116 / 100 | Windows 11 build 26340，Intel 蓝牙 | 2026-10-20 | 全部官方功能可用 |
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| vivo TWS 1 | 电量、充电状态、佩戴状态（只读）、固件信息 |
+| vivo TWS Neo、vivo TWS 2e、vivo TWS Air、vivo TWS A1、iQOO TWS Air、vivo TWS Air2、vivo TWS A2、iQOO TWS Air2、vivo TWS 3i、iQOO TWS 1i、vivo TWS A3、vivo TWS 3i (Long Battery) | 电量、充电状态、预设 EQ、佩戴状态（只读）、查找耳机、固件信息 |
+| vivo TWS 2、vivo TWS 3、vivo TWS 3 Pro、vivo TWS Air Pro、vivo TWS A1 Pro、iQOO TWS Air Pro、vivo TWS X1、iQOO TWS 1、vivo TWS 3e、iQOO TWS 1e | 电量、充电状态、降噪、通透、预设 EQ、佩戴状态（只读）、查找耳机、固件信息 |
+| vivo TWS 4、iQOO TWS 2、vivo TWS 4 Hi-Fi、vivo TWS Air3 Pro、iQOO TWS Air3 Pro、vivo TWS Air3 Pro (Long Battery)、vivo TWS 5、vivo TWS 5 Hi-Fi、iQOO TWS 5、iQOO TWS 5e、vivo TWS 5e、vivo TWS 5 Pro | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、佩戴状态（只读）、查找耳机、固件信息 |
+| vivo TWS Air3、iQOO TWS Air3、vivo TWS A4、vivo TWS 5i、vivo TWS A5、iQOO TWS 5i | 电量、充电状态、预设 EQ、游戏模式、佩戴状态（只读）、查找耳机、固件信息 |
+| vivo Headphones、iQOO Headphones | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、查找耳机、固件信息 |
 
-## 其他型号（按欢律型号配置）
+## 华为
 
-欢律为每个型号保存一份配置（降噪模式树、EQ 预设、手势、功能开关等）。EncoDeck 内置了这份配置中的 **85 个 OPPO / 一加型号**（`OppoCatalog.g.cs`，由 `tools/assets/make_models.py` 生成，只含互操作所需的事实），另从 OppoPodsManager 的型号表补充了 **50 个 realme / DIZO / 老款 OPPO、一加型号**（`OppoCatalog.Supplement.g.cs`，`make_models.py --supplement` 生成），并按欢律读取配置的方式把它们变成型号定义（`OppoCatalog.cs`，规则见 [PROTOCOL_FINDINGS.md](PROTOCOL_FINDINGS.md) §9）。这些型号可以直接使用全部对应功能：降噪、EQ、自定义 EQ、手势、长按降噪循环、游戏模式、双设备连接、空间音频、BassWave、查找耳机、贴合度检测、提示音音量、佩戴检测等。
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| HUAWEI FreeBuds 3 | 型号识别 / 素材；独立空间音频需设备确认；暂不开放降噪控制 |
+| HUAWEI FreeBuds 3i | 电量、充电状态、降噪、通透、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds 4E | 电量、充电状态、降噪、降噪档位、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds 4i | 电量、充电状态、降噪、通透、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds 5 | 电量、充电状态、降噪、降噪档位、游戏模式、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds 5i、HUAWEI FreeBuds 6i、HUAWEI FreeBuds Pro 3、HUAWEI FreeBuds Pro 5 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds 7i、HUAWEI FreeBuds Studio | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds Pro | 电量、充电状态、降噪、通透、降噪档位、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds Pro 2 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds Pro 4、HUAWEI FreeClip 2 | 电量、充电状态、预设 EQ、游戏模式、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds SE、HUAWEI FreeClip、HUAWEI Eyewear | 电量、充电状态、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds SE 2 | 电量、充电状态、预设 EQ、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeBuds SE 4 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeArc | 电量、充电状态、预设 EQ、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeLace Pro | 电量、充电状态、降噪、通透、降噪档位、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI FreeLace Pro 2 | 电量、充电状态、降噪、通透、降噪档位、游戏模式、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
+| HUAWEI Eyewear 2 | 电量、充电状态、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
 
-- 证据等级为 **官方实现**：与欢律的配置和代码路径一致，有单元测试；除 X4 外尚未在真机上测试。由配置生成的 X4 定义与真机验证过的 X4 定义逐项一致（`OppoCatalogTests`）。
-- 连接后按耳机的能力位图决定运行时差异，与欢律相同：空间音频 V2（`0x0422`）或 V1（功能 27）、带游戏音效时游戏模式主开关为 40、只有耳机支持 `0x0418` 时提供自定义 EQ、按固件版本开放的 EQ 预设。
-- 耳机在 Windows 中被改名时，先按通用配置连接，读到产品 ID 后自动切换到对应型号并读取全部设置。
-- 只有欢律型号列表中也没有的产品 ID 才显示“未识别的型号”，此时只读取电量与固件信息。
+## 索尼
 
-欢迎按 [TESTING.md](TESTING.md) 提交其他型号的 Probe 报告，把证据从“官方实现”提升为“真机读写”。
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| INZONE H9 II、LinkBuds、LinkBuds Clip、LinkBuds Fit、LinkBuds Open、LinkBuds S、MDR-XB950B1、MDR-XB950N1、ULT WEAR、WF-1000X、WF-1000XM3、WF-1000XM4、WF-1000XM5、WF-1000XM6、WF-C500、WF-C510、WF-C700N、WF-C710N、WF-H800、WF-SP700N、WF-SP800N、WF-SP900、WH-1000XM2、WH-1000XM3、WH-1000XM4、WH-1000XM4C、WH-1000XM5、WH-1000XM6、WH-CH520、WH-CH530 series、WH-CH700N、WH-CH720N、WH-CH730N series、WH-H800、WH-H810、WH-H900N、WH-H910N、WH-XB700、WH-XB900N、WH-XB910N、WI-1000X、WI-1000XM2、WI-C100、WI-C600N、WI-H700、WI-SP600N | 电量 / 充电状态（按设备上报）；降噪 / 环境声、预设 EQ（需设备确认） |
 
-### 补充型号（realme / DIZO / 老款 OPPO、一加）
+## AKG
 
-与 OPPO 走同一套协议和控制服务，但型号表里没有降噪、EQ 等配置，因此只提供电量、充电、佩戴状态和固件信息；连接后按耳机上报的产品 ID 识别。Enco Quiet、W11、W31 Lite、O-Free、M32、Bullets Wireless Z2 这 6 款在官方配置中没有 SPP 控制通道，未收录。realme Buds T500 Pro 的降噪写入方式（不回 ACK、不能查询）与 OPPO 不同，暂未提供降噪。
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| AKG N400NC、AKG N700NCM2、AKG N200NC、AKG Y600 | 电量、降噪 / 环境声、入耳自动播放 / 暂停（需设备确认） |
+| AKG N700NC、AKG N5 Hybrid、AKG N9 Hybrid | 仅型号识别和素材，暂不提供耳机控制 |
 
-## 其他品牌
+## 小米 / Redmi
 
-以下协议移植自 [OppoPodsManager](https://github.com/Zhaoyi-ya/OppoPodsManager)（GPL-3.0-or-later），并参考 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 交叉核对。证据等级均为 **参考实现**：协议帧有单元测试（使用参考项目公开的抓包向量），**尚未在真机上验证**。所有写入都在耳机回读确认后才显示为成功。没有产品图的型号显示通用的单色耳机图标。
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| REDMI Buds 6 Pro 电竞版、REDMI Buds 7S、REDMI Buds 8、REDMI Buds 8 Active、REDMI Buds 8 Lite、REDMI Buds 8 Pro、REDMI Buds 8 活力版、REDMI Buds 8 青春版、REDMI Buds 8S、REDMI Headphones Neo、REDMI 头戴降噪耳机、REDMI Buds 6 Pro、REDMI Buds SE、Redmi Buds 4、Redmi Buds 4 Active、Redmi Buds 4 Pro、Redmi Buds 4 哈利·波特版、Redmi Buds 4活力版、Redmi Buds 5、Redmi Buds 5 AAPE、Redmi Buds 5 Pro、Redmi Buds 5 Pro Gaming、Redmi Buds 6 Active、Redmi Buds 6 Lite、Redmi Buds 6 Play、Redmi Buds 6 活力版、Redmi Buds 6 青春版、Redmi Buds 6S、Redmi Buds 6、Xiaomi Air 5、Xiaomi Buds 3、Xiaomi Buds 3 Pro、Xiaomi Buds 3 Star Wars、Xiaomi Buds 3T Pro、Xiaomi Buds 4、Xiaomi Buds 4 Pro、Xiaomi Buds 5、Xiaomi Buds 6、Xiaomi OpenWear Stereo、Xiaomi OpenWear Stereo Pro、Xiaomi 开放式耳机、Xiaomi 开放式耳机 Pro、Xiaomi 真无线降噪耳机 3 迪士尼100周年限定版、Xiaomi 耳夹式耳机、Xiaomi 骨传导耳机2、Xiaomi Buds 5 Pro、Xiaomi Buds 5 Pro Wi-Fi、小米 Air4 SE | 电量；降噪 / 通透及档位、预设 EQ、游戏低延迟、双设备开关、空间音频 / 头部跟踪、提示音量（按官方型号配置与设备回读开放） |
 
-| 品牌 | 型号 | 已实现 | 未实现 / 说明 |
-|---|---|---|---|
-| vivo / iQOO | 43 款（TWS、TWS Air、TWS Neo、Headphones 等）+ 通用识别 | 电量、充电、佩戴状态、固件；按型号：降噪 / 通透 / 关闭、内置 EQ、查找耳机、游戏模式 | 降噪档位、自定义 EQ、手势等。除 TWS 4、TWS 3e、Air3 Pro 外，协议版本按参考实现推定 |
-| HUAWEI | 24 款（FreeBuds、FreeClip、FreeArc、FreeLace、Eyewear）+ 通用识别 | 电量、充电；按型号：降噪及档位（动态 / 舒适 / 均衡 / 深度）、通透、内置 EQ、佩戴检测、低延迟、双设备开关 | 自定义 EQ、查找耳机、固件信息。参考实现中部分型号固定使用 RFCOMM 通道 1，EncoDeck 按 SDP 服务查找，若连不上请提交 Probe 报告 |
-| Xiaomi / Redmi | 按名称识别系列（无逐型号表） | 鉴权、左右耳与充电盒电量、游戏模式（耳机支持时） | 降噪、EQ：参考实现未确认取值，未提供 |
-| EDIFIER | W820NB、W200BT + 通用识别 | 电量、降噪 / 通透 / 关闭（30 秒轮询） | 充电状态、EQ |
+## 漫步者
 
-## OPPO Enco X4 功能表
+| 兼容设备 | 对应功能 |
+| --- | --- |
+| EDIFIER W820NB、EDIFIER W200BT | 电量、降噪、通透 |
 
-| 功能 | 证据 | 说明 |
-|---|---|---|
-| 控制通道（RFCOMM `0000079A-…`，通道 15） | 真机读写 | SDP 查询、连接、握手、官方会话启动顺序 |
-| 左/右/盒电量、充电状态 | 真机读取 | 查询 + 主动上报；盒子电量仅在耳机入盒时上报，其余时间显示“上次读取” |
-| 佩戴/出入盒状态 | 真机读取 | 查询 + 主动上报 |
-| 降噪：关闭 / 降噪 / 通透 / 自适应 | 真机读写 | 顶层按钮发送自身序号（自适应 = 11），与欢律一致 |
-| 降噪强度：深度、中度、轻度、智能切换 | 真机读写（深度、轻度）；真机读取（中度、智能） | 智能切换时显示当前实际档位 |
-| 自适应 · 更少噪音 / 标准 / 更多噪音 | 真机读写（标准）；官方实现（更少、更多） | |
-| 耳机触控/手机切换后同步 | 真机读取 | 事件 `0204/03` |
-| 固件版本、产品 ID、颜色 ID | 真机读取 | `0x0105`、`0x0102`、`0x010B` |
-| 耳机端 EQ 预设（丹拿原声、丹拿高解析、纯享人声、清亮高音、澎湃低音） | 真机读取 | `0x0406` 写入 + `0x010F` 回读 |
-| 自定义 EQ（最多 3 组，10 段，−6..+6） | 真机读取 | `0x0418` 添加/选择/调节/重命名/删除，之后回读 `0x0122` |
-| BassWave 动态低音（开关 + 档位） | 真机读取（档位 −5..5） | 功能 29 + `0x041B` |
-| 空间音频：关闭 / 固定 / 头部跟踪 | 真机读取 | `0x0422` + `0x012A`；开启时按官方关闭 Hi-Res 模式 |
-| 游戏模式、游戏低延迟、游戏音效强化 | 真机读取 | 功能 40/6 + `0x0423`；包含官方的互斥与联动规则 |
-| 设备双连：开关、设备列表、连接/断开/移除、优先设备 | 真机读取（3 台设备、本机标记） | `0x0112`、`0x0429`、`0x0132`；本机需从 Windows 蓝牙设置断开 |
-| 耳机控制：单捏/双捏/三捏/长捏/滑动（左右耳分别设置）、通话手势 | 真机读取（16 条记录） | `0x0401` + `0x0108`；X4 按左右耳分别上报通话手势 |
-| 长捏噪声控制循环（每只耳机，至少 2 项） | 真机读取 | `0x0404 02 03/04` |
-| 点头 / 摇头接听 | 真机读取 | 功能 59 + `0x0431` |
-| 耳机提示音音量（1–10） | 真机读取 | `0x0427` + `0x0130` |
-| 佩戴检测、入睡暂停、Swift Pair、快捷语音指令 | 真机读取 | 功能 4 / 58 / 55 / 25 |
-| 查找耳机 | 官方实现 | 佩戴时先提示听力风险；50 秒或入盒后自动停止 |
-| 贴合度检测 | 官方实现 | 需双耳佩戴；15 秒超时 |
-| BLE 开盒弹窗 | 未实现 | 需要先实测广播格式 |
-| OTA 固件升级 | 不做 | |
-| 听力增强测试、耳机专注、对话感知、AI 摘要、翻译 | 不做 | 依赖手机；对话感知官方说明连接电脑时不生效 |
+## 未列出的型号
 
-## 提交新型号或补充证据
+| 系列 | 对应功能 |
+| --- | --- |
+| OPPO / 一加 / realme / DIZO | 尝试通用协议；按返回的产品 ID 识别，未知产品仅提供基础状态 |
+| vivo / iQOO、华为、漫步者 | 尝试各品牌通用协议，基础状态以设备实际应答为准 |
+| Xiaomi / Redmi | 按系列名称尝试鉴权、电量及已实现配置；目录未收录的型号不开放猜测的 EQ 预设或降噪档位 |
+| Sony / AKG | 无通用型号兜底；仅匹配上表内置名称 |
 
-1. 按 [TESTING.md](TESTING.md) 运行 `EncoDeck.Probe monitor` 和对应的写入命令（写入会自动回读并恢复）。
-2. 把输出（`--report` 生成的 JSON 已脱敏）附在 issue 中，注明型号、固件版本、Windows 版本。
-3. 在 `src/EncoDeck.Protocol/Oppo/Models/OppoModels.cs` 中添加型号定义，每一项都要有官方实现或真机证据，并更新本表。
+通用识别不保证兼容。设备素材可用不代表控制可用；小米、华为、索尼、AKG 暂未达到 OPPO 的全部功能覆盖。

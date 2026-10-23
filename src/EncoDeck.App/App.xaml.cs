@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.App.Services;
 using EncoDeck.App.ViewModels;
+using EncoDeck.Bluetooth.Discovery;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Notifications;
@@ -191,7 +192,7 @@ public partial class App : Application
         SyncStartupRegistration();
 
         var theme = new ThemeService(Host.Settings);
-        Windows = new WindowManager(theme, () => Host.Settings.Current.KeepRunningInTray, ExitApp);
+        Windows = new WindowManager(theme, () => Host.Settings.Current.KeepRunningInTray, ExitApp, Host.Settings);
         Device = new DeviceViewModel(Host.Store, Host.Devices, Host.Settings, Host.Resources, _dispatcher);
         Features = new FeaturesViewModel(Host.Store, Host.Devices, Host.Devices, Device, _dispatcher);
         Settings = new SettingsViewModel(Host.Settings, Host.Startup, Host.ResourceSync, Host.Resources.DownloadRoot, Host.Updates,
@@ -200,8 +201,10 @@ public partial class App : Application
 
         _tray = new TrayIconService(Device, Host.Settings, Windows, ExitApp);
         _tray.Create();
+        var radio = new BluetoothRadioMonitor();
+        _ = radio.StartAsync();
         _quickSettings = new QuickSettingsCompanion(Host.Settings, Windows, Device,
-            new QuickSettingsWatcher(Host.Loggers.CreateLogger<QuickSettingsWatcher>()), _dispatcher);
+            new QuickSettingsWatcher(Host.Loggers.CreateLogger<QuickSettingsWatcher>()), radio, _dispatcher);
         Hotkeys = new HotkeyService(Host.Settings, Device, new GlobalHotkeys(Host.Loggers.CreateLogger<GlobalHotkeys>()), _dispatcher,
             Host.Loggers.CreateLogger<HotkeyService>());
 

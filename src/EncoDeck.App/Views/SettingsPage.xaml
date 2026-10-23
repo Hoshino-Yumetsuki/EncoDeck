@@ -25,6 +25,19 @@
                         <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.ShowAboveQuickSettings, Mode=TwoWay}"
                                       IsEnabled="{x:Bind ViewModel.IsQuickSettingsPanelSupported}" />
                     </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_QuickSettingsBluetoothOff" Header="Don't show the earbuds panel while Bluetooth is off">
+                        <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.HideQuickSettingsPanelWhenBluetoothOff, Mode=TwoWay}"
+                                      IsEnabled="{x:Bind ViewModel.ShowAboveQuickSettings, Mode=OneWay}" />
+                    </controls:SettingRow>
+                    <controls:SettingRow x:Uid="Settings_QuickSettingsTheme" Header="Quick Settings panel theme"
+                                         Description="Separate from the app theme, so the panel can match Quick Settings.">
+                        <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.QuickSettingsPanelThemeIndex, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.ShowAboveQuickSettings, Mode=OneWay}">
+                            <ComboBoxItem x:Uid="Settings_Theme_System" Content="Use system setting" />
+                            <ComboBoxItem x:Uid="Settings_Theme_Light" Content="Light" />
+                            <ComboBoxItem x:Uid="Settings_Theme_Dark" Content="Dark" />
+                        </ComboBox>
+                    </controls:SettingRow>
                     <controls:SettingRow x:Uid="Settings_Theme" Header="Theme">
                         <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}">
                             <ComboBoxItem x:Uid="Settings_Theme_System" Content="Use system setting" />
@@ -48,7 +61,7 @@
                     <StackPanel Spacing="2">
                         <TextBlock x:Uid="Settings_Hotkeys" Text="Hotkeys" Style="{StaticResource BodyStrongTextBlockStyle}" />
                         <TextBlock x:Uid="Settings_HotkeysSummary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
-                                   Text="Switch noise control from any app, also while EncoDeck is only in the notification area. Click a box, then press the keys." />
+                                   Text="Switch noise control from any app. Click a box, then press the keys." />
                     </StackPanel>
                     <controls:SettingRow x:Uid="Settings_HotkeyToggle" Header="Noise cancelling / transparency"
                                          Description="Switches between the two; from any other mode to noise cancelling.">
@@ -151,7 +164,7 @@
                         <TextBlock Text="{x:Bind ViewModel.ArtworkCache, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
                     </controls:SettingRow>
                     <controls:SettingRow x:Uid="Settings_ArtworkSource" Header="Source"
-                                         Description="A community service, not affiliated with OPPO. Only the product ID and color are sent.">
+                                         Description="A community service.">
                         <HyperlinkButton Content="EncoAPI" NavigateUri="https://encoapi.vercel.app/" />
                     </controls:SettingRow>
                 </StackPanel>

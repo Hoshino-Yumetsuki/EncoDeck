@@ -12,7 +12,7 @@ namespace EncoDeck.Protocol.Brands.Huawei;
 /// confirmed by reading the value back (like the reference's write-then-readback); a device error
 /// TLV (0x7F) on the written command rejects it. Unconfirmed optimistic values are rolled back.
 /// </summary>
-internal sealed class HuaweiDeviceController : BrandControllerBase
+internal sealed partial class HuaweiDeviceController : BrandControllerBase
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan ReadBackDelay = TimeSpan.FromMilliseconds(200);
@@ -37,7 +37,7 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
         _codec = codec;
     }
 
-    public HuaweiDeviceProfile Profile { get; }
+    public HuaweiDeviceProfile Profile { get; private set; }
 
     private HuaweiModel Model => Profile.Model;
 
@@ -61,13 +61,18 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
             return false;
         }
         await RefreshAllAsync(skipBattery: true, cancellationToken).ConfigureAwait(false);
+        // Read-only feature probe; unsupported firmware simply leaves the control unavailable.
+        await QueryAsync(HuaweiCommands.FeatureState, SpatialQuery, cancellationToken).ConfigureAwait(false);
         return true;
     }
 
-    public override async Task<CommandResult> RefreshAsync(CancellationToken cancellationToken)
+    public override Task<CommandResult> RefreshAsync(CancellationToken cancellationToken) => SerializedAsync(RefreshCoreAsync, cancellationToken);
+
+    private async Task<CommandResult> RefreshCoreAsync(CancellationToken cancellationToken)
     {
         if (Closed.IsCompleted) return CommandResult.NotConnected;
         var status = await RefreshAllAsync(skipBattery: false, cancellationToken).ConfigureAwait(false);
+        if (Profile.SpatialConfirmed) await QueryAsync(HuaweiCommands.FeatureState, SpatialQuery, cancellationToken).ConfigureAwait(false);
         return status == CommandStatus.Success ? CommandResult.Ok : new CommandResult(status, "Refresh: no response from the device.");
     }
 
@@ -96,7 +101,8 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
         lock (_gate) frames = _codec.Feed(data);
         foreach (var frame in frames)
         {
-            _responded = true;
+            if (!HuaweiWire.TryParseTlv(frame.Payload, out var fields)) continue;
+            if (!fields.ContainsKey(HuaweiCommands.ErrorTlv) && IsDeviceProbeResponse(frame.Command, fields)) _responded = true;
             Touch();
             List<TaskCompletionSource<HuaweiFrame>>? waiters;
             lock (_gate)
@@ -140,6 +146,9 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
                 break;
             case HuaweiCommands.QueryDualConnect:
                 ApplyToggle(DeviceToggle.DualDeviceConnection, ParseBool(fields, 0x01), source);
+                break;
+            case HuaweiCommands.FeatureState:
+                ApplySpatial(frame.Payload, source);
                 break;
         }
     }
@@ -215,7 +224,8 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
             var done = await Task.WhenAny(waiter.Task, delay, Closed).ConfigureAwait(false);
             timeout.Cancel();
             ct.ThrowIfCancellationRequested();
-            if (done == waiter.Task) return (waiter.Task.Result, CommandStatus.Success);
+            if (done == waiter.Task) return (waiter.Task.Result,
+                HuaweiWire.ParseTlv(waiter.Task.Result.Payload).ContainsKey(HuaweiCommands.ErrorTlv) ? CommandStatus.Rejected : CommandStatus.Success);
             return (null, done == Closed ? CommandStatus.TransportError : CommandStatus.Timeout);
         }
         finally
@@ -320,7 +330,12 @@ internal sealed class HuaweiDeviceController : BrandControllerBase
     /// Optimistic value + pending marker → write → (device error TLV ⇒ Rejected) → read-back until the
     /// store holds the requested value as a confirmed reading. Failures roll back optimistic values.
     /// </summary>
-    private async Task<CommandResult> ExecuteConfirmedAsync(
+    private Task<CommandResult> ExecuteConfirmedAsync(
+        string name, Func<DeviceState, DeviceState> applyOptimistic, ushort setCommand, byte[] setPayload,
+        ushort queryCommand, byte[] queryPayload, Func<DeviceState, bool> confirmed, CancellationToken cancellationToken) =>
+        SerializedAsync(ct => ExecuteConfirmedCoreAsync(name, applyOptimistic, setCommand, setPayload, queryCommand, queryPayload, confirmed, ct), cancellationToken);
+
+    private async Task<CommandResult> ExecuteConfirmedCoreAsync(
         string name,
         Func<DeviceState, DeviceState> applyOptimistic,
         ushort setCommand,

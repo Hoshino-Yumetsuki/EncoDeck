@@ -23,7 +23,7 @@
 
 EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings the everyday settings from HeyMelody to your PC: battery levels for the left and right earbuds and the case, noise control, EQ and spatial audio, touch controls and more. Most of the time it can live as just a tray icon, without keeping the main window open.
 
-**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi and EDIFIER** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
+**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi, Sony, AKG and EDIFIER** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
 
 ## Screenshots
 
@@ -39,7 +39,7 @@ EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings the e
 
 ### Battery and connection status
 
-Once your earbuds connect, the main window and tray panel show battery level and charging state for the **left earbud, right earbud and charging case**. Supported models also show wear state, in-case state and firmware version.
+Once your device connects, the main window and tray panel show its reported battery readings: left/right earbuds and case where supported, or a single battery group for headphones. Charging, wear state, in-case state and firmware information vary by model.
 
 The case usually stops reporting battery once the earbuds leave it, so EncoDeck keeps the last reading and labels it as "last read" instead of passing stale data off as live. You also get a low-battery reminder.
 
@@ -94,7 +94,7 @@ This is the *range of implemented features*: not every earbud supports all of th
 - When your earbuds connect to the PC, a popup near the taskbar shows the device name, battery levels and that model's connection animation; it stays out of the way while you're in full screen.
 - The popup animation doesn't open an audio output or show up in Windows media controls, so it won't pull your earbuds' audio away from your phone to the PC.
 - The home page shows a picture or model of your device. Pre-rendered models can be dragged left and right; models with `.vfxms` support can be rotated, zoomed and reset in real time.
-- Device artwork is fetched per model and color, then cached locally for reuse. Models without an official animation get a generic one.
+- Device artwork is fetched per model and color, then cached locally for reuse. Headphones without an official animation keep a static product image; only the popup window animates in and out.
 
 *The connection popup fires when the earbuds establish a Bluetooth connection; BLE lid-open detection (popping up when you open the case nearby) is not implemented yet.*
 
@@ -108,8 +108,10 @@ Support currently falls into two groups: models with configuration data from the
 | **Other OPPO / OnePlus** | ~85 built-in model configurations; noise control, sound and touch settings per model capabilities | Mostly based on HeyMelody configuration and protocol; not yet tested on hardware |
 | **realme / DIZO and some older OPPO / OnePlus** | ~50 more models, mainly battery, charging, wear state and firmware info | Not yet tested on hardware |
 | **vivo / iQOO** | ~43 models; battery and status, plus noise control, EQ, find earbuds and game mode on some models | Protocol port, not verified on hardware |
-| **HUAWEI** | ~24 models; battery, plus noise control, EQ, wear detection, low latency and dual-device toggle on some models | Protocol port, not verified on hardware |
-| **Xiaomi / Redmi** | Recognized by series name; mainly battery, game mode on some models | Protocol port, not verified on hardware |
+| **HUAWEI** | 24 models; battery and model-specific ANC/levels, EQ, wear detection, low latency and multipoint; independent spatial audio/head tracking after device confirmation | Protocol port and official APK analysis; not verified on hardware |
+| **Xiaomi / Redmi** | Series matching with 48 official model capability records; battery, ANC/levels, EQ, low latency, multipoint, spatial audio/head tracking and prompt volume gated by model data and device readback | Official APK analysis; not verified on hardware |
+| **Sony** | 46 built-in model names; battery/charging, ANC/ambient sound and device-reported EQ presets | Official MDR protocol and simulated-device tests; not verified on hardware |
+| **AKG** | N400NC, N700NCM2, N200NC, Y600: battery, ANC/ambient and automatic play/pause; N700NC, N5 Hybrid, N9 Hybrid: recognition/artwork only | Official APK analysis; not verified on hardware |
 | **EDIFIER** | W820NB, W200BT and generic detection; battery, noise cancelling / transparency on some models | Protocol port, not verified on hardware |
 
 For more models, per-feature details and verification records, see the **[device compatibility list](docs/COMPATIBILITY.md)**. If your earbuds aren't on the tested list but work fine, please share the model, firmware and your results.

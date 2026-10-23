@@ -71,6 +71,7 @@ public sealed partial class ConnectionPopupWindow : Window
     private bool _closing;
     private bool _finished;
     private bool _huawei;
+    private bool _headphones;
     private bool _huaweiPick;
     private double _huaweiHeight;
     private double _huaweiTextDelay;
@@ -121,7 +122,7 @@ public sealed partial class ConnectionPopupWindow : Window
     internal string DiagnosticState =>
         $"video={_videoPath is not null} pipeline={_video?.Player?.Pipeline} size={_video?.Player?.Width}x{_video?.Player?.Height} " +
         $"frames={_video?.Player?.FramesPublished} last={_video?.Player?.LastFrameTime?.TotalMilliseconds} holding={_video?.Player?.IsHolding} " +
-        $"huawei={_huawei} pick={_huaweiPick} huaweiMedia=[{HuaweiPicture.DiagnosticState}] style={_layout.BatteryStyle} videoVisible={_arrangement?.VideoVisible} images={_arrangement?.ImagesVisible} " +
+        $"headphones={_headphones} headphoneMedia=[{HeadphonePicture.DiagnosticState}] huawei={_huawei} pick={_huaweiPick} huaweiMedia=[{HuaweiPicture.DiagnosticState}] style={_layout.BatteryStyle} videoVisible={_arrangement?.VideoVisible} images={_arrangement?.ImagesVisible} " +
         $"groups=[{string.Join("; ", _arrangement?.Groups.Select(g => $"{g.Group}:{g.Image}:{string.Join(",", g.Slots.Select(x => $"{x.Slot}={x.Battery}"))}") ?? [])}] " +
         $"column=[{string.Join(",", _arrangement?.Column ?? [])}] title={(TitleText.Visibility == Visibility.Visible ? TitleText.Text : "-")} shown={_shown:0.##} dialog={Scaled.Height:0.#} compact={Picture.DiagnosticState} topmost={WindowInterop.IsTopmost(this)} bounds={_bounds}";
 
@@ -150,6 +151,7 @@ public sealed partial class ConnectionPopupWindow : Window
         (double width, double height) = _timeline is null ? (CardWidth, CardHeight) : (VideoWidth, VideoWidth * dialogHeight / PopupLayout.Width);
         (Scaled.Width, Scaled.Height) = _timeline is null ? (CardWidth, CardHeight) : (PopupLayout.Width, dialogHeight);
         if (_huawei) { width = CardWidth; height = _huaweiHeight; Scaled.Width = width; Scaled.Height = height; }
+        if (_headphones) { width = 320; height = 340; Scaled.Width = width; Scaled.Height = height; }
         int pixelWidth = (int)Math.Ceiling(width * scale);
         int pixelHeight = (int)Math.Ceiling(height * scale);
         // An explicit placement (diagnostics) gives the position; the size is always the layout's.
@@ -249,6 +251,16 @@ public sealed partial class ConnectionPopupWindow : Window
 
         if (isVideo && path is not null && path.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) && ConfigureHuawei(path)) return;
 
+        if (ViewModel.IsHeadphones && !isVideo)
+        {
+            _headphones = true;
+            HeadphonePicture.LoopVideo = false;
+            HeadphonePicture.FallbackPath = ViewModel.DeviceImagePath;
+            HeadphonePicture.SourcePath = path ?? ViewModel.DeviceImagePath;
+            HeadphoneCard.Visibility = Visibility.Visible;
+            return;
+        }
+
         if (isVideo && path is not null && File.Exists(path) && !path.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) && !path.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase))
         {
             _timeline = PopupTimeline.TryReadFor(path) ?? PopupTimeline.Default with { CloseDelay = _fallbackDuration };
@@ -337,7 +349,7 @@ public sealed partial class ConnectionPopupWindow : Window
 
     private void OnArtworkChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (_closing || _finished || MediaOverride is not null || Card.Visibility != Visibility.Visible) return;
+        if (_closing || _finished || MediaOverride is not null || (!_headphones && Card.Visibility != Visibility.Visible)) return;
         if (e.PropertyName is not (nameof(DeviceViewModel.DeviceImagePath) or nameof(DeviceViewModel.PopupMediaPath)
             or nameof(DeviceViewModel.PopupMediaDarkPath) or nameof(DeviceViewModel.PopupMediaIsVideo) or nameof(DeviceViewModel.PopupMediaDarkIsVideo)
             or nameof(DeviceViewModel.LeftArtworkPath) or nameof(DeviceViewModel.RightArtworkPath) or nameof(DeviceViewModel.CaseArtworkPath))) return;
@@ -345,6 +357,12 @@ public sealed partial class ConnectionPopupWindow : Window
         // video layouts with their own timing are selected on the next connection.
         var path = IsDark ? ViewModel.PopupMediaDarkPath : ViewModel.PopupMediaPath;
         bool video = IsDark ? ViewModel.PopupMediaDarkIsVideo : ViewModel.PopupMediaIsVideo;
+        if (_headphones)
+        {
+            HeadphonePicture.FallbackPath = ViewModel.DeviceImagePath;
+            HeadphonePicture.SourcePath = video ? ViewModel.DeviceImagePath : path ?? ViewModel.DeviceImagePath;
+            return;
+        }
         ConfigureCompactArtwork(video && !(path?.Contains(".reconnect.", StringComparison.OrdinalIgnoreCase) ?? false) && !(path?.EndsWith(".alpha-right.mp4", StringComparison.OrdinalIgnoreCase) ?? false) ? ViewModel.DeviceImagePath : path);
     }
 
@@ -713,6 +731,7 @@ public sealed partial class ConnectionPopupWindow : Window
         WindowInterop.SetClickThrough(this, true);
         OfficialClose.Visibility = Visibility.Collapsed;
         CardClose.Visibility = Visibility.Collapsed;
+        HeadphoneClose.Visibility = Visibility.Collapsed;
         if (_hovered)
         {
             // Hover paused the countdown; no pointer events arrive any more, so resume it.
@@ -853,6 +872,7 @@ public sealed partial class ConnectionPopupWindow : Window
         _video?.Stop();
         _video = null;
         Picture.Stop();
+        HeadphonePicture.Stop();
         HuaweiPicture.Stop();
     }
 

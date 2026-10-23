@@ -19,6 +19,25 @@
         <!-- The whole pop-up scales with the user's size setting. -->
         <Viewbox Stretch="Fill">
             <Grid x:Name="Scaled">
+                <Grid x:Name="HeadphoneCard" Padding="24,18,24,20" RowSpacing="10" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <StackPanel Margin="0,0,24,0" Spacing="3">
+                            <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <Button x:Name="HeadphoneClose" x:Uid="Popup_Close" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-12,0"
+                                Style="{StaticResource SubtleButtonStyle}" Padding="6" Click="OnCloseClick" AutomationProperties.Name="Close">
+                            <FontIcon Glyph="&#xE711;" FontSize="10" />
+                        </Button>
+                    </Grid>
+                    <controls:DeviceMedia x:Name="HeadphonePicture" Grid.Row="1" IsHeadphones="True" Margin="10,0" IsHitTestVisible="False" />
+                    <controls:HeadphoneBattery Grid.Row="2" Item="{x:Bind ViewModel.Left}" />
+                </Grid>
                 <Grid x:Name="HuaweiLayout" Visibility="Collapsed">
                     <controls:DeviceMedia x:Name="HuaweiPicture" IsHitTestVisible="False" />
                     <Canvas x:Name="HuaweiLevels" IsHitTestVisible="False">

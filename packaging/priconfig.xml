@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     makepri config for the MSIX resources.pri: qualified tile images plus the app's merged EncoDeck.pri. -->
+<resources targetOsVersion="10.0.0" majorVersion="1">
+  <index root="\" startIndexAt="\">
+    <default>
+      <qualifier name="Language" value="en-US" />
+      <qualifier name="Contrast" value="standard" />
+      <qualifier name="Scale" value="100" />
+      <qualifier name="TargetSize" value="256" />
+      <qualifier name="AlternateForm" value="" />
+      <qualifier name="Theme" value="dark" />
+    </default>
+    <indexer-config type="folder" foldernameAsQualifier="true" filenameAsQualifier="true" qualifierDelimiter="." />
+    <indexer-config type="PRI" />
+  </index>
+</resources>

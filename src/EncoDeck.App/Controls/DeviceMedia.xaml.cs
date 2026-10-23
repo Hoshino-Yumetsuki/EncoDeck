@@ -19,7 +19,13 @@ namespace EncoDeck.App.Controls;
 public sealed partial class DeviceMedia : UserControl
 {
     public static readonly DependencyProperty IsHeadphonesProperty = DependencyProperty.Register(
-        nameof(IsHeadphones), typeof(bool), typeof(DeviceMedia), new PropertyMetadata(false, (d, e) => ((DeviceMedia)d).Still.IsHeadphones = (bool)e.NewValue));
+        nameof(IsHeadphones), typeof(bool), typeof(DeviceMedia), new PropertyMetadata(false, (d, e) =>
+        {
+            var media = (DeviceMedia)d;
+            media.Still.IsHeadphones = (bool)e.NewValue;
+            media.StopFallback();
+            media.StartFallback();
+        }));
 
     /// <summary>Selects the headphones illustration when no product image is available.</summary>
     public bool IsHeadphones
@@ -191,7 +197,7 @@ public sealed partial class DeviceMedia : UserControl
     // It moves the existing shot/illustration; it does not invent a case-opening sequence.
     private void StartFallback()
     {
-        if (!_fallback || _fallbackRunning || !IsLoaded || Visibility != Visibility.Visible || !ShellEnvironment.AnimationsEnabled()) return;
+        if (IsHeadphones || !_fallback || _fallbackRunning || !IsLoaded || Visibility != Visibility.Visible || !ShellEnvironment.AnimationsEnabled()) return;
         var visual = ElementCompositionPreview.GetElementVisual(Still);
         var c = visual.Compositor;
         ElementCompositionPreview.SetIsTranslationEnabled(Still, true);

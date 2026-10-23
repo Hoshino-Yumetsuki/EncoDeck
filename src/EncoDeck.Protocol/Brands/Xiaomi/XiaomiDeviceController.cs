@@ -11,7 +11,7 @@ namespace EncoDeck.Protocol.Brands.Xiaomi;
 /// Controller for Xiaomi / Redmi earbuds over the XIAOAI SPP channel: optional auth challenge,
 /// battery, and low-latency (game) mode via the RCSP device-config channel.
 /// </summary>
-internal sealed class XiaomiDeviceController : BrandControllerBase
+internal sealed partial class XiaomiDeviceController : BrandControllerBase
 {
     /// <summary>The auth probe is short: models that do not require auth never answer it.</summary>
     private static readonly TimeSpan AuthTimeout = TimeSpan.FromMilliseconds(1200);
@@ -27,7 +27,7 @@ internal sealed class XiaomiDeviceController : BrandControllerBase
     public XiaomiDeviceController(IDuplexByteChannel channel, ControllerContext context, XiaomiDeviceProfile profile)
         : base(channel, context)
     {
-        _profile = profile;
+        _profile = profile.ForDevice(context.Identity.Name);
     }
 
     /// <summary>True when the earbuds answered the auth challenge correctly.</summary>
@@ -45,18 +45,20 @@ internal sealed class XiaomiDeviceController : BrandControllerBase
             Logger.LogInformation("Xiaomi earbuds did not answer the battery query");
             return false;
         }
-        await ReadConfigAsync(XiaomiProtocol.ConfigLowLatency, cancellationToken).ConfigureAwait(false);
+        await ReadFeaturesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 
-    public override async Task<CommandResult> RefreshAsync(CancellationToken cancellationToken)
+    public override Task<CommandResult> RefreshAsync(CancellationToken cancellationToken) => SerializedAsync(RefreshCoreAsync, cancellationToken);
+
+    private async Task<CommandResult> RefreshCoreAsync(CancellationToken cancellationToken)
     {
         bool battery = await ReadBatteryAsync(cancellationToken).ConfigureAwait(false);
-        if (_profile.HasGamingMode) await ReadConfigAsync(XiaomiProtocol.ConfigLowLatency, cancellationToken).ConfigureAwait(false);
+        await ReadFeaturesAsync(cancellationToken).ConfigureAwait(false);
         return battery ? CommandResult.Ok : new CommandResult(CommandStatus.Timeout, "The earbuds did not answer the battery query.");
     }
 
-    public override async Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken)
+    private async Task<CommandResult> SetGamingModeCoreAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken)
     {
         if (toggle != DeviceToggle.GamingMode || !_profile.HasGamingMode) return NotSupported(toggle.ToString());
 
@@ -118,11 +120,17 @@ internal sealed class XiaomiDeviceController : BrandControllerBase
 
     protected override void OnReceived(ReadOnlySpan<byte> data)
     {
-        foreach (var frame in _decoder.Feed(data))
+        foreach (var raw in _decoder.Feed(data))
         {
+            var frame = XiaomiConfigCodec.NormalizeResponse(raw);
+            if (frame is null) continue;
             Logger.LogTrace("Xiaomi frame received: {Frame}", frame);
             Touch();
             Apply(frame);
+            ApplyFeatures(frame);
+            if (raw.OpCode == XiaomiProtocol.OpNotifyConfig && (raw.Kind & 0xC0) == 0xC0
+                && XiaomiConfigCodec.TryParse(raw.Payload, out _))
+                _ = WriteAsync(new XiaomiFrame((byte)(raw.Kind & 0x3F), raw.OpCode, 0, [raw.Sequence]).Encode(), CancellationToken.None);
             Waiter? match = null;
             lock (_gate)
             {
@@ -204,7 +212,7 @@ internal sealed class XiaomiDeviceController : BrandControllerBase
     /// <summary>Sends <paramref name="frame"/> and waits for the first received frame <paramref name="accepts"/> matches; null on timeout or write failure.</summary>
     private async Task<XiaomiFrame?> RequestAsync(XiaomiFrame frame, Func<XiaomiFrame, bool> accepts, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        var waiter = new Waiter(accepts, new TaskCompletionSource<XiaomiFrame>(TaskCreationOptions.RunContinuationsAsynchronously));
+        var waiter = new Waiter(f => f.Sequence == frame.Sequence && accepts(f), new TaskCompletionSource<XiaomiFrame>(TaskCreationOptions.RunContinuationsAsynchronously));
         lock (_gate) _waiters.Add(waiter);
         try
         {

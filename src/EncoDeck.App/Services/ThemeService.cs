@@ -19,16 +19,15 @@ public sealed class ThemeService
         _settings.Changed += (_, _) => ApplyAll();
     }
 
-    public ElementTheme Theme => _settings.Current.Theme switch
-    {
-        AppTheme.Light => ElementTheme.Light,
-        AppTheme.Dark => ElementTheme.Dark,
-        _ => ElementTheme.Default,
-    };
+    public ElementTheme Theme => ToElementTheme(_settings.Current.Theme);
 
-    public void Register(Window window)
+    /// <summary>
+    /// Keeps <paramref name="window"/> in the user's theme, or in the one <paramref name="themeOf"/>
+    /// picks from the settings (a window with a theme setting of its own).
+    /// </summary>
+    public void Register(Window window, Func<AppSettings, AppTheme>? themeOf = null)
     {
-        var registration = new Registration(new WeakReference<Window>(window), window.DispatcherQueue);
+        var registration = new Registration(new WeakReference<Window>(window), window.DispatcherQueue, themeOf ?? (s => s.Theme));
         lock (_lock)
         {
             _windows.RemoveAll(r => !r.Window.TryGetTarget(out _));
@@ -40,7 +39,7 @@ public sealed class ThemeService
         {
             lock (_lock) _windows.Remove(registration);
         };
-        Apply(window);
+        Apply(window, registration);
     }
 
     /// <summary>Diagnostics: what a settings change does.</summary>
@@ -57,15 +56,22 @@ public sealed class ThemeService
                 // Closed after this was queued: leave it alone.
                 bool open;
                 lock (_lock) open = _windows.Contains(registration);
-                if (open && registration.Window.TryGetTarget(out var window)) Apply(window);
+                if (open && registration.Window.TryGetTarget(out var window)) Apply(window, registration);
             });
         }
     }
 
-    private void Apply(Window window)
+    private void Apply(Window window, Registration registration)
     {
-        if (window.Content is FrameworkElement root) root.RequestedTheme = Theme;
+        if (window.Content is FrameworkElement root) root.RequestedTheme = ToElementTheme(registration.ThemeOf(_settings.Current));
     }
 
-    private sealed record Registration(WeakReference<Window> Window, DispatcherQueue Queue);
+    private static ElementTheme ToElementTheme(AppTheme theme) => theme switch
+    {
+        AppTheme.Light => ElementTheme.Light,
+        AppTheme.Dark => ElementTheme.Dark,
+        _ => ElementTheme.Default,
+    };
+
+    private sealed record Registration(WeakReference<Window> Window, DispatcherQueue Queue, Func<AppSettings, AppTheme> ThemeOf);
 }

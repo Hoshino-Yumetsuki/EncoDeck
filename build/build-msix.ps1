@@ -45,6 +45,7 @@ $buildToolsVersion = [regex]::Match((Get-Content Directory.Packages.props -Raw),
 $makeappx = Get-ChildItem (Join-Path $nugetRoot "microsoft.windows.sdk.buildtools\$buildToolsVersion\bin") -Recurse -Filter makeappx.exe |
     Where-Object { $_.DirectoryName -like "*\x64" } | Select-Object -First 1
 if (-not $makeappx) { throw "makeappx.exe not found; run dotnet restore first." }
+$makepri = Join-Path $makeappx.DirectoryName "makepri.exe"
 
 $work = [IO.Path]::GetFullPath((Join-Path $root "artifacts\msix"))
 if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
@@ -74,14 +75,36 @@ foreach ($arch in $Architectures) {
         -o $layout --nologo
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish ($arch) failed." }
 
+    # Scale variants plus targetsize *_altform-unplated icons: without the unplated ones the taskbar,
+    # Start and Alt+Tab draw the icon on an accent-colored square plate.
     $images = New-Item -ItemType Directory -Force (Join-Path $layout "Images")
-    Save-Logo (Join-Path $images "StoreLogo.png") 50 50 1.0
-    Save-Logo (Join-Path $images "Square44x44Logo.png") 44 44 1.0
-    Save-Logo (Join-Path $images "Square150x150Logo.png") 150 150 0.66
-    Save-Logo (Join-Path $images "Wide310x150Logo.png") 310 150 0.66
+    foreach ($scale in 100, 200) {
+        $f = $scale / 100
+        Save-Logo (Join-Path $images "StoreLogo.scale-$scale.png") (50 * $f) (50 * $f) 1.0
+        Save-Logo (Join-Path $images "Square44x44Logo.scale-$scale.png") (44 * $f) (44 * $f) 1.0
+        Save-Logo (Join-Path $images "Square150x150Logo.scale-$scale.png") (150 * $f) (150 * $f) 0.66
+        Save-Logo (Join-Path $images "Wide310x150Logo.scale-$scale.png") (310 * $f) (150 * $f) 0.66
+    }
+    foreach ($size in 16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256) {
+        foreach ($form in "", "_altform-unplated", "_altform-lightunplated") {
+            Save-Logo (Join-Path $images "Square44x44Logo.targetsize-$size$form.png") $size $size 1.0
+        }
+    }
 
+    $manifest = Join-Path $layout "AppxManifest.xml"
     (Get-Content packaging\Package.appxmanifest -Raw).Replace('$VERSION$', $packageVersion).Replace('$ARCH$', $arch) |
-        Set-Content (Join-Path $layout "AppxManifest.xml") -Encoding utf8
+        Set-Content $manifest -Encoding utf8
+
+    # The shell resolves those qualified names only through resources.pri. Once it exists the app's
+    # MRT Core loads it instead of EncoDeck.pri, so merge EncoDeck.pri (XAML + strings) into it. The
+    # staging folder keeps the folder indexer away from the rest of the publish output.
+    $priStage = Join-Path $work "pri-$arch"
+    New-Item -ItemType Directory -Force $priStage | Out-Null
+    Copy-Item -LiteralPath $images -Destination $priStage -Recurse
+    Copy-Item -LiteralPath (Join-Path $layout "EncoDeck.pri") -Destination $priStage
+    Copy-Item -LiteralPath packaging\priconfig.xml -Destination $work -Force
+    & $makepri new /pr $priStage /cf (Join-Path $work "priconfig.xml") /mn $manifest /of (Join-Path $layout "resources.pri") /o | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "makepri new ($arch) failed." }
 
     & $makeappx.FullName pack /o /d $layout /p (Join-Path $work "bundle\EncoDeck_${packageVersion}_$arch.msix")
     if ($LASTEXITCODE -ne 0) { throw "makeappx pack ($arch) failed." }

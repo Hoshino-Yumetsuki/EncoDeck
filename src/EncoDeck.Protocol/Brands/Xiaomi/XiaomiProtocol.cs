@@ -45,8 +45,8 @@ public static class XiaomiProtocol
     /// <summary>Device config id of low-latency (game) mode; value 1 = on, 0 = off.</summary>
     public const ushort ConfigLowLatency = 47;
 
-    /// <summary>Get-config payload: <c>[0x02][configId BE]</c>.</summary>
-    public static byte[] GetConfigPayload(ushort configId) => [0x02, (byte)(configId >> 8), (byte)configId];
+    /// <summary>Official GetDeviceConfigParam: a list of 16-bit big-endian type ids, without a TLV length.</summary>
+    public static byte[] GetConfigPayload(ushort configId) => [(byte)(configId >> 8), (byte)configId];
 
     /// <summary>Set-config payload: <c>[0x03][configId BE][value]</c>.</summary>
     public static byte[] SetConfigPayload(ushort configId, byte value) => [0x03, (byte)(configId >> 8), (byte)configId, value];

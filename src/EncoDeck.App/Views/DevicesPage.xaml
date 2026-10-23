@@ -18,6 +18,13 @@
                 </StackPanel>
             </Border>
 
+            <Border x:Name="CapabilityCard" Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="Devices_Capabilities" Text="Feature support" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <StackPanel x:Name="CapabilityHost" Spacing="6" />
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="8">
                     <TextBlock x:Uid="Devices_Diagnostics" Text="Diagnostics" Style="{StaticResource BodyStrongTextBlockStyle}" />

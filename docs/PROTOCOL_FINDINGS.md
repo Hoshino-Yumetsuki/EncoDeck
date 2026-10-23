@@ -2,6 +2,8 @@
 
 本文档记录 EncoDeck 使用的 OPPO / HeyMelody（欢律）私有控制协议的全部已知事实，以及每条事实的**证据等级**。实现代码以本文为准；新增型号或命令时请同步更新本文与 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
+本文主要覆盖 OPPO 协议；其他品牌的实现与范围见 [实现状态](IMPLEMENTATION_STATUS.md#多品牌设备控制) 和 [设备兼容性](COMPATIBILITY.md)。Sony MDR、AKG BES、Xiaomi RCSP 和 HUAWEI MBB 使用各自协议，不能复用下文的 OPPO 指令。
+
 ## 证据等级
 
 | 标记 | 含义 |

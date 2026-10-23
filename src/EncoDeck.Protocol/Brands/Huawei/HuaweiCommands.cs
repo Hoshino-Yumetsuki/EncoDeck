@@ -41,6 +41,9 @@ public static class HuaweiCommands
     /// <summary>Dual-connection master switch query: TLV 1 = 0/1.</summary>
     public const ushort QueryDualConnect = 0x2B2F;
 
+    /// <summary>Official audio plugin MBB feature state; TLV 1 selects feature 24 (independent spatial audio).</summary>
+    public const ushort FeatureState = 0x2BB4;
+
     /// <summary>TLV type a device uses to return an error code for a command.</summary>
     public const byte ErrorTlv = 0x7F;
 

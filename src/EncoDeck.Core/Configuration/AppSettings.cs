@@ -21,6 +21,20 @@ public enum PopupPosition
     TopRight,
 }
 
+/// <summary>Where the main window was when it last closed: its restored bounds (physical pixels, virtual-screen coordinates).</summary>
+public sealed record WindowBounds
+{
+    public int X { get; init; }
+
+    public int Y { get; init; }
+
+    public int Width { get; init; }
+
+    public int Height { get; init; }
+
+    public bool Maximized { get; init; }
+}
+
 /// <summary>User preferences persisted as JSON under %LOCALAPPDATA%\EncoDeck.</summary>
 public sealed record AppSettings
 {
@@ -38,6 +52,12 @@ public sealed record AppSettings
     /// Nullable only so a file from an older version (which reads as null) gets the default, on.
     /// </summary>
     public bool? ShowAboveQuickSettings { get; init; } = true;
+
+    /// <summary>Leave Quick Settings alone while the Bluetooth radio is off. Nullable for older files, like the above.</summary>
+    public bool? HideQuickSettingsPanelWhenBluetoothOff { get; init; } = true;
+
+    /// <summary>Theme of the panel on top of Quick Settings; independent of <see cref="Theme"/>, so it can match the shell.</summary>
+    public AppTheme QuickSettingsPanelTheme { get; init; } = AppTheme.System;
 
     public bool ShowConnectionPopup { get; init; } = true;
 
@@ -81,14 +101,20 @@ public sealed record AppSettings
     /// <summary>System-wide noise-control hotkeys; none are set by default (a hotkey takes the combination away from every other app).</summary>
     public HotkeyBindings? Hotkeys { get; init; }
 
+    /// <summary>The main window's last size and position, or null for the default (centered).</summary>
+    public WindowBounds? MainWindowBounds { get; init; }
+
     public AppSettings Normalize() => this with
     {
+        MainWindowBounds = MainWindowBounds is { Width: > 0, Height: > 0 } ? MainWindowBounds : null,
         Hotkeys = Hotkeys?.Normalize(),
         AutoCheckUpdates = AutoCheckUpdates ?? true,
         PopupDurationSeconds = Math.Clamp(PopupDurationSeconds, 1.5, 30),
         // Missing in settings saved by older versions (read as 0): the standard size.
         PopupScale = double.IsFinite(PopupScale) && PopupScale > 0 ? Math.Clamp(PopupScale, 0.6, 1.6) : 1.0,
         ShowAboveQuickSettings = ShowAboveQuickSettings ?? true,
+        HideQuickSettingsPanelWhenBluetoothOff = HideQuickSettingsPanelWhenBluetoothOff ?? true,
+        QuickSettingsPanelTheme = Enum.IsDefined(QuickSettingsPanelTheme) ? QuickSettingsPanelTheme : AppTheme.System,
         PopupPosition = Enum.IsDefined(PopupPosition) ? PopupPosition : PopupPosition.NearTray,
         LowBatteryThreshold = Math.Clamp(LowBatteryThreshold, 5, 50),
     };

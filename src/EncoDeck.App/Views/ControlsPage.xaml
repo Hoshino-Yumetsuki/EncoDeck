@@ -157,15 +157,6 @@
                     </controls:SettingRow>
                 </StackPanel>
             </Border>
-
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="8">
-                    <TextBlock x:Uid="Controls_Capabilities" Text="Feature support" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <TextBlock x:Uid="Controls_Capabilities_Note" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}"
-                               Text="Every feature follows the official HeyMelody implementation for this model and is confirmed by the earbuds before it is shown." />
-                    <StackPanel x:Name="CapabilityHost" Spacing="6" />
-                </StackPanel>
-            </Border>
         </StackPanel>
         </Grid>
     </ScrollViewer>

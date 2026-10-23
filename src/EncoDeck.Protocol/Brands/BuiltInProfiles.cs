@@ -18,5 +18,6 @@ public static class BuiltInProfiles
         .. XiaomiProfiles.CreateBuiltIn(),
         .. VivoProfiles.CreateBuiltIn(),
         .. HuaweiProfiles.CreateBuiltIn(),
+        .. Sony.SonyAkgProfiles.CreateBuiltIn(),
     ];
 }

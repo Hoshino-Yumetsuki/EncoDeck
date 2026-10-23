@@ -17,19 +17,29 @@ public sealed class XiaomiDeviceProfile : IControllableProfile
 {
     private readonly string[] _nameMarkers;
     private readonly int _score;
+    private readonly XiaomiModelFeatures? _model;
+    private readonly IReadOnlySet<ushort> _confirmed;
 
-    private XiaomiDeviceProfile(string modelId, string displayName, string[] nameMarkers, int score, bool gamingMode)
+    private XiaomiDeviceProfile(string modelId, string displayName, string[] nameMarkers, int score, bool gamingMode,
+        XiaomiModelFeatures? model = null, IReadOnlySet<ushort>? confirmed = null)
     {
         _score = score;
         ModelId = modelId;
         DisplayName = displayName;
         _nameMarkers = nameMarkers;
         HasGamingMode = gamingMode;
+        _model = model;
+        _confirmed = confirmed ?? new HashSet<ushort>();
         var caps = DeviceCapabilities.CreateBuilder()
             .Set(DeviceCapability.BatteryLevel, CapabilitySupport.Supported, "Battery query 0x02 answers 02 02 04 07 L R C (OppoPodsManager / MiBudsClient capture).")
             .Set(DeviceCapability.ChargingStatus, CapabilitySupport.Unsupported, "The battery answer carries no charging flags.")
-            .Set(DeviceCapability.NoiseCancellation, CapabilitySupport.Unsupported, "Noise mode values for config id 10 are not confirmed.")
-            .Set(DeviceCapability.Equalizer, CapabilitySupport.Unsupported, "EQ values for config id 7 are not confirmed.");
+            .Set(DeviceCapability.NoiseCancellation, HasNoiseControl ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official Xiaomi APK config 11; available only after live readback.")
+            .Set(DeviceCapability.NoiseCancellationLevel, HasNoiseControl && (_model?.NoiseLevels.Length ?? 0) > 0 ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Levels intersected across official regional catalogs.")
+            .Set(DeviceCapability.Equalizer, HasEqualizer ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official model sound_effect list and live config 7.")
+            .Set(DeviceCapability.DualDeviceConnection, HasConfig(4) ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official config 4, confirmed by live response.")
+            .Set(DeviceCapability.SpatialAudio, HasConfig(29) ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official config 29 bit 0.")
+            .Set(DeviceCapability.HeadTracking, HasConfig(29) ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official config 29 bit 3.")
+            .Set(DeviceCapability.PromptVolume, HasConfig(161) ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "Official config 161 with device-reported bounds.");
         caps = gamingMode
             ? caps.Set(DeviceCapability.GamingMode, CapabilitySupport.Supported, "The earbuds answered a read of low-latency config id 47.")
             : caps.Set(DeviceCapability.GamingMode, CapabilitySupport.Unknown, "Low-latency config id 47 has not been read from these earbuds yet.");
@@ -66,13 +76,28 @@ public sealed class XiaomiDeviceProfile : IControllableProfile
     /// <summary>Whether the earbuds have answered for low-latency (game) mode.</summary>
     public bool HasGamingMode { get; }
 
-    public IReadOnlyCollection<DeviceToggle> Toggles => HasGamingMode ? [DeviceToggle.GamingMode] : [];
+    public IReadOnlyCollection<DeviceToggle> Toggles =>
+    [
+        .. HasGamingMode ? new[] { DeviceToggle.GamingMode } : [],
+        .. HasConfig(4) ? new[] { DeviceToggle.DualDeviceConnection } : [],
+    ];
+    public bool HasNoiseControl => HasConfig(11);
+    public bool HasEqualizer => HasConfig(7) && (_model?.Equalizers.Length ?? 0) > 0;
+    internal bool HasConfig(ushort id) => _confirmed.Contains(id);
 
     public IDeviceCapabilities Capabilities { get; }
 
-    public IReadOnlyList<NoiseControlOption> NoiseControlOptions => [];
+    public IReadOnlyList<NoiseControlOption> NoiseControlOptions => !HasNoiseControl ? [] :
+    [
+        new(NoiseControlMode.Off, null, "Off", "NoiseMode_Off", CapabilitySupport.Supported),
+        new(NoiseControlMode.NoiseCancellation, null, "Noise cancelling", "NoiseMode_NoiseCancellation", CapabilitySupport.Supported),
+        new(NoiseControlMode.Transparency, null, "Transparency", "NoiseMode_Transparency", CapabilitySupport.Supported),
+        .. (_model?.NoiseLevels ?? []).Select(n => new NoiseControlOption(NoiseControlMode.NoiseCancellation, $"nc-{n}", $"Level {n + 1}", $"Xiaomi_Level_{n}", CapabilitySupport.Supported)),
+        .. (_model?.AmbientLevels ?? []).Select(n => new NoiseControlOption(NoiseControlMode.Transparency, $"ambient-{n}", $"Level {n + 1}", $"Xiaomi_Level_{n}", CapabilitySupport.Supported)),
+    ];
 
-    public IReadOnlyList<EqualizerPreset> EqualizerPresets => [];
+    public IReadOnlyList<EqualizerPreset> EqualizerPresets => !HasEqualizer ? [] :
+        _model!.Equalizers.Where(n => n != 10).Select(n => new EqualizerPreset($"xiaomi-{n}", $"EQ {n}", $"Xiaomi_Eq_{n}", CapabilitySupport.Supported)).ToArray();
 
     public IReadOnlyList<Guid> ControlServiceUuids { get; } = [XiaomiProtocol.XiaoAiSppUuid];
 
@@ -87,9 +112,12 @@ public sealed class XiaomiDeviceProfile : IControllableProfile
     public XiaomiDeviceProfile WithGamingMode(bool supported)
     {
         if (supported == HasGamingMode) return this;
-        var plain = ModelId == Redmi.ModelId ? Redmi : Xiaomi;
-        return supported ? new XiaomiDeviceProfile(plain.ModelId, plain.DisplayName, plain._nameMarkers, plain._score, true) : plain;
+        return new XiaomiDeviceProfile(ModelId, DisplayName, _nameMarkers, _score, supported, _model, _confirmed);
     }
+
+    internal XiaomiDeviceProfile ForDevice(string name) => new(ModelId, DisplayName, _nameMarkers, _score, HasGamingMode, XiaomiModelFeatures.Find(name), _confirmed);
+    internal XiaomiDeviceProfile WithConfig(ushort id) => new(ModelId, DisplayName, _nameMarkers, _score,
+        HasGamingMode || id == 47, _model, new HashSet<ushort>(_confirmed) { id });
 
     public IControllableProfile Remember(DeviceState known) =>
         WithGamingMode(HasGamingMode || known.Toggles.ContainsKey(DeviceToggle.GamingMode));

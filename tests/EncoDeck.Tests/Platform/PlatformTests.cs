@@ -220,6 +220,7 @@ public class SettingsStoreTests
             File.WriteAllText(path, """{ "schemaVersion": 1, "keepRunningInTray": true }""");
             var store = new JsonSettingsStore(path, NullLogger<JsonSettingsStore>.Instance);
             Assert.True(store.Current.ShowAboveQuickSettings);
+            Assert.True(store.Current.HideQuickSettingsPanelWhenBluetoothOff);
 
             store.Update(s => s with { ShowAboveQuickSettings = false });
             Assert.False(new JsonSettingsStore(path, NullLogger<JsonSettingsStore>.Instance).Current.ShowAboveQuickSettings);

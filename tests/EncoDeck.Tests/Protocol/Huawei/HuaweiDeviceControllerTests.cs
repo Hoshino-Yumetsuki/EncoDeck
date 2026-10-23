@@ -25,8 +25,12 @@ public class HuaweiDeviceControllerTests
         public FakeByteChannel Inner { get; } = new();
 
         public bool Silent { get; set; }
+        public bool ErrorOnly { get; set; }
 
         public bool IgnoreAncWrites { get; set; }
+        public bool SpatialAvailable { get; set; }
+        public byte SpatialMode { get; set; }
+        public bool IgnoreSpatialWrites { get; set; }
 
         public byte[] AncState { get; set; } = [0x00, 0x00]; // [sub, mode]
 
@@ -41,8 +45,16 @@ public class HuaweiDeviceControllerTests
             {
                 lock (Received) Received.Add(frame);
                 if (Silent) continue;
+                if (ErrorOnly) { Reply(frame.Command, [0x7F, 1, 1]); continue; }
                 switch (frame.Command)
                 {
+                    case HuaweiCommands.FeatureState when SpatialAvailable:
+                        if (frame.Payload is [1, 1, 24, 2, 1, var mode])
+                        {
+                            if (!IgnoreSpatialWrites) SpatialMode = mode;
+                        }
+                        else Reply(HuaweiCommands.FeatureState, [1, 1, 24, 2, 1, SpatialMode, 3, 1, 0]);
+                        break;
                     case HuaweiCommands.Battery:
                         Reply(HuaweiCommands.Battery, [0x02, 0x03, 0x50, 0x46, 0x20, 0x03, 0x03, 0x01, 0x00, 0x01]);
                         break;
@@ -83,6 +95,53 @@ public class HuaweiDeviceControllerTests
         var context = new ControllerContext(Pro3, store, () => false, NullLoggerFactory.Instance, TimeProvider.System);
         return (profile.CreateController(device, context), store);
     }
+
+    [Fact]
+    public async Task IndependentSpatial_RequiresProbeAndConfirmsWrites()
+    {
+        var device = new FakeHuaweiDevice { SpatialAvailable = true };
+        var (controller, store) = Create(device); await using var session = controller;
+        Assert.True(await controller.InitializeAsync(Ct));
+        Assert.Equal(SpatialAudioMode.Off, store.Current.Spatial!.Value);
+        Assert.True(((HuaweiDeviceProfile)store.Current.Profile!).SpatialConfirmed);
+        Assert.True((await controller.SetSpatialAudioAsync(SpatialAudioMode.HeadTracking, Ct)).IsSuccess);
+        Assert.Equal(1, device.SpatialMode);
+        Assert.Equal(StateSource.CommandConfirmation, store.Current.Spatial!.Source);
+        device.IgnoreSpatialWrites = true;
+        Assert.Equal(CommandStatus.Rejected, (await controller.SetSpatialAudioAsync(SpatialAudioMode.Fixed, Ct)).Status);
+        Assert.Equal(SpatialAudioMode.HeadTracking, store.Current.Spatial!.Value);
+        Assert.NotNull(store.Current.LastError);
+        Assert.Contains(device.Received, f => f.Command == 0x2BB4 && f.Payload.SequenceEqual(new byte[] { 1, 1, 24, 2, 0, 3, 0 }));
+    }
+
+    [Theory]
+    [InlineData("010118020101", SpatialAudioMode.HeadTracking)]
+    [InlineData("010118020102030100", SpatialAudioMode.Fixed)]
+    [InlineData("010118020100", SpatialAudioMode.Off)]
+    [InlineData("010117020101", null)]
+    [InlineData("010118020103", null)]
+    [InlineData("0101180201010302", null)]
+    [InlineData("010118020101020100", null)]
+    [InlineData("0101180201017F0101", null)]
+    public void SpatialParser_RejectsOtherFeaturesAndMalformedTlv(string hex, SpatialAudioMode? expected) =>
+        Assert.Equal(expected, HuaweiDeviceController.ParseSpatial(Convert.FromHexString(hex)));
+
+    [Fact]
+    public async Task ErrorResponses_DoNotProveCompatibleDevice()
+    {
+        var device = new FakeHuaweiDevice { ErrorOnly = true };
+        var (controller, store) = Create(device); await using var session = controller;
+        Assert.False(await controller.InitializeAsync(Ct));
+        Assert.Null(store.Current.NoiseControl);
+        Assert.Null(store.Current.Battery.Left);
+    }
+
+    [Theory]
+    [InlineData("0101010302")]
+    [InlineData("010101010100")]
+    [InlineData("01")]
+    public void ControlTlv_RejectsTruncationAndDuplicateFields(string hex) =>
+        Assert.False(HuaweiWire.TryParseTlv(Convert.FromHexString(hex), out _));
 
     [Fact]
     public async Task Initialize_ReadsBatteryAndNoiseIntoStore()
