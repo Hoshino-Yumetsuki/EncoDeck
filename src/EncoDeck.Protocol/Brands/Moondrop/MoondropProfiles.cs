@@ -175,6 +175,19 @@ public sealed class MoondropProfile : IControllableProfile
     public int? DecodeGain(byte value) => _gainMap is not null && Array.IndexOf(_gainMap, value) is var level && level >= 0 ? level : null;
     public bool HasFeature(int feature) => _features?.Contains(feature) == true;
 
+    /// <summary>GAIA features the catalog implies for this model; what a full discovery would report.</summary>
+    internal IReadOnlySet<int> CatalogFeatures()
+    {
+        var features = new HashSet<int> { 0, 13 };
+        if (_model.AncFeature is { } anc) features.Add(anc);
+        if (_gainMap is not null) features.Add(15);
+        if (_model.Lhdc) features.Add(16);
+        if (_model.PromptVolume) features.Add(14);
+        if (_model.DualConnection) features.Add(20);
+        if (_model.Id == "pudding") features.UnionWith([19, 22]);
+        return features;
+    }
+
     private CapabilitySupport DiscoveredSupport(int feature, bool confirmed) => _features is null ? CapabilitySupport.Unknown
         : !_features.Contains(feature) ? CapabilitySupport.Unsupported
         : confirmed ? CapabilitySupport.Supported : CapabilitySupport.Experimental;

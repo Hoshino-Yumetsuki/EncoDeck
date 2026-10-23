@@ -42,34 +42,13 @@ internal static class UiSnapshot
         if (profileId is not null)
         {
             var profile = BuiltInProfiles.Create().Single(p => p.ModelId == profileId);
-            // Synthetic discovery for Bluetooth-free visual diagnostics, not hardware-support evidence.
-            if (profile is MoondropProfile moondropSample)
-                profile = moondropSample.WithFeatures(moondropSample.ModelId switch
+            // Same synthetic session as the brand demo; not hardware-support evidence.
+            var device = new DeviceIdentity("snapshot", profile.DisplayName, new BluetoothAddress(0));
+            sample = BrandDemo.CreateState(DemoDiscovery.AfterSession(profile, profile.DisplayName), device, DateTimeOffset.UtcNow);
+            if (sample.Profile is MoondropProfile && sample.KeyFunctions is not null)
+                sample = sample with
                 {
-                    "moondrop-pudding" => new HashSet<int> { 0, 1, 5, 13, 14, 15, 16, 19, 20, 22, 32 },
-                    "moondrop-golden-ages-2" => new HashSet<int> { 0, 1, 5, 8, 13, 15, 16, 22 },
-                    "moondrop-edge" => new HashSet<int> { 0, 1, 5, 8, 13, 15, 20 },
-                    _ => new HashSet<int> { 0, 1, 5, 13 },
-                });
-            sample = DeviceState.Empty with
-            {
-                Device = new DeviceIdentity("snapshot", profile.DisplayName, new BluetoothAddress(0)),
-                Profile = profile, Connection = DeviceConnectionState.ControlReady,
-                Battery = profile is MoondropProfile batteryProfile
-                    ? new BatteryStatus(
-                        Observed.From(new BatteryReading(70, null), DateTimeOffset.UtcNow, StateSource.QueryResponse),
-                        Observed.From(new BatteryReading(70, null), DateTimeOffset.UtcNow, StateSource.QueryResponse),
-                        batteryProfile.ModelId == "moondrop-pudding"
-                            ? Observed.From(new BatteryReading(100, null), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null)
-                    : sample.Battery,
-                NoiseControl = profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile
-                    ? Observed.From(new NoiseControlState(NoiseControlMode.Off), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
-                PromptVolume = profile.Capabilities.IsAvailable(DeviceCapability.PromptVolume, false)
-                    ? Observed.From(20, DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
-                Gain = profile.Capabilities.IsAvailable(DeviceCapability.Gain, true)
-                    ? Observed.From(1, DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
-                KeyFunctions = profile.Capabilities.IsAvailable(DeviceCapability.TouchCustomization, true)
-                    ? Observed.From<IReadOnlyList<KeyFunction>>(
+                    KeyFunctions = Observed.From<IReadOnlyList<KeyFunction>>(
                         (from side in new[] { EarSide.Left, EarSide.Right }
                          from action in new[] { GestureAction.SingleSqueeze, GestureAction.DoubleSqueeze, GestureAction.TripleSqueeze, GestureAction.SqueezeAndHold, GestureAction.LongHold }
                          select new KeyFunction(side, 0, action, action switch
@@ -79,11 +58,8 @@ internal static class UiSnapshot
                              GestureAction.TripleSqueeze => 6,
                              GestureAction.SqueezeAndHold => 7,
                              _ => side == EarSide.Left ? 0 : 10, // Unknown native nibble must survive display unchanged.
-                         })).ToArray(), DateTimeOffset.UtcNow, StateSource.QueryResponse) : null,
-                Toggles = profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile moondrop
-                    ? moondrop.Toggles.ToImmutableDictionary(t => t, t => Observed.From(t is DeviceToggle.IndicatorLight or DeviceToggle.PromptTone, DateTimeOffset.UtcNow, StateSource.QueryResponse))
-                    : ImmutableDictionary<DeviceToggle, Observed<bool>>.Empty,
-            };
+                         })).ToArray(), DateTimeOffset.UtcNow, StateSource.QueryResponse),
+                };
         }
         host.Store.Reset(sample);
         app.CreateViewModelsForDiagnostics(dispatcher);
@@ -339,7 +315,7 @@ internal static class UiSnapshot
         }
     }
 
-    private static ScrollViewer? FindScrollViewer(DependencyObject? root)
+    internal static ScrollViewer? FindScrollViewer(DependencyObject? root)
     {
         if (root is null) return null;
         // The page's own ScrollViewer: the largest one inside the frame content.
