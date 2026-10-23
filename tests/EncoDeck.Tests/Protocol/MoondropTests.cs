@@ -130,6 +130,27 @@ public sealed partial class MoondropTests
         Assert.Equal(NoiseControlMode.Transparency, store.Current.NoiseControl?.Value.Mode);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EdgeAudioCurationReadsFourByteStateAndConfirmsModeChange(bool rfcomm)
+    {
+        var identity = new DeviceIdentity("edge-test", "MOONDROP EDGE", new BluetoothAddress(0));
+        var profile = (MoondropProfile)new DeviceProfileRegistry(BuiltInProfiles.Create()).Match(identity)!;
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = identity, Profile = profile });
+        var device = new PodChannel(rfcomm) { AncFeature = 8, ExtendedNoiseResponse = true };
+        await using var controller = profile.CreateController(device, new ControllerContext(identity, store, () => false, NullLoggerFactory.Instance, TimeProvider.System));
+        Assert.True(await controller.InitializeAsync(Ct));
+        Assert.Equal(NoiseControlMode.Off, store.Current.NoiseControl?.Value.Mode);
+
+        var result = await controller.SetNoiseControlAsync(new(NoiseControlMode.Transparency), Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(NoiseControlMode.Transparency, store.Current.NoiseControl?.Value.Mode);
+        Assert.Empty(store.Current.PendingCommands);
+    }
+
     [Fact]
     public async Task InferredMappingCannotWriteWithoutExperimentalOptIn()
     {
@@ -167,6 +188,7 @@ public sealed partial class MoondropTests
         public bool RejectNoise { get; set; }
         public byte AncFeature { get; set; } = 32;
         public byte? LastNoiseWrite { get; private set; }
+        public bool ExtendedNoiseResponse { get; init; }
         public byte[] Touch { get; set; } = [0x11, 0x23, 0xEF, 0x77, 0x89];
         public byte[]? LastTouchWrite { get; private set; }
         public byte Gain { get; private set; }
@@ -200,7 +222,7 @@ public sealed partial class MoondropTests
                 (0, 1) => Features(),
                 (13, 0) => [0, 1, 2, 3],
                 (13, 1) => Battery,
-                (8 or 32, 3) => [Noise],
+                (8 or 32, 3) => ExtendedNoiseResponse ? [Noise, 1, 0, 0] : [Noise],
                 (8 or 32, 4) => SetNoise(request.Payload),
                 (14, 1) => Voice,
                 (14, 2) => SetVoice(request.Payload),

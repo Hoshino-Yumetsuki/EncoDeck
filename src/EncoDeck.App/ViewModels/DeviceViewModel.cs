@@ -328,7 +328,8 @@ public sealed partial class DeviceViewModel : ObservableObject
 
         if (state.LastError is { } error && state.Connection is DeviceConnectionState.ControlUnavailable && !HasError)
         {
-            ErrorMessage = error.Message;
+            ErrorMessage = error.Message == "The selected headset's Bluetooth LE control endpoint was not found. Audio can remain connected; make the headset discoverable and retry controls."
+                ? Loc.Get("Error_ControlEndpointNotFound") : error.Message;
         }
 
         TrayToolTip = BuildToolTip();

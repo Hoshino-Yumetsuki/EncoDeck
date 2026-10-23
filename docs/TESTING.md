@@ -28,6 +28,20 @@ dotnet test tests/EncoDeck.Tests --filter "FullyQualifiedName~Xiaomi|FullyQualif
 
 `XiaomiFeaturesTests` 覆盖官方配置报文、写后回读、拒绝写入、通知 ACK 和未知型号；`HuaweiDeviceControllerTests` 覆盖独立空间音频、错误应答和非法 TLV；`SonyAkgTests` 覆盖 MDR v1/v2、EQ 能力及 BES 自动播放/暂停。协议模拟器通过不代表全部型号实机可用。
 
+### MOONDROP 控制通道回归
+
+```powershell
+dotnet test tests/EncoDeck.Tests -c Debug --filter "FullyQualifiedName~ControlChannelSupervisorTests|FullyQualifiedName~Moondrop|FullyQualifiedName~Gaia"
+```
+
+2026-10-24：41 项定向测试通过，覆盖端点未发现后停止连接 / 保持音频链路 / 手动恢复、控制器创建与握手异常释放、握手期间链路掉线不会发布控制就绪，以及既有 GAIA / MOONDROP 协议行为。此结果不是 Windows EDGE 真机控制成功的证据。
+
+GAIA GATT 开通前使用 `GetDeviceSelectorFromBluetoothAddress(address, Public)` 对所选经典蓝牙地址发现 LE 端点（最多 6 秒，整体开通仍最多 15 秒），通过发现的 ID 打开设备。经典配对不等于 LE 端点已缓存；不会选择同名附近设备、随机地址或未验证的 SPP 回退。端点未发现是本次连接的终态，只有用户重试或新的链路周期再尝试；诊断保留实际原因。
+
+支持页面仅显示本地化二元标签，隐藏未知项及未移植 MOONDROP 功能，但不修改协议能力与写入门控。UI 状态检查需区分控制就绪、音频已连接但控制不可用、以及未选择设备；隔离状态诊断不能证明真实蓝牙已连接。
+
+修改后的发布程序集已执行一次真实 EDGE 运行时场景（见 `artifacts/verification/control-channel-live-edge.txt`）：经典蓝牙保持已连接；约 6.06 秒进入 `ControlUnavailable`，控制器未发布，设置指令数为 0。精确公开地址的 LE 端点在本次窗口内仍未发现，因此只证明连接流程正确结束且不影响音频，不能宣称 EDGE 的 GAIA 控制握手已成功。
+
 以下 Probe 命令示例主要面向 OPPO。其他品牌的 `monitor` 可用于观察统一设备运行时，不能把 OPPO 专用写入命令直接用于其他品牌。
 
 ## 2. 用 EncoDeck.Probe 验证真实耳机

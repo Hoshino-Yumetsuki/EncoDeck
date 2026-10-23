@@ -101,7 +101,7 @@ public sealed class AppHost : IAsyncDisposable
         var devices = new DeviceManager(
             registry,
             store,
-            new RfcommChannelConnector(loggers.CreateLogger<RfcommChannelConnector>()),
+            new RfcommChannelConnector(registry, loggers.CreateLogger<RfcommChannelConnector>()),
             preferredDeviceId: () => settings.Current.PreferredDeviceId,
             // Experimental MOONDROP commands remain opt-in and read this preference dynamically.
             allowExperimental: () => store.Current.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile && settings.Current.EnableExperimentalFeatures,

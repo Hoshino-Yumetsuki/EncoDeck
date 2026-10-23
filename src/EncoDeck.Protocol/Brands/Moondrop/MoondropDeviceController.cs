@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Protocol adapted from huime180/MiuixMoondrop, GPL-3.0-or-later.
 using System.Buffers.Binary;
+using System.Text;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
@@ -37,6 +38,12 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
 
     private async Task NegotiateRfcommAsync(CancellationToken ct)
     {
+        // EDGE answers the framed BASIC application-version query without a CSR API probe.
+        if (_profile.RfcommChannel is not null && await RequestAsync(0, 5, [], ct).ConfigureAwait(false) is { } version)
+        {
+            Apply(version, StateSource.QueryResponse);
+            return;
+        }
         // Upstream's read-only CSR API-version probe: official framing first, bare PDU second.
         if (await RequestAsync(-1, 0, [], ct).ConfigureAwait(false) is not null) return;
         _usesHeader = false;
@@ -176,6 +183,13 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
     private bool Apply(GaiaFrame frame, StateSource source)
     {
         byte[] p = frame.Payload;
+        if (frame.Feature == 0 && frame.Command == 5 && p.Length is > 0 and <= 128)
+        {
+            string version = Encoding.UTF8.GetString(p).TrimEnd('\0');
+            if (string.IsNullOrWhiteSpace(version) || version.Any(char.IsControl)) return false;
+            Store.TryUpdate(DeviceId, s => s with { Firmware = Observed.From(FirmwareInfo.Empty with { Version = version }, Now, source), LastUpdateSource = source });
+            return true;
+        }
         if (ApplySettings(frame, source)) return true;
         if (frame.Feature == 13 && frame.Command == 1 && p.Length >= 2 && p.Length % 2 == 0)
         {
@@ -204,7 +218,8 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             });
             return updated;
         }
-        if (frame.Feature == _profile.AncFeature && frame.Command == (frame.Feature == 2 ? 1 : 3) && p.Length == 1 && _profile.DecodeNoise(p[0]) is { } noise)
+        if (frame.Feature == _profile.AncFeature && frame.Command == (frame.Feature == 2 ? 1 : 3) &&
+            (p.Length == 1 || frame.Feature == 8 && p.Length == 4) && _profile.DecodeNoise(p[0]) is { } noise)
         {
             Store.TryUpdate(DeviceId, s => s with { NoiseControl = Observed.From(noise, Now, source), LastUpdateSource = source });
             return true;
