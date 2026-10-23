@@ -36,23 +36,27 @@ public class ControlChannelSupervisorTests
     private sealed class FakeConnector : IChannelConnector
     {
         public int Attempts;
+        public Action? OnOpen { get; set; }
+        public Task? BeforeOpen { get; set; }
         public ChannelOpenStatus? FailWith { get; set; }
         public FakeOppoDevice? LastDevice { get; private set; }
 
-        public Task<ChannelOpenResult> OpenAsync(string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
+        public async Task<ChannelOpenResult> OpenAsync(string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref Attempts);
-            if (FailWith is { } status) return Task.FromResult(ChannelOpenResult.Failed(status, "fake failure"));
+            if (BeforeOpen is { } pending) await pending.WaitAsync(cancellationToken);
+            OnOpen?.Invoke();
+            if (FailWith is { } status) return ChannelOpenResult.Failed(status, "fake failure");
             LastDevice = new FakeOppoDevice();
-            return Task.FromResult(new ChannelOpenResult(ChannelOpenStatus.Opened, LastDevice.Channel, serviceUuids[0], null));
+            return new ChannelOpenResult(ChannelOpenStatus.Opened, LastDevice.Channel, serviceUuids[0], null);
         }
     }
 
-    private static (ControlChannelSupervisor Supervisor, DeviceStateStore Store) Create(FakeLink link, FakeConnector connector)
+    private static (ControlChannelSupervisor Supervisor, DeviceStateStore Store) Create(FakeLink link, FakeConnector connector, TimeSpan? connectionTimeout = null)
     {
         var store = new DeviceStateStore();
         store.Reset(DeviceState.Empty with { Device = X4 });
-        var supervisor = new ControlChannelSupervisor(X4, new OppoDeviceProfile(OppoModels.EncoX4), link, connector, store, FastPolicy, linkSettleDelay: TimeSpan.FromMilliseconds(20));
+        var supervisor = new ControlChannelSupervisor(X4, new OppoDeviceProfile(OppoModels.EncoX4), link, connector, store, FastPolicy, linkSettleDelay: TimeSpan.FromMilliseconds(20), connectionTimeout: connectionTimeout);
         return (supervisor, store);
     }
 
@@ -84,6 +88,88 @@ public class ControlChannelSupervisorTests
         await WaitFor(store, DeviceConnectionState.PairedNotConnected);
         await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.Equal(0, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task ManualConnect_AttemptsWhileDisconnected_AndWaitsForHandshake()
+    {
+        var link = new FakeLink(false);
+        var connector = new FakeConnector { OnOpen = () => link.Set(true) };
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        var result = await supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(DeviceConnectionState.ControlReady, store.Current.Connection);
+        Assert.Equal(1, connector.Attempts);
+        Assert.NotNull(supervisor.Controller);
+    }
+
+    [Fact]
+    public async Task ManualConnect_WhenUnreachable_FailsWithoutBackgroundRetryLoop()
+    {
+        var link = new FakeLink(false);
+        var connector = new FakeConnector { FailWith = ChannelOpenStatus.DeviceUnreachable };
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        var result = await supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        Assert.False(result.IsSuccess);
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(1, connector.Attempts);
+        await supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task ManualConnect_WhenAlreadyReady_DoesNotOpenAnotherChannel()
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector();
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlReady);
+        Assert.True((await supervisor.ConnectAsync(TestContext.Current.CancellationToken)).IsSuccess);
+        Assert.Equal(1, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task ManualConnect_ConcurrentClicksShareOneAttempt()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var link = new FakeLink(false);
+        var connector = new FakeConnector { BeforeOpen = gate.Task, OnOpen = () => link.Set(true) };
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        var first = supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        await OppoDeviceControllerTests.WaitUntil(() => connector.Attempts == 1);
+        var second = supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        gate.SetResult();
+        Assert.True((await first).IsSuccess);
+        Assert.True((await second).IsSuccess);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(1, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task ManualConnect_UnresponsiveDeviceTimesOut()
+    {
+        var link = new FakeLink(false);
+        var connector = new FakeConnector { BeforeOpen = new TaskCompletionSource().Task };
+        var (supervisor, store) = Create(link, connector, TimeSpan.FromMilliseconds(50));
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        var result = await supervisor.ConnectAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(EncoDeck.Core.Commands.CommandStatus.Timeout, result.Status);
+        await WaitFor(store, DeviceConnectionState.PairedNotConnected);
+        Assert.Equal(1, connector.Attempts);
     }
 
     [Fact]

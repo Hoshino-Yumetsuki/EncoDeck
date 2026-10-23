@@ -15,14 +15,24 @@ public sealed partial class DevicesPage : Page
         Loaded += (_, _) =>
         {
             App.Instance.Host.Devices.KnownDevicesChanged += OnDevicesChanged;
+            ViewModel.PropertyChanged += OnViewModelChanged;
             Build();
         };
-        Unloaded += (_, _) => App.Instance.Host.Devices.KnownDevicesChanged -= OnDevicesChanged;
+        Unloaded += (_, _) =>
+        {
+            App.Instance.Host.Devices.KnownDevicesChanged -= OnDevicesChanged;
+            ViewModel.PropertyChanged -= OnViewModelChanged;
+        };
     }
 
     public DeviceViewModel ViewModel => App.Instance.Device;
 
     private void OnDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(Build);
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DeviceViewModel.IsConnectingDevice)) Build();
+    }
 
     private void Build()
     {
@@ -55,7 +65,18 @@ public sealed partial class DevicesPage : Page
         Grid.SetColumn(text, 1);
 
         UIElement action;
-        if (device.IsActive)
+        if (!device.IsConnected)
+        {
+            action = new Button
+            {
+                Content = Loc.Get(device.IsActive && ViewModel.IsConnectingDevice ? "Devices_Connecting" : "DeviceConnect/Content"),
+                Command = ViewModel.ConnectDeviceCommand,
+                CommandParameter = device.Identity.DeviceId,
+                IsEnabled = !ViewModel.IsConnectingDevice,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+        else if (device.IsActive)
         {
             action = new TextBlock { Text = Loc.Get("Devices_Active"), VerticalAlignment = VerticalAlignment.Center, Style = (Style)Application.Current.Resources["SecondaryTextStyle"] };
         }

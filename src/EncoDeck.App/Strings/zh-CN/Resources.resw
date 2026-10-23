@@ -521,10 +521,15 @@
   <data name="Lhdc_Device" xml:space="preserve"><value>音频设备</value></data>
   <data name="Lhdc_StandaloneLink.Content" xml:space="preserve"><value>下载非商店版本</value></data>
   <data name="Lhdc_StoreDisabled" xml:space="preserve"><value>商店版暂不支持 LHDC</value></data>
-  <data name="Lhdc_HelpDownload.Text" xml:space="preserve"><value>1. 在 Windows 中配对耳机，再点击“下载 LHDC 组件”。仅在你点击时下载，完成后保存在本机，无需自行安装 SDK 或编译。随后在此处选择音频设备；它可能与首页当前选中的耳机不同，一次只管理一台。</value></data>
-  <data name="Lhdc_HelpQuality.Text" xml:space="preserve"><value>3. 播放后可按需调整参数。高采样率和高码率取决于耳机能力，也可能增加无线负担；出现卡顿时先降低码率。“自适应码率”以所选码率为上限，根据链路状况调整。修改参数后需再次应用，点击“刷新”可读取最新驱动状态。</value></data>
-  <data name="Lhdc_HelpApply.Text" xml:space="preserve"><value>2. 建议先使用 48 kHz、24 bit、400 kbps，点击“启用 LHDC / 应用参数”，并允许系统的管理员授权。安装时会检测耳机的实际 LHDC V5 能力。切换会短暂中断音频，请等待操作完成；若提示需要重启，请手动重启后再刷新状态。</value></data>
-  <data name="Lhdc_HelpRequirements.Text" xml:space="preserve"><value>使用条件：非商店 x64 版本、Windows 11 22H2（22621）及以上，以及支持 LHDC V5 的耳机。驱动目前使用测试签名，系统需满足相应的驱动加载条件；下载成功不代表驱动一定能加载。应用不会自动修改测试模式、Secure Boot 或内存完整性。</value></data>
+  <data name="Lhdc_HelpDownload.Text" xml:space="preserve"><value>1. 在 Windows 中配对耳机，点击“下载 LHDC 组件”。下载不会安装驱动。完成后，在上方选择要使用的音频设备；这里的选择独立于首页，一次只能管理一台。</value></data>
+  <data name="Lhdc_HelpQuality.Text" xml:space="preserve"><value>3. 播放音频，确认声音正常后再调整参数。如果声音卡顿，先降低码率。勾选“自适应码率”后，码率会随连接状况变化，最高不超过所选值。每次修改参数后都要重新点击“启用 LHDC / 应用参数”。点击“刷新”可查看当前状态；耳机的 Hi-Res 开关不能确认 Windows 是否正在使用 LHDC。</value></data>
+  <data name="Lhdc_HelpApply.Text" xml:space="preserve"><value>2. 先试用 48 kHz、24 bit、400 kbps，点击“启用 LHDC / 应用参数”，并在 Windows 提示时允许管理员操作。安装时会检查耳机是否支持 LHDC V5。切换期间声音会暂时中断，请等待完成。若提示重启，请重启电脑后再点击“刷新”。</value></data>
+  <data name="Lhdc_HelpRequirements.Text" xml:space="preserve"><value>需要非商店 x64 版 EncoDeck、Windows 11 22H2（22621）或更新版本，以及支持 LHDC V5 的耳机。驱动使用测试签名，可能被系统阻止加载。EncoDeck 不会自动更改测试模式、安全启动（Secure Boot）或内存完整性设置。</value></data>
   <data name="Lhdc_Help.Header" xml:space="preserve"><value>LHDC 使用说明</value></data>
-  <data name="Lhdc_HelpRestore.Text" xml:space="preserve"><value>4. 不再使用或准备卸载 EncoDeck 时，先选择对应耳机并点击“恢复 Windows 音频”，允许管理员操作，等待完成。关闭 EncoDeck 不会停止 LHDC 后台服务，也不会自动恢复 Windows 音频。商店版禁用此功能；非商店版目前仍属于实验性支持。</value></data>
+  <data name="Lhdc_HelpRestore.Text" xml:space="preserve"><value>4. 停用 LHDC 或卸载 EncoDeck 前，选择对应耳机，点击“恢复 Windows 音频”，允许管理员操作并等待完成。退出 EncoDeck 不会停止 LHDC 后台服务，也不会自动恢复 Windows 音频。</value></data>
+  <data name="Lhdc_Disclaimer.Text" xml:space="preserve"><value>免责声明：LHDC 为基于第三方开源项目 LHDC-Win 的实验性功能，实际播放、重连和恢复仍待实机验证，不保证适用于所有设备或系统。使用中可能出现无声、卡顿或需要手动恢复音频的情况。请在了解驱动安装及系统设置变更风险后自行决定是否使用，并自行承担相关风险；EncoDeck 及其开发者在适用法律允许的范围内不对由此造成的损失承担责任。</value></data>
+  <data name="DeviceConnect.Content" xml:space="preserve"><value>连接设备</value></data>
+  <data name="Devices_Connecting" xml:space="preserve"><value>正在连接…</value></data>
+  <data name="Devices_ConnectFailed" xml:space="preserve"><value>未能连接耳机。请确认耳机已开机、在附近且可连接，然后重试。若仍失败，请在 Windows 蓝牙设置中连接。</value></data>
+  <data name="Lhdc_Guide.Content" xml:space="preserve"><value>查看详细教程（驱动加载与恢复）</value></data>
 </root>

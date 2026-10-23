@@ -40,10 +40,12 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     private readonly TimeProvider _time;
     private readonly IProtocolTrace? _trace;
     private readonly TimeSpan _linkSettleDelay;
+    private readonly TimeSpan _connectionTimeout;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly Lock _gate = new();
     private TaskCompletionSource _wake = NewWake();
     private bool _manualRetry;
+    private TaskCompletionSource<CommandResult>? _connectionRequest;
     private Task? _loop;
     private IDeviceController? _controller;
 
@@ -58,7 +60,8 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         ILoggerFactory? loggers = null,
         TimeProvider? time = null,
         IProtocolTrace? trace = null,
-        TimeSpan? linkSettleDelay = null)
+        TimeSpan? linkSettleDelay = null,
+        TimeSpan? connectionTimeout = null)
     {
         _identity = identity;
         _profile = profile;
@@ -72,6 +75,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         _time = time ?? TimeProvider.System;
         _trace = trace;
         _linkSettleDelay = linkSettleDelay ?? DefaultLinkSettleDelay;
+        _connectionTimeout = connectionTimeout ?? TimeSpan.FromSeconds(25);
         _link.ConnectionChanged += OnLinkChanged;
     }
 
@@ -100,6 +104,33 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         Wake();
     }
 
+    /// <summary>One explicit attempt, including when Windows currently reports the device disconnected.</summary>
+    public Task<CommandResult> ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Task<CommandResult> task;
+        lock (_gate)
+        {
+            if (_lifetime.IsCancellationRequested) return Task.FromResult(new CommandResult(CommandStatus.Cancelled));
+            if (_controller is not null) return Task.FromResult(CommandResult.Ok);
+            if (_connectionRequest is not null) return _connectionRequest.Task.WaitAsync(cancellationToken);
+            _connectionRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            task = _connectionRequest.Task;
+            _manualRetry = true;
+        }
+        Wake();
+        return task.WaitAsync(cancellationToken);
+    }
+
+    private bool HasConnectionRequest { get { lock (_gate) return _connectionRequest is not null; } }
+
+    private void CompleteConnectionRequest(CommandResult result)
+    {
+        TaskCompletionSource<CommandResult>? request;
+        lock (_gate) { request = _connectionRequest; _connectionRequest = null; }
+        request?.TrySetResult(result);
+    }
+
     private void OnLinkChanged(object? sender, bool connected)
     {
         _logger.LogInformation("Bluetooth link {State}", connected ? "up" : "down");
@@ -119,7 +150,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         {
             var wake = CurrentWake();
 
-            if (!_link.IsConnected)
+            if (!_link.IsConnected && !HasConnectionRequest)
             {
                 attempt = 0;
                 exhausted = false;
@@ -130,7 +161,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 continue;
             }
 
-            if (!linkWasUp)
+            if (_link.IsConnected && !linkWasUp)
             {
                 // Fresh link: forget earlier failures. Unless the link was already up when we started,
                 // give Windows a moment to finish profile setup before opening RFCOMM.
@@ -161,7 +192,15 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             }
 
             SetConnection(DeviceConnectionState.ControlConnecting);
-            var outcome = await ConnectAndServeAsync(ct).ConfigureAwait(false);
+            ServeOutcome outcome;
+            try { outcome = await ConnectAndServeAsync(ct).ConfigureAwait(false); }
+            catch (Exception ex) when (HasConnectionRequest && !ct.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Manual connection failed");
+                SetError("Could not connect to the device.");
+                outcome = ServeOutcome.Failed;
+            }
+            CompleteConnectionRequest(new CommandResult(ct.IsCancellationRequested ? CommandStatus.Cancelled : CommandStatus.TransportError));
             if (ct.IsCancellationRequested) break;
 
             switch (outcome)
@@ -198,14 +237,21 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
 
     private async Task<ServeOutcome> ConnectAndServeAsync(CancellationToken ct)
     {
+        using var startup = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (HasConnectionRequest) startup.CancelAfter(_connectionTimeout);
         ChannelOpenResult open;
         try
         {
-            open = await _connector.OpenAsync(_identity.DeviceId, _profile.ControlServiceUuids, ct).ConfigureAwait(false);
+            open = await _connector.OpenAsync(_identity.DeviceId, _profile.ControlServiceUuids, startup.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             return ServeOutcome.EndedByLinkOrUser;
+        }
+        catch (OperationCanceledException) when (startup.IsCancellationRequested)
+        {
+            CompleteConnectionRequest(new CommandResult(CommandStatus.Timeout));
+            return ServeOutcome.Failed;
         }
         catch (Exception ex)
         {
@@ -236,11 +282,17 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             bool initialized;
             try
             {
-                initialized = await controller.InitializeAsync(ct).ConfigureAwait(false);
+                initialized = await controller.InitializeAsync(startup.Token).ConfigureAwait(false);
+                startup.Token.ThrowIfCancellationRequested();
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 return ServeOutcome.EndedByLinkOrUser;
+            }
+            catch (OperationCanceledException) when (startup.IsCancellationRequested)
+            {
+                CompleteConnectionRequest(new CommandResult(CommandStatus.Timeout));
+                return ServeOutcome.Failed;
             }
 
             if (!initialized)
@@ -252,6 +304,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             lock (_gate) _controller = controller;
             SetConnection(DeviceConnectionState.ControlReady);
             _store.TryUpdate(_identity.DeviceId, s => s with { LastError = null });
+            CompleteConnectionRequest(CommandResult.Ok);
 
             while (true)
             {
@@ -324,6 +377,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     {
         _link.ConnectionChanged -= OnLinkChanged;
         _lifetime.Cancel();
+        CompleteConnectionRequest(new CommandResult(CommandStatus.Cancelled));
         Wake();
         if (_loop is not null)
         {

@@ -187,6 +187,35 @@ public sealed partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private Task RefreshAsync() => RunAsync(() => _commands.RefreshAsync());
 
+    [ObservableProperty] public partial bool IsConnectingDevice { get; set; }
+
+    [RelayCommand]
+    private async Task ConnectDeviceAsync(string? deviceId)
+    {
+        if (IsConnectingDevice) return;
+        deviceId ??= Current.Device?.DeviceId;
+        if (deviceId is null) return;
+        IsConnectingDevice = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
+        try
+        {
+            var result = await App.Instance.Host.Devices.ConnectDeviceAsync(deviceId);
+            if (result.IsSuccess) App.Instance.Host.Settings.Update(s => s with { PreferredDeviceId = deviceId });
+            if (!result.IsSuccess && result.Status != CommandStatus.Cancelled)
+            {
+                ErrorMessage = Loc.Get("Devices_ConnectFailed");
+                HasError = true;
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = Loc.Get("Devices_ConnectFailed");
+            HasError = true;
+        }
+        finally { IsConnectingDevice = false; }
+    }
+
     [RelayCommand]
     private Task ReconnectAsync() => RunAsync(() => _commands.ReconnectAsync());
 

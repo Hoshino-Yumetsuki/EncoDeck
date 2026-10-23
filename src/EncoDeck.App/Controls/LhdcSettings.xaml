@@ -28,6 +28,7 @@
      <Button x:Name="Refresh" Click="OnRefresh" />
     </StackPanel>
    </StackPanel>
+   <TextBlock x:Uid="Lhdc_Disclaimer" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    <Expander x:Uid="Lhdc_Help" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
     <StackPanel Spacing="10">
      <TextBlock x:Uid="Lhdc_HelpRequirements" TextWrapping="Wrap" />
@@ -35,6 +36,7 @@
      <TextBlock x:Uid="Lhdc_HelpApply" TextWrapping="Wrap" />
      <TextBlock x:Uid="Lhdc_HelpQuality" TextWrapping="Wrap" />
      <TextBlock x:Uid="Lhdc_HelpRestore" TextWrapping="Wrap" />
+     <HyperlinkButton x:Uid="Lhdc_Guide" NavigateUri="https://github.com/TIANLI0/EncoDeck/blob/main/docs/LHDC.md" Padding="0" />
     </StackPanel>
    </Expander>
   </StackPanel>

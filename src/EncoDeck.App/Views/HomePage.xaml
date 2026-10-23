@@ -114,6 +114,8 @@
                                    AutomationProperties.LiveSetting="Polite" />
                     </StackPanel>
                 </StackPanel>
+                <Button x:Uid="DeviceConnect" Command="{x:Bind ViewModel.ConnectDeviceCommand}"
+                        Visibility="{x:Bind ViewModel.IsLinkDown, Mode=OneWay}" Margin="0,8,0,0" />
                 <Grid Margin="0,8,0,0">
                 <controls:DeviceModelView x:Name="Model" Height="280" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.DeviceModelPath), Mode=OneWay}"
                                           ModelPath="{x:Bind ViewModel.DeviceModelPath, Mode=OneWay}"
