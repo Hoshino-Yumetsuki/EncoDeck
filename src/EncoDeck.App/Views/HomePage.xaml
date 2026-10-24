@@ -89,7 +89,18 @@
             <ScrollViewer x:Name="MainScroll" Grid.Row="1" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Auto" Margin="0,0,-20,0" SizeChanged="OnMainScrollSizeChanged">
             <StackPanel x:Name="MainColumn" Spacing="16" Padding="0,0,20,32">
             <StackPanel x:Name="Stage" Spacing="6" Visibility="{x:Bind ViewModel.HasDevice, Mode=OneWay}">
-                <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource TitleLargeTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="DeviceNameText" Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource TitleLargeTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                <!-- With more than one supported headset paired, the name opens a switcher (shown instead of DeviceNameText). -->
+                <Button x:Name="DeviceSwitcher" x:Uid="Home_SwitchDevice" Style="{StaticResource SubtleButtonStyle}" Padding="0,0,8,0" Margin="-4,0,0,0"
+                        HorizontalAlignment="Left" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="10" Padding="4,0,0,0">
+                        <TextBlock Text="{x:Bind ViewModel.DeviceName, Mode=OneWay}" Style="{StaticResource TitleLargeTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                        <FontIcon Glyph="&#xE70D;" FontSize="14" VerticalAlignment="Center" Margin="0,6,0,0" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <MenuFlyout x:Name="DeviceMenu" Placement="BottomEdgeAlignedLeft" Opening="OnDeviceMenuOpening" />
+                    </Button.Flyout>
+                </Button>
                 <StackPanel Orientation="Horizontal" Spacing="14">
                     <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.Left.HasValue, Mode=OneWay}">
                         <Border Style="{StaticResource BadgeStyle}" Visibility="{x:Bind ViewModel.Right.IsVisible, Mode=OneWay}"><TextBlock Text="L" Style="{StaticResource BadgeTextStyle}" /></Border>
