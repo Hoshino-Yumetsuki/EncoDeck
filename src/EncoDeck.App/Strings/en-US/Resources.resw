@@ -623,10 +623,10 @@
   <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>Current: LE Audio, but only one earbud is paired, so sound may play on one side only. Switch again to fix it.</value></data>
   <data name="LeAudio_StatusClassic" xml:space="preserve"><value>Current: Classic Bluetooth (A2DP).</value></data>
   <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>Change how the earbuds connect?</value></data>
-  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck first removes this PC's Bluetooth pairing with the earbuds (your phone and other devices are not affected). Then put the earbuds in the case, open the lid and hold the case button to enter pairing mode. EncoDeck pairs both earbuds over LE Audio automatically; audio stops meanwhile.
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>When asked, put the earbuds in the case, open the lid and hold the case button to enter pairing mode. Once pairing mode is detected, EncoDeck removes this PC's old pairing with the earbuds (your phone and other devices are not affected) and pairs both earbuds over LE Audio automatically; audio stops meanwhile.
 
 Afterwards Windows lists two entries with the same name (one is the other earbud), and audio plays through "Speakers (earbud name)".</value></data>
-  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck removes the earbuds' LE Audio pairing. Then put them in pairing mode and EncoDeck pairs them over Classic Bluetooth again. Audio stops meanwhile.</value></data>
+  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>When asked, put the earbuds in pairing mode. Once it is detected, EncoDeck removes their LE Audio pairing and pairs them over Classic Bluetooth again; audio stops meanwhile.</value></data>
   <data name="LeAudio_Stage_RemovingPairings" xml:space="preserve"><value>Removing this PC's pairing with the earbuds…</value></data>
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>Put both earbuds in the case, open the lid and hold the case button until the light flashes (waiting up to 2 minutes)…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>Pairing mode detected. Pairing the first earbud over LE Audio…</value></data>
@@ -635,7 +635,7 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="LeAudio_Result_Paired" xml:space="preserve"><value>Switched to LE Audio. Put the earbuds on and choose "Speakers (earbud name)" as the output in Sound settings.</value></data>
   <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>Only one earbud was paired, so sound may play on one side only. Enter pairing mode again and retry.</value></data>
   <data name="LeAudio_Result_ClassicRestored" xml:space="preserve"><value>Classic Bluetooth is restored.</value></data>
-  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>Pairing mode was not detected. The old pairing has been removed; retry, or add the earbuds again in Windows Bluetooth settings.</value></data>
+  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>Pairing mode was not detected; the existing pairing is unchanged. Please retry.</value></data>
   <data name="LeAudio_Result_PairingFailed" xml:space="preserve"><value>Pairing failed. Put the earbuds in pairing mode again and retry, or add them again in Windows Bluetooth settings.</value></data>
   <data name="LeAudio_Cancelled" xml:space="preserve"><value>Cancelled. If the pairing was already removed, retry or add the earbuds again in Windows Bluetooth settings.</value></data>
   <data name="LeAudio_Error" xml:space="preserve"><value>Failed: {0}</value></data>

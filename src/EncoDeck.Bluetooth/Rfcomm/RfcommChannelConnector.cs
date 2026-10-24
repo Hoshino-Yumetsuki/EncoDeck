@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Gatt;
+using EncoDeck.Bluetooth.LeAudio;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
 using EncoDeck.Core.Profiles;
@@ -62,8 +63,14 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             {
                 var result = await OppoGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
                 if (result.Status == ChannelOpenStatus.Opened) return result;
-                gattFailure = result;
                 _logger.LogInformation("OPPO GATT connect failed: {Detail}", result.Detail);
+                // On LE Audio, RFCOMM would page the Classic link that Windows keeps down (and disturb
+                // the LE links); report the GATT failure so the supervisor retries instead.
+                if (result.Status != ChannelOpenStatus.DeviceUnreachable || await LeAudioLink.IsConnectedAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false))
+                    return result.Status is ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ServiceNotFound
+                        ? ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, result.Detail ?? "OPPO GATT")
+                        : result;
+                gattFailure = result;
             }
 
             foreach (var uuid in serviceUuids)

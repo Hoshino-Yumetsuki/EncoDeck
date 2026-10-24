@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Channels;
@@ -13,16 +14,20 @@ namespace EncoDeck.Bluetooth.Gatt;
 
 /// <summary>
 /// OPPO control channel over LE Audio: GATT service 079A, write 0100079A, notify 0200079A.
-/// Frames are the same as over RFCOMM, so notifications are passed on as one byte stream.
+/// Frames are the same as over RFCOMM, so notifications are passed on as one byte stream; each
+/// notification is read whole before the next, which keeps frames intact as long as a frame fits
+/// one notification (OPPO frames are far below the LE Audio MTU).
 /// Both earbuds expose the service but only the current primary answers, and the roles swap
-/// (e.g. after one earbud went into the case), so every bonded earbud of the pair is opened:
-/// writes go to all of them and notifications from any are read. Verified on the Enco X4.
+/// (e.g. after one earbud went into the case), so every bonded earbud of the pair is used:
+/// writes go to all connected ones, notifications from any are read, and an earbud that
+/// connects later joins. Verified on the Enco X4.
 /// </summary>
 internal sealed class OppoGattByteChannel : IDuplexByteChannel
 {
     public static readonly Guid ServiceId = new("0000079A-D102-11E1-9B23-00025B00A5A5");
     private static readonly Guid WriteId = new("0100079A-D102-11E1-9B23-00025B00A5A5");
     private static readonly Guid NotifyId = new("0200079A-D102-11E1-9B23-00025B00A5A5");
+    private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(15);
 
     private sealed class Endpoint(BluetoothLEDevice device, GattSession? session, GattDeviceService service, GattCharacteristic write, GattCharacteristic notify)
     {
@@ -35,10 +40,13 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         public GattWriteOption WriteOption { get; } = write.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Write)
             ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
         public bool Subscribed { get; set; }
-        public bool IsConnected => Device.ConnectionStatus == BluetoothConnectionStatus.Connected;
     }
 
-    private readonly List<Endpoint> _endpoints = [];
+    private readonly Lock _gate = new();
+    /// <summary>The bonded earbuds of the pair, connected or not; owned until dispose.</summary>
+    private ImmutableArray<BluetoothLEDevice> _candidates = [];
+    private ImmutableArray<Endpoint> _endpoints = [];
+    private readonly HashSet<ulong> _joining = [];
     private readonly Channel<byte[]> _notifications = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions
     {
         SingleReader = true,
@@ -56,18 +64,17 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         _shutdownToken = _shutdown.Token;
     }
 
-    public string Description => $"OPPO GATT 079A ({_endpoints.Count} earbud(s))";
+    public string Description => $"OPPO GATT 079A ({_endpoints.Length} earbud(s))";
 
     /// <summary>
-    /// Opens the channel on the bonded LE identity at <paramref name="bluetoothAddress"/> and on the
-    /// other bonded earbud of the pair. Unpaired or disconnected earbuds are skipped: this never pairs or pages.
+    /// Opens the channel on the bonded LE identity at <paramref name="bluetoothAddress"/> and the other
+    /// bonded earbud of the pair. Disconnected earbuds join when they connect; this never pairs or pages.
     /// </summary>
     internal static async Task<ChannelOpenResult> OpenAsync(ulong bluetoothAddress, CancellationToken cancellationToken)
     {
         var channel = new OppoGattByteChannel();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(15));
-        ChannelOpenResult? failure = null;
+        timeout.CancelAfter(JoinTimeout);
         try
         {
             var primary = await BluetoothLEDevice.FromBluetoothAddressAsync(bluetoothAddress, BluetoothAddressType.Public).AsTask(timeout.Token).ConfigureAwait(false);
@@ -76,19 +83,25 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
                 primary?.Dispose();
                 return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The earbuds are not paired over LE Audio.");
             }
-            var candidates = new List<BluetoothLEDevice> { primary };
-            candidates.AddRange(await LeAudioPairing.FindSecondaryBondsAsync(bluetoothAddress, primary.Name, timeout.Token).ConfigureAwait(false));
+            List<BluetoothLEDevice> candidates = [primary];
+            try
+            {
+                candidates.AddRange(await LeAudioPairing.FindSecondaryBondsAsync(bluetoothAddress, primary.Name, timeout.Token).ConfigureAwait(false));
+            }
+            catch (Exception ex) when (ex is ArgumentException or UnauthorizedAccessException or COMException)
+            {
+                // Control through the primary alone still works while it is the primary.
+            }
+            channel._candidates = [.. candidates];
+            foreach (var device in candidates) device.ConnectionStatusChanged += channel.OnConnectionStatusChanged;
+
+            ChannelOpenResult? failure = null;
             foreach (var device in candidates)
             {
-                if (device.ConnectionStatus != BluetoothConnectionStatus.Connected)
-                {
-                    device.Dispose();
-                    continue;
-                }
-                var result = await channel.AddEndpointAsync(device, timeout.Token).ConfigureAwait(false);
-                if (result is not null) failure = result;
+                if (device.ConnectionStatus != BluetoothConnectionStatus.Connected) continue;
+                failure = await channel.TryJoinAsync(device, timeout.Token).ConfigureAwait(false) ?? failure;
             }
-            if (channel._endpoints.Count == 0)
+            if (channel._endpoints.IsEmpty)
                 return failure ?? ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The earbuds are not connected over LE Audio.");
             var opened = new ChannelOpenResult(ChannelOpenStatus.Opened, channel, ServiceId, null);
             channel = null;
@@ -98,11 +111,7 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         {
             return ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, "OPPO GATT connection timed out or disconnected.");
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, ex.Message);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ex is ArgumentException or UnauthorizedAccessException or COMException)
         {
             return ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, $"OPPO GATT: 0x{ex.HResult:X8}");
         }
@@ -112,16 +121,21 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         }
     }
 
-    /// <summary>Takes ownership of <paramref name="device"/>; returns a failure, or null once the earbud's endpoint is subscribed.</summary>
-    private async Task<ChannelOpenResult?> AddEndpointAsync(BluetoothLEDevice device, CancellationToken cancellationToken)
+    /// <summary>Subscribes one connected earbud. Returns a failure, or null once it joined (or it already had).</summary>
+    private async Task<ChannelOpenResult?> TryJoinAsync(BluetoothLEDevice device, CancellationToken cancellationToken)
     {
+        lock (_gate)
+        {
+            if (_stopped != 0 || _endpoints.Any(e => e.Device.BluetoothAddress == device.BluetoothAddress) || !_joining.Add(device.BluetoothAddress)) return null;
+        }
         GattSession? session = null;
         GattDeviceService? service = null;
         try
         {
             var access = await device.RequestAccessAsync().AsTask(cancellationToken).ConfigureAwait(false);
+            // Not "AccessDenied": one earbud refusing must not make the supervisor give up on control.
             if (access != DeviceAccessStatus.Allowed)
-                return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"BLE device access: {access}");
+                return ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, $"BLE device access: {access}");
             // Keep the LE link while the channel is open, as the RFCOMM socket keeps the ACL.
             session = await GattSession.FromDeviceIdAsync(device.BluetoothDeviceId).AsTask(cancellationToken).ConfigureAwait(false);
             if (session is not null) session.MaintainConnection = true;
@@ -143,24 +157,37 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
                 || (write.CharacteristicProperties & (GattCharacteristicProperties.Write | GattCharacteristicProperties.WriteWithoutResponse)) == 0)
                 return ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "OPPO GATT write or notify characteristic is missing.");
 
-            var endpoint = new Endpoint(device, session, service, write, notify);
-            _endpoints.Add(endpoint);
-            session = null;
-            service = null;
-            device.ConnectionStatusChanged += OnConnectionStatusChanged;
             notify.ValueChanged += OnValueChanged;
-            endpoint.Subscribed = true;
             var status = await notify.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify)
                 .AsTask(cancellationToken).ConfigureAwait(false);
-            if (status == GattCommunicationStatus.Success) return null;
-            await RemoveAsync(endpoint).ConfigureAwait(false);
-            return Failed(status, "OPPO GATT subscription");
+            if (status != GattCommunicationStatus.Success)
+            {
+                notify.ValueChanged -= OnValueChanged;
+                return Failed(status, "OPPO GATT subscription");
+            }
+            var endpoint = new Endpoint(device, session, service, write, notify) { Subscribed = true };
+            lock (_gate)
+            {
+                if (_stopped == 0)
+                {
+                    _endpoints = _endpoints.Add(endpoint);
+                    session = null;
+                    service = null;
+                    return null;
+                }
+            }
+            notify.ValueChanged -= OnValueChanged;
+            return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The channel closed while an earbud joined.");
+        }
+        catch (Exception ex) when (ex is COMException or UnauthorizedAccessException or ObjectDisposedException)
+        {
+            return ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, $"OPPO GATT join: 0x{ex.HResult:X8}");
         }
         finally
         {
             service?.Dispose();
             session?.Dispose();
-            if (!_endpoints.Any(e => ReferenceEquals(e.Device, device))) device.Dispose();
+            lock (_gate) _joining.Remove(device.BluetoothAddress);
         }
     }
 
@@ -178,18 +205,53 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
             _notifications.Writer.TryWrite(args.CharacteristicValue.ToArray());
     }
 
-    /// <summary>One earbud going into the case is fine; the channel ends when none is connected.</summary>
+    /// <summary>
+    /// An earbud that connects joins the channel (it may be the primary now); one going into the
+    /// case is fine; the channel ends when no earbud of the pair is connected.
+    /// </summary>
     private void OnConnectionStatusChanged(BluetoothLEDevice sender, object args)
     {
-        bool any;
-        try { any = _endpoints.Any(e => e.IsConnected); }
-        catch (ObjectDisposedException) { any = false; }
-        if (!any) Stop();
+        try
+        {
+            if (sender.ConnectionStatus == BluetoothConnectionStatus.Connected)
+            {
+                if (Volatile.Read(ref _stopped) != 0) return;
+                _ = JoinLaterAsync(sender);
+                return;
+            }
+            // Re-subscribe on reconnect rather than trusting the old subscription.
+            ImmutableArray<Endpoint> gone;
+            lock (_gate)
+            {
+                gone = _endpoints.Where(e => e.Device.BluetoothAddress == sender.BluetoothAddress).ToImmutableArray();
+                _endpoints = _endpoints.RemoveRange(gone);
+            }
+            foreach (var endpoint in gone) _ = ReleaseAsync(endpoint);
+            if (!_candidates.Any(c => c.ConnectionStatus == BluetoothConnectionStatus.Connected)) Stop();
+        }
+        catch (ObjectDisposedException)
+        {
+            Stop();
+        }
+    }
+
+    private async Task JoinLaterAsync(BluetoothLEDevice device)
+    {
+        try
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
+            timeout.CancelAfter(JoinTimeout);
+            await TryJoinAsync(device, timeout.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
+        {
+            // Closed or gave up; the remaining earbud keeps the channel.
+        }
     }
 
     private void Stop()
     {
-        lock (_shutdown)
+        lock (_gate)
         {
             if (_stopped != 0) return;
             Volatile.Write(ref _stopped, 1);
@@ -221,14 +283,23 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         if (_shutdownToken.IsCancellationRequested) throw new IOException("OPPO GATT earbuds are disconnected.");
+        cancellationToken.ThrowIfCancellationRequested();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownToken);
         GattCommunicationStatus last = GattCommunicationStatus.Unreachable;
         bool delivered = false;
-        foreach (var endpoint in _endpoints)
+        try
         {
-            if (!endpoint.IsConnected) continue;
-            last = await WriteToAsync(endpoint, data, linked.Token).ConfigureAwait(false);
-            delivered |= last == GattCommunicationStatus.Success;
+            foreach (var endpoint in _endpoints)
+            {
+                if (endpoint.Device.ConnectionStatus != BluetoothConnectionStatus.Connected) continue;
+                last = await WriteToAsync(endpoint, data, linked.Token).ConfigureAwait(false);
+                delivered |= last == GattCommunicationStatus.Success;
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Closed underneath the write: a transport error, as on RFCOMM, not the caller's cancellation.
+            throw new IOException("OPPO GATT earbuds disconnected during a write.");
         }
         if (!delivered) throw new IOException($"OPPO GATT write failed: {last}");
     }
@@ -257,15 +328,8 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         return GattCommunicationStatus.Success;
     }
 
-    private async Task RemoveAsync(Endpoint endpoint)
-    {
-        _endpoints.Remove(endpoint);
-        await ReleaseAsync(endpoint).ConfigureAwait(false);
-    }
-
     private async Task ReleaseAsync(Endpoint endpoint)
     {
-        endpoint.Device.ConnectionStatusChanged -= OnConnectionStatusChanged;
         endpoint.Notify.ValueChanged -= OnValueChanged;
         try
         {
@@ -286,11 +350,7 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         finally
         {
             try { endpoint.Service.Dispose(); }
-            finally
-            {
-                try { endpoint.Session?.Dispose(); }
-                finally { endpoint.Device.Dispose(); }
-            }
+            finally { endpoint.Session?.Dispose(); }
         }
     }
 
@@ -298,13 +358,26 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         Stop();
+        ImmutableArray<Endpoint> endpoints;
+        ImmutableArray<BluetoothLEDevice> candidates;
+        lock (_gate)
+        {
+            endpoints = _endpoints;
+            candidates = _candidates;
+            _endpoints = [];
+            _candidates = [];
+        }
         try
         {
-            foreach (var endpoint in _endpoints) await ReleaseAsync(endpoint).ConfigureAwait(false);
-            _endpoints.Clear();
+            foreach (var endpoint in endpoints) await ReleaseAsync(endpoint).ConfigureAwait(false);
         }
         finally
         {
+            foreach (var device in candidates)
+            {
+                device.ConnectionStatusChanged -= OnConnectionStatusChanged;
+                device.Dispose();
+            }
             _shutdown.Dispose();
         }
     }

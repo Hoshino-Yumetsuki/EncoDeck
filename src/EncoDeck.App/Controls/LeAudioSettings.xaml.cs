@@ -20,6 +20,7 @@ public sealed partial class LeAudioSettings : UserControl
     private string? _deviceId;
     private ulong _address;
     private bool _busy;
+    private bool _dialogOpen;
 
     public LeAudioSettings()
     {
@@ -47,7 +48,10 @@ public sealed partial class LeAudioSettings : UserControl
         var state = Features.State;
         if (state.Profile is not OppoDeviceProfile || state.Device is not { Transport: DeviceTransport.Bluetooth } device)
         {
-            Visibility = Visibility.Collapsed;
+            // After an operation the earbuds may have left the app (pairing removed): keep the card,
+            // its result and its buttons, which still work on the remembered address.
+            Visibility = _address != 0 && Message.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+            Sync();
             return;
         }
         if (device.DeviceId != _deviceId)
@@ -82,9 +86,11 @@ public sealed partial class LeAudioSettings : UserControl
         bool le = _bond?.PrimaryBonded == true;
         bool both = le && _bond!.SecondaryBonded;
         Status.Text = _bond is null ? "" : Loc.Get(both ? "LeAudio_StatusLe" : le ? "LeAudio_StatusLeSingle" : "LeAudio_StatusClassic");
+        // Nothing bonded (e.g. an earlier attempt failed): offer both ways back.
+        bool unpaired = _bond is { PrimaryBonded: false, ClassicBonded: false };
         Switch.Visibility = both ? Visibility.Collapsed : Visibility.Visible;
-        Restore.Visibility = le ? Visibility.Visible : Visibility.Collapsed;
-        Switch.IsEnabled = Restore.IsEnabled = !_busy && _bond is not null;
+        Restore.Visibility = le || unpaired ? Visibility.Visible : Visibility.Collapsed;
+        Switch.IsEnabled = Restore.IsEnabled = !_busy && !_dialogOpen && _bond is not null;
         Progress.Visibility = Cancel.Visibility = _busy ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -135,6 +141,23 @@ public sealed partial class LeAudioSettings : UserControl
     }
 
     private async Task<bool> ConfirmAsync(string messageKey, string primaryKey)
+    {
+        // A second ContentDialog while one is open throws; a double click must not open two.
+        if (_dialogOpen || _busy) return false;
+        _dialogOpen = true;
+        Sync();
+        try
+        {
+            return await ShowConfirmAsync(messageKey, primaryKey);
+        }
+        finally
+        {
+            _dialogOpen = false;
+            Sync();
+        }
+    }
+
+    private async Task<bool> ShowConfirmAsync(string messageKey, string primaryKey)
     {
         var dialog = new ContentDialog
         {

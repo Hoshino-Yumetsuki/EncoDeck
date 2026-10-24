@@ -78,17 +78,18 @@ public static class LeAudioPairing
     }
 
     /// <summary>
-    /// Removes this PC's pairings of the earbuds, waits for the user to open pairing mode, then
-    /// bonds the primary and the secondary over LE. Writes nothing to the earbuds.
+    /// Waits for the user to open pairing mode, then removes this PC's pairings of the earbuds and
+    /// bonds the primary and the secondary over LE. Writes nothing to the earbuds. A timeout or
+    /// cancellation before pairing mode leaves the existing pairings untouched.
     /// </summary>
     public static async Task<LeAudioPairingResult> SwitchToLeAudioAsync(ulong primary, IProgress<LeAudioPairingStage>? progress, CancellationToken cancellationToken)
     {
-        progress?.Report(LeAudioPairingStage.RemovingPairings);
-        await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
-
         progress?.Report(LeAudioPairingStage.WaitingForPairingMode);
         var advert = await WaitForPairingModeAsync(primary, cancellationToken).ConfigureAwait(false);
         if (advert is null) return new(LeAudioPairingOutcome.PairingModeNotSeen);
+
+        progress?.Report(LeAudioPairingStage.RemovingPairings);
+        await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
 
         progress?.Report(LeAudioPairingStage.PairingPrimary);
         var status = await PairLeAsync(primary, cancellationToken).ConfigureAwait(false);
@@ -104,17 +105,17 @@ public static class LeAudioPairing
     }
 
     /// <summary>
-    /// Removes the LE bonds and pairs the earbuds over Classic again (they must be in pairing mode),
+    /// Once the earbuds are in pairing mode, removes the LE bonds and pairs them over Classic again,
     /// which brings back Windows' A2DP/HFP connection.
     /// </summary>
     public static async Task<LeAudioPairingResult> RestoreClassicAsync(ulong primary, IProgress<LeAudioPairingStage>? progress, CancellationToken cancellationToken)
     {
-        progress?.Report(LeAudioPairingStage.RemovingPairings);
-        await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
-
         progress?.Report(LeAudioPairingStage.WaitingForPairingMode);
         if (await WaitForPairingModeAsync(primary, cancellationToken).ConfigureAwait(false) is null)
             return new(LeAudioPairingOutcome.PairingModeNotSeen);
+
+        progress?.Report(LeAudioPairingStage.RemovingPairings);
+        await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
 
         progress?.Report(LeAudioPairingStage.PairingClassic);
         var status = DevicePairingResultStatus.Failed;

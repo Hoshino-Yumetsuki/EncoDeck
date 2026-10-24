@@ -623,10 +623,10 @@
   <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>当前：LE Audio，但只有一只耳机已配对，声音可能只在一侧。可以重新切换一次。</value></data>
   <data name="LeAudio_StatusClassic" xml:space="preserve"><value>当前：传统蓝牙（A2DP）。</value></data>
   <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>更改耳机的连接方式？</value></data>
-  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck 会先删除这副耳机在本电脑上的蓝牙配对（手机等其他设备不受影响），然后请你把耳机放回充电盒、打开盖子，长按充电盒按键进入配对模式。EncoDeck 会自动通过 LE Audio 配对两只耳机，期间声音会中断。
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>请按提示把耳机放回充电盒、打开盖子，长按充电盒按键进入配对模式。检测到配对模式后，EncoDeck 会删除这副耳机在本电脑上的旧配对（手机等其他设备不受影响），再通过 LE Audio 自动配对两只耳机，期间声音会中断。
 
 切换后，Windows 的蓝牙列表里会出现两个同名条目（其中一个是另一只耳机），声音输出改为“扬声器 (耳机名)”。</value></data>
-  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck 会删除这副耳机的 LE Audio 配对，然后请你让耳机进入配对模式，再通过传统蓝牙重新配对。期间声音会中断。</value></data>
+  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>请按提示让耳机进入配对模式。检测到后，EncoDeck 会删除这副耳机的 LE Audio 配对，再通过传统蓝牙重新配对，期间声音会中断。</value></data>
   <data name="LeAudio_Stage_RemovingPairings" xml:space="preserve"><value>正在删除这副耳机在本电脑上的配对…</value></data>
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>请把两只耳机放回充电盒，打开盖子，长按充电盒按键直到指示灯闪烁（最多等待 2 分钟）…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>已检测到配对模式，正在通过 LE Audio 配对第一只耳机…</value></data>
@@ -635,7 +635,7 @@
   <data name="LeAudio_Result_Paired" xml:space="preserve"><value>已切换到 LE Audio。戴上耳机，在声音设置中选择“扬声器 (耳机名)”作为输出。</value></data>
   <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>只配对上了一只耳机，声音可能只在一侧。请重新进入配对模式后再试一次。</value></data>
   <data name="LeAudio_Result_ClassicRestored" xml:space="preserve"><value>已恢复传统蓝牙连接。</value></data>
-  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>没有检测到耳机的配对模式。原有配对已删除，请重试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
+  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>没有检测到耳机的配对模式，原有配对没有改动。请重试。</value></data>
   <data name="LeAudio_Result_PairingFailed" xml:space="preserve"><value>配对失败。请让耳机重新进入配对模式后再试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
   <data name="LeAudio_Cancelled" xml:space="preserve"><value>已取消。若配对已被删除，请重试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
   <data name="LeAudio_Error" xml:space="preserve"><value>操作失败：{0}</value></data>
