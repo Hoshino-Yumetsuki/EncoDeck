@@ -147,9 +147,11 @@ public sealed class DeviceManager : IDeviceManager
 
     private void TrackConnections()
     {
-        var connected = KnownDevices.Where(d => d.IsConnected).Select(d => d.Identity.DeviceId).ToHashSet();
         lock (_connectionGate)
         {
+            // Snapshot under the gate: the Bluetooth and USB watchers raise Changed on different
+            // threads, and an older snapshot applied after a newer one would corrupt _connectedAt.
+            var connected = KnownDevices.Where(d => d.IsConnected).Select(d => d.Identity.DeviceId).ToHashSet();
             // Devices already connected at startup are not newer than the saved preference.
             bool startup = !_startupTracked;
             // A USB watcher that never completes must not keep newer connections from winning.
