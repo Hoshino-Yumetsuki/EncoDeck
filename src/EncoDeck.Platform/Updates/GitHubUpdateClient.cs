@@ -15,7 +15,7 @@ public sealed record UpdateAsset(string Name, long Size, Uri DownloadUrl, string
 
 /// <summary>A release that has a Windows x64 installer for this app.</summary>
 public sealed record UpdateRelease(SemanticVersion Version, string Tag, string? Title, Uri? NotesUrl, DateTimeOffset? PublishedAt,
-    bool IsPrerelease, UpdateAsset Installer, UpdateAsset? Checksum);
+    bool IsPrerelease, UpdateAsset Installer, UpdateAsset? Checksum, string? Notes = null);
 
 public enum UpdateCheckOutcome
 {
@@ -38,7 +38,7 @@ public readonly record struct UpdateDownloadProgress(long Received, long Total);
 public sealed class UpdateVerificationException(string message) : IOException(message);
 
 internal sealed record GitHubAsset(string? Name, long Size, string? BrowserDownloadUrl, string? Digest);
-internal sealed record GitHubRelease(string? TagName, string? Name, bool Draft, bool Prerelease, string? HtmlUrl, DateTimeOffset? PublishedAt, List<GitHubAsset>? Assets);
+internal sealed record GitHubRelease(string? TagName, string? Name, bool Draft, bool Prerelease, string? HtmlUrl, DateTimeOffset? PublishedAt, List<GitHubAsset>? Assets, string? Body = null);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 [JsonSerializable(typeof(List<GitHubRelease>))]
@@ -123,7 +123,7 @@ public sealed partial class GitHubUpdateClient(HttpClient http, string downloadD
             if (best is null || version > best.Version)
             {
                 best = new UpdateRelease(version, release.TagName!, release.Name, Uri.TryCreate(release.HtmlUrl, UriKind.Absolute, out var notes) && notes.Scheme == Uri.UriSchemeHttps ? notes : null,
-                    release.PublishedAt, prerelease, installer, checksum);
+                    release.PublishedAt, prerelease, installer, checksum, ReleaseNotes.ToPlainText(release.Body));
             }
         }
         return best;

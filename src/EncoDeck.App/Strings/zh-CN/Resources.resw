@@ -448,7 +448,7 @@
   <data name="Settings_CheckUpdates.Content" xml:space="preserve"><value>检查更新</value></data>
   <data name="Settings_ReleaseNotes.Content" xml:space="preserve"><value>查看更新说明</value></data>
   <data name="Settings_AutoUpdate.Header" xml:space="preserve"><value>自动检查更新</value></data>
-  <data name="Settings_AutoUpdate.Description" xml:space="preserve"><value>每天在 GitHub 检查一次，并在后台下载新版本。只有你点击后才会安装。</value></data>
+  <data name="Settings_AutoUpdate.Description" xml:space="preserve"><value>有新版本时在后台下载并通知你，只有你点击后才会安装。</value></data>
   <data name="Settings_Prerelease.Header" xml:space="preserve"><value>接收预览版</value></data>
   <data name="Settings_Prerelease.Description" xml:space="preserve"><value>同时提供预发布版本，可能不够稳定。</value></data>
   <data name="Update_CurrentVersion" xml:space="preserve"><value>当前版本 {0}</value></data>
@@ -474,8 +474,9 @@
   <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck 正在通知区域中运行。</value></data>
   <data name="Settings_StoreUpdate.Content" xml:space="preserve"><value>更新</value></data>
   <data name="Settings_StoreAutoUpdate.Header" xml:space="preserve"><value>自动检查更新</value></data>
-  <data name="Settings_StoreAutoUpdate.Description" xml:space="preserve"><value>启动时检查 Microsoft Store，有新版本时通知你。</value></data>
+  <data name="Settings_StoreAutoUpdate.Description" xml:space="preserve"><value>有新版本时通知你。</value></data>
   <data name="StoreUpdate_Available" xml:space="preserve"><value>Microsoft Store 中有新版本。</value></data>
+  <data name="Settings_StoreReleaseNotes.Text" xml:space="preserve"><value>更新内容</value></data>
   <data name="Notify_StoreUpdate_Title" xml:space="preserve"><value>EncoDeck 有更新</value></data>
   <data name="Notify_StoreUpdate_Message" xml:space="preserve"><value>打开设置，通过 Microsoft Store 更新。</value></data>
   <data name="Vivo_Eq_Standard" xml:space="preserve"><value>标准</value></data>

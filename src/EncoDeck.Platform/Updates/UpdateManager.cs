@@ -55,9 +55,9 @@ public sealed record UpdateStatus
 }
 
 /// <summary>
-/// Checks GitHub Releases shortly after start-up and then once a day (when enabled), downloads a newer
-/// installer in the background and starts it only when the user asks. All work runs off the UI thread;
-/// one check or download at a time.
+/// Checks GitHub Releases shortly after start-up and when the main window opens (when enabled, at most once
+/// per <c>checkInterval</c>), downloads a newer installer in the background and starts it only when the user
+/// asks. All work runs off the UI thread; one check or download at a time.
 /// </summary>
 public sealed class UpdateManager : IAsyncDisposable
 {
@@ -82,6 +82,7 @@ public sealed class UpdateManager : IAsyncDisposable
     private bool _disposed;
 
     /// <param name="stateFile">Holds the time of the last successful check, so restarts do not hammer the API.</param>
+    /// <param name="checkInterval">Minimum time between automatic checks.</param>
     public UpdateManager(GitHubUpdateClient client, ISettingsStore settings, string stateFile, ILogger<UpdateManager> logger,
         TimeSpan? firstCheckDelay = null, TimeSpan? checkInterval = null)
     {
@@ -89,8 +90,8 @@ public sealed class UpdateManager : IAsyncDisposable
         _settings = settings;
         _stateFile = stateFile;
         _logger = logger;
-        _firstCheckDelay = firstCheckDelay ?? TimeSpan.FromMinutes(1);
-        _checkInterval = checkInterval ?? TimeSpan.FromHours(24);
+        _firstCheckDelay = firstCheckDelay ?? TimeSpan.FromSeconds(30);
+        _checkInterval = checkInterval ?? TimeSpan.FromHours(1);
         _status = new UpdateStatus { LastChecked = ReadLastCheck() };
     }
 
@@ -123,17 +124,15 @@ public sealed class UpdateManager : IAsyncDisposable
             // Installers of the version now running (or older) are no longer needed.
             _client.CleanUpInstalled();
             await Task.Delay(_firstCheckDelay, ct).ConfigureAwait(false);
-            while (!ct.IsCancellationRequested)
-            {
-                if (_settings.Current.AutoCheckUpdates != false && IsDue(DateTimeOffset.UtcNow))
-                    await CheckCoreAsync(automatic: true, ct).ConfigureAwait(false);
-                // Wake hourly so a toggle change or a missed check (offline, sleep) is picked up without a timer per day.
-                await Task.Delay(_checkInterval < TimeSpan.FromHours(1) ? _checkInterval : TimeSpan.FromHours(1), ct).ConfigureAwait(false);
-            }
+            await CheckIfDueAsync().ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
-        catch (Exception ex) { _logger.LogWarning(ex, "Update loop stopped"); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Start-up update check failed"); }
     }
+
+    /// <summary>Automatic check (may download), when enabled and the last one is older than the check interval; e.g. when the main window opens.</summary>
+    public Task CheckIfDueAsync() =>
+        _settings.Current.AutoCheckUpdates != false && IsDue(DateTimeOffset.UtcNow) ? CheckCoreAsync(automatic: true, _shutdown.Token) : Task.CompletedTask;
 
     internal bool IsDue(DateTimeOffset now) => Status.LastChecked is not { } last || now - last >= _checkInterval || last > now.AddDays(1);
 

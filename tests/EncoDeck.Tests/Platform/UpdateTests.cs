@@ -335,3 +335,40 @@ public sealed class GitHubUpdateTests : IDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { }
     }
 }
+
+public sealed class StoreReleaseNotesTests
+{
+    [Fact]
+    public void ReadsTheSkuReleaseNotesAsBullets()
+    {
+        // The shape of the catalog JSON behind StoreProduct.ExtendedJsonData.
+        const string json = """
+            {"LocalizedProperties":[{"ProductTitle":"EncoDeck"}],
+             "DisplaySkuAvailabilities":[{"Sku":{"LocalizedProperties":[{"MinimumNotes":"","ReleaseNotes":"- 新增水月雨支持\r\n- 修复电量显示\r\n"}]}}]}
+            """;
+        Assert.Equal("• 新增水月雨支持\n• 修复电量显示", StoreUpdateService.FindReleaseNotes(json));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("not json")]
+    [InlineData("""{"Skus":[{"LocalizedProperties":[{"ReleaseNotes":"  "}]}]}""")]
+    public void MissingOrEmptyNotesAreNull(string? json) => Assert.Null(StoreUpdateService.FindReleaseNotes(json));
+}
+
+public sealed class ReleaseNotesTests
+{
+    [Fact]
+    public void GitHubMarkdownBecomesPlainText_WithoutTheDownloadSection()
+    {
+        const string body = "这个版本新增 **水月雨** 支持。\r\n\r\n## 本次更新\r\n\r\n- **AKG**：支持电量。\r\n- 详见 [教程](https://example.test/a.md)。\r\n\r\n## 下载\r\n\r\n- EncoDeck-Setup.exe\r\n";
+        Assert.Equal("这个版本新增 水月雨 支持。\n\n本次更新\n\n• AKG：支持电量。\n• 详见 教程。", ReleaseNotes.ToPlainText(body));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(" \r\n ")]
+    [InlineData("## 下载\n- a.exe")]
+    public void NothingLeftIsNull(string? body) => Assert.Null(ReleaseNotes.ToPlainText(body));
+}

@@ -155,6 +155,9 @@ internal static partial class NativeMethods
 
     [LibraryImport("kernel32.dll", EntryPoint = "GetModuleHandleW", StringMarshalling = StringMarshalling.Utf16)]
     public static partial nint GetModuleHandle(string? moduleName);
+
+    [LibraryImport("kernel32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial int RegisterApplicationRestart(string? commandLine, uint flags);
 }
 
 [StructLayout(LayoutKind.Sequential)]

@@ -314,6 +314,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial Uri? ReleaseNotesUrl { get; set; }
     [ObservableProperty] public partial bool HasReleaseNotes { get; set; }
 
+    /// <summary>The offered release's notes from GitHub, as plain text; empty when none is offered.</summary>
+    [ObservableProperty] public partial string UpdateReleaseNotes { get; set; } = string.Empty;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand), nameof(RunUpdateActionCommand))]
     public partial bool IsUpdateIdle { get; set; } = true;
@@ -352,6 +355,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateActionText = Loc.Get(status.Stage == UpdateStage.Ready ? "Update_InstallNow" : "Update_DownloadAndInstall");
         ReleaseNotesUrl = status.Release?.NotesUrl;
         HasReleaseNotes = ReleaseNotesUrl is not null;
+        UpdateReleaseNotes = status.Release?.Notes ?? string.Empty;
         IsUpdateIdle = !status.IsBusy;
     }
 
@@ -384,6 +388,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial string StoreUpdateStatus { get; set; } = Loc.Get("Update_NeverChecked");
     [ObservableProperty] public partial bool IsStoreUpdateAvailable { get; set; }
 
+    /// <summary>The listing's "What's new" text while an update is available; empty otherwise.</summary>
+    [ObservableProperty] public partial string StoreReleaseNotes { get; set; } = string.Empty;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CheckStoreUpdatesCommand), nameof(InstallStoreUpdateCommand))]
     public partial bool IsStoreUpdateIdle { get; set; } = true;
@@ -397,6 +404,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             IsStoreUpdateAvailable = await _storeUpdates.CheckAsync() > 0;
             StoreUpdateStatus = Loc.Get(IsStoreUpdateAvailable ? "StoreUpdate_Available" : "Update_UpToDate");
+            StoreReleaseNotes = IsStoreUpdateAvailable ? await _storeUpdates.GetReleaseNotesAsync() ?? string.Empty : string.Empty;
         }
         catch (Exception ex)
         {

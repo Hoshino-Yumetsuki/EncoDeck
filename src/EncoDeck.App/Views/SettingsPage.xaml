@@ -193,10 +193,17 @@
                         </StackPanel>
                     </controls:SettingRow>
                     <ProgressBar Value="{x:Bind ViewModel.UpdateProgress, Mode=OneWay}" Visibility="{x:Bind services:Ui.Visible(ViewModel.IsUpdateDownloading), Mode=OneWay}" />
+                    <StackPanel Spacing="4" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.UpdateReleaseNotes), Mode=OneWay}">
+                        <TextBlock x:Uid="Settings_StoreReleaseNotes" Text="What's new" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock Text="{x:Bind ViewModel.UpdateReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </ScrollViewer>
+                    </StackPanel>
                     <HyperlinkButton x:Uid="Settings_ReleaseNotes" Content="Release notes" Padding="0" NavigateUri="{x:Bind ViewModel.ReleaseNotesUrl, Mode=OneWay}"
                                      Visibility="{x:Bind services:Ui.Visible(ViewModel.HasReleaseNotes), Mode=OneWay}" />
                     <controls:SettingRow x:Uid="Settings_AutoUpdate" Header="Check for updates automatically"
-                                         Description="Checks GitHub once a day and downloads new versions in the background. Nothing is installed until you choose to.">
+                                         Description="Downloads new versions in the background and lets you know. Nothing is installed until you choose to.">
                         <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.AutoCheckUpdates, Mode=TwoWay}" />
                     </controls:SettingRow>
                     <controls:SettingRow x:Uid="Settings_Prerelease" Header="Receive preview versions" Description="Also offer pre-releases. They may be less stable.">
@@ -216,8 +223,15 @@
                                     Command="{x:Bind ViewModel.InstallStoreUpdateCommand}" Visibility="{x:Bind services:Ui.Visible(ViewModel.IsStoreUpdateAvailable), Mode=OneWay}" />
                         </StackPanel>
                     </controls:SettingRow>
+                    <StackPanel Spacing="4" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.StoreReleaseNotes), Mode=OneWay}">
+                        <TextBlock x:Uid="Settings_StoreReleaseNotes" Text="What's new" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock Text="{x:Bind ViewModel.StoreReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </ScrollViewer>
+                    </StackPanel>
                     <controls:SettingRow x:Uid="Settings_StoreAutoUpdate" Header="Check for updates automatically"
-                                         Description="Checks the Microsoft Store at start-up and lets you know when a new version is available.">
+                                         Description="Lets you know when a new version is available.">
                         <ToggleSwitch Style="{StaticResource TrailingSwitchStyle}" IsOn="{x:Bind ViewModel.AutoCheckUpdates, Mode=TwoWay}" />
                     </controls:SettingRow>
                 </StackPanel>

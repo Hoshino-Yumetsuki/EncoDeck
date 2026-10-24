@@ -26,6 +26,9 @@ public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTr
 
     public bool IsMainVisible => _main is not null;
 
+    /// <summary>The main window was created (opened from the tray, a launch or another instance), not merely re-activated.</summary>
+    public event EventHandler? MainOpened;
+
     internal ThemeService Theme => theme;
 
     /// <summary>Window handle for pickers and dialogs (0 when the main window is closed).</summary>
@@ -57,6 +60,7 @@ public sealed class WindowManager(ThemeService theme, Func<bool> keepRunningInTr
         _main.Activate();
         if (created) _main.ApplyMaximized();
         WindowInterop.BringToForeground(_main);
+        if (created) MainOpened?.Invoke(this, EventArgs.Empty);
     }
 
     public void ToggleTrayPanel(Guid trayIconId)

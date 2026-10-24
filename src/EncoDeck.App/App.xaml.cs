@@ -32,6 +32,8 @@ public partial class App : Application
     private UpdateRelease? _pendingUpdateNotice;
     private DispatcherQueueTimer? _noticeTimer;
     private bool _exiting;
+    private DateTimeOffset _lastStoreCheck = DateTimeOffset.MinValue;
+    private bool _storeUpdateNotified;
     private BrandDemo? _brandDemo;
 
     public App()
@@ -220,7 +222,19 @@ public partial class App : Application
         Host.Start();
 
         HandleCommandLine(commandLine, isLaunch: true);
-        if (PackageIdentity.IsPackaged && Host.Settings.Current.AutoCheckUpdates != false) _ = CheckStoreUpdatesAsync();
+        if (PackageIdentity.IsPackaged)
+        {
+            Host.StoreUpdates.RegisterRestart(UpdateManager.RelaunchArgument);
+            Host.StoreUpdates.UpdateStarting += (_, _) => _dispatcher.TryEnqueue(ExitForStoreUpdate);
+            Host.StoreUpdates.WatchForUpdates();
+            Windows.MainOpened += (_, _) => _ = CheckStoreUpdatesAsync();
+            _ = CheckStoreUpdatesAsync(TimeSpan.FromSeconds(30));
+        }
+        else
+        {
+            // The start-up check runs in UpdateManager (started by the host).
+            Windows.MainOpened += (_, _) => _ = Task.Run(Host.Updates.CheckIfDueAsync);
+        }
         // Launched into the tray (e.g. with Windows): give back what start-up touched.
         Windows.TrimWhenIdle();
     }
@@ -357,16 +371,24 @@ public partial class App : Application
         _dispatcher?.TryEnqueue(() => _tray?.Notify(Loc.Format("Notify_LowBattery_Title", e.Current.Device?.Name), parts));
     }
 
-    /// <summary>A background download finished: one tray notification, never over a game (retried later instead).</summary>
-    /// <summary>Start-up Store check for the MSIX build; only a tray notification, installing stays the user's choice.</summary>
-    private async Task CheckStoreUpdatesAsync()
+    /// <summary>
+    /// Store check for the MSIX build, once after start-up and when the main window opens (at most once an hour);
+    /// only a tray notification (once per session), installing stays the user's choice.
+    /// </summary>
+    private async Task CheckStoreUpdatesAsync(TimeSpan delay = default)
     {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            if (delay > TimeSpan.Zero) await Task.Delay(delay);
+            if (_exiting || Host.Settings.Current.AutoCheckUpdates == false || !Settings.IsStoreUpdateIdle
+                || DateTimeOffset.UtcNow - _lastStoreCheck < TimeSpan.FromHours(1)) return;
+            _lastStoreCheck = DateTimeOffset.UtcNow;
             await Settings.CheckStoreUpdatesCommand.ExecuteAsync(null);
-            if (Settings.IsStoreUpdateAvailable && !_exiting && FullscreenDetector.GetState() == InterruptionState.Available)
+            if (!_storeUpdateNotified && Settings.IsStoreUpdateAvailable && !_exiting && FullscreenDetector.GetState() == InterruptionState.Available)
+            {
                 _tray?.Notify(Loc.Get("Notify_StoreUpdate_Title"), Loc.Get("Notify_StoreUpdate_Message"));
+                _storeUpdateNotified = true;
+            }
         }
         catch (Exception ex)
         {
@@ -374,6 +396,15 @@ public partial class App : Application
         }
     }
 
+    /// <summary>The Store is replacing this package (its own Update button or an automatic update): leave so it is not "in use".</summary>
+    private void ExitForStoreUpdate()
+    {
+        if (_exiting) return;
+        _logger?.LogInformation("Exiting for a Store update");
+        ExitApp();
+    }
+
+    /// <summary>A background download finished: one tray notification, never over a game (retried later instead).</summary>
     private void OnUpdateReady(object? sender, UpdateRelease release) => _dispatcher?.TryEnqueue(() =>
     {
         _pendingUpdateNotice = release;
