@@ -17,6 +17,9 @@ public sealed class UsbHeadsetWatcher : IDisposable
     private readonly Dictionary<string, Guid> _containers = [];
     private readonly Dictionary<string, long> _revisions = [];
     private long _revision;
+    // Startup receivers count as enumerated only after their USB ancestry check finishes.
+    private int _pending;
+    private bool _completed;
     private readonly CancellationTokenSource _stop = new();
     private DeviceWatcher? _watcher;
     // One receiver often exposes several render endpoints (game/chat); list it once per container.
@@ -46,14 +49,14 @@ public sealed class UsbHeadsetWatcher : IDisposable
     private void Added(DeviceWatcher sender, DeviceInformation info)
     {
         long revision;
-        lock (_gate) { _endpoints[info.Id] = info; revision = _revisions[info.Id] = ++_revision; }
+        lock (_gate) { _endpoints[info.Id] = info; revision = _revisions[info.Id] = ++_revision; _pending++; }
         _ = VerifyAsync(info, revision);
     }
     private void Updated(DeviceWatcher sender, DeviceInformationUpdate update)
     {
         DeviceInformation? info;
         long revision;
-        lock (_gate) { _endpoints.TryGetValue(update.Id, out info); info?.Update(update); revision = _revisions[update.Id] = ++_revision; }
+        lock (_gate) { _endpoints.TryGetValue(update.Id, out info); info?.Update(update); revision = _revisions[update.Id] = ++_revision; if (info is not null) _pending++; }
         if (info is not null) _ = VerifyAsync(info, revision);
     }
     private void Removed(DeviceWatcher sender, DeviceInformationUpdate update)
@@ -61,7 +64,17 @@ public sealed class UsbHeadsetWatcher : IDisposable
         lock (_gate) { _endpoints.Remove(update.Id); _devices.Remove(update.Id); _containers.Remove(update.Id); _revisions.Remove(update.Id); }
         Changed?.Invoke(this, EventArgs.Empty);
     }
-    private void Completed(DeviceWatcher sender, object args) { IsEnumerated = true; Changed?.Invoke(this, EventArgs.Empty); }
+    private void Completed(DeviceWatcher sender, object args)
+    {
+        lock (_gate) { _completed = true; if (_pending == 0) IsEnumerated = true; }
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+    private void VerifyFinished()
+    {
+        bool latched;
+        lock (_gate) { _pending--; latched = _completed && _pending == 0 && !IsEnumerated; if (latched) IsEnumerated = true; }
+        if (latched) Changed?.Invoke(this, EventArgs.Empty);
+    }
     private async Task VerifyAsync(DeviceInformation info, long revision)
     {
         try
@@ -98,6 +111,7 @@ public sealed class UsbHeadsetWatcher : IDisposable
         {
             // USB unplug/access denial races are normal; they must not stop Bluetooth discovery.
         }
+        finally { VerifyFinished(); }
     }
     public void Dispose()
     {

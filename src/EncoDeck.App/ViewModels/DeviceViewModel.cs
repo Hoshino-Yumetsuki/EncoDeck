@@ -326,7 +326,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         ApplyEqualizer(state, profile);
         ApplyToggles(state);
 
-        FirmwareText = state.Firmware?.Value is { } fw ? DescribeFirmware(fw) : string.Empty;
+        FirmwareText = state.Firmware?.Value is { } fw ? DescribeFirmware(fw, profile) : string.Empty;
         var newest = new[] { state.Battery.Left?.Timestamp, state.Battery.Right?.Timestamp, state.NoiseControl?.Timestamp, state.LastResponseAt }.Max();
         LastUpdatedText = newest is { } t && IsReady ? Loc.Format("Status_UpdatedAt", t.ToLocalTime().ToString("T")) : string.Empty;
 
@@ -486,14 +486,15 @@ public sealed partial class DeviceViewModel : ObservableObject
         return text.Length > 120 ? text[..120] : text;
     }
 
-    private static string DescribeFirmware(FirmwareInfo fw)
+    private static string DescribeFirmware(FirmwareInfo fw, IDeviceProfile? profile)
     {
         var parts = new List<string>();
         if (fw.Extra.TryGetValue("left", out var l)) parts.Add($"{Loc.Get("Battery_Left")} {l}");
         if (fw.Extra.TryGetValue("right", out var r)) parts.Add($"{Loc.Get("Battery_Right")} {r}");
         if (fw.Extra.TryGetValue("case", out var c)) parts.Add($"{Loc.Get("Battery_Case")} {c}");
         // Labelled, or the bare version numbers read like battery levels.
-        if (parts.Count == 0 && !string.IsNullOrWhiteSpace(fw.Version)) parts.Add(fw.Version);
+        // Sennheiser reports one device-wide version; other brands keep their existing Home layout.
+        if (parts.Count == 0 && profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile && !string.IsNullOrWhiteSpace(fw.Version)) parts.Add(fw.Version);
         return parts.Count == 0 ? string.Empty : $"{Loc.Get("Home_FirmwareLabel")}  {string.Join(" · ", parts)}";
     }
 

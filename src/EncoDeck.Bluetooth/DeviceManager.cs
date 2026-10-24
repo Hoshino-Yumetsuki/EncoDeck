@@ -65,6 +65,13 @@ public sealed class DeviceManager : IDeviceManager
     private Task? _usbPoll;
     private readonly SemaphoreSlim _usbReadGate = new(1, 1);
     private string? _manualSelection;
+    // The most recently connected device wins automatic selection over earlier choices.
+    private readonly object _connectionGate = new();
+    private readonly Dictionary<string, long> _connectedAt = [];
+    private long _sequence;
+    private long _selectedAt;
+    private bool _startupTracked;
+    private long _startedAt;
 
     public DeviceManager(
         IDeviceProfileRegistry profiles,
@@ -114,11 +121,12 @@ public sealed class DeviceManager : IDeviceManager
 
     public event EventHandler<DeviceIdentity>? ActiveDeviceCaseLidOpened;
 
-    public void Start() { _watcher.Start(); _usbWatcher.Start(); }
+    public void Start() { _startedAt = Environment.TickCount64; _watcher.Start(); _usbWatcher.Start(); }
 
     public async Task SelectDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         _manualSelection = deviceId;
+        lock (_connectionGate) _selectedAt = ++_sequence;
         await ReselectAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -130,10 +138,36 @@ public sealed class DeviceManager : IDeviceManager
 
     private void OnPairedDevicesChanged(object? sender, EventArgs e)
     {
+        TrackConnections();
         KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
         // Wait for Bluetooth enumeration so a USB receiver found first does not briefly take over.
         if (!_watcher.IsEnumerated) return;
         _ = ReselectAsync(_lifetime.Token);
+    }
+
+    private void TrackConnections()
+    {
+        var connected = KnownDevices.Where(d => d.IsConnected).Select(d => d.Identity.DeviceId).ToHashSet();
+        lock (_connectionGate)
+        {
+            // Devices already connected at startup are not newer than the saved preference.
+            bool startup = !_startupTracked;
+            // A USB watcher that never completes must not keep newer connections from winning.
+            _startupTracked |= _watcher.IsEnumerated && (_usbWatcher.IsEnumerated || Environment.TickCount64 - _startedAt > 10_000);
+            foreach (var id in _connectedAt.Keys.Where(id => !connected.Contains(id)).ToList()) _connectedAt.Remove(id);
+            foreach (var id in connected) _connectedAt.TryAdd(id, startup ? 0 : ++_sequence);
+        }
+    }
+
+    private KnownDevice? NewestConnection(IReadOnlyList<KnownDevice> candidates)
+    {
+        lock (_connectionGate)
+        {
+            return candidates
+                .Select(c => (Device: c, At: c.IsConnected && _connectedAt.TryGetValue(c.Identity.DeviceId, out long at) ? at : 0))
+                .Where(x => x.At > _selectedAt)
+                .OrderByDescending(x => x.At).Select(x => x.Device).FirstOrDefault();
+        }
     }
 
     private async Task ReselectAsync(CancellationToken cancellationToken)
@@ -151,9 +185,10 @@ public sealed class DeviceManager : IDeviceManager
         {
             var candidates = KnownDevices;
             string? preferred = _manualSelection ?? _preferredDeviceId();
-            var choice = candidates.FirstOrDefault(c => c.Identity.DeviceId == preferred)
-                // A USB receiver is always "connected" even with the headset off, so connected
-                // Bluetooth devices win automatic selection; the user can still pick USB manually.
+            var choice = NewestConnection(candidates)
+                ?? candidates.FirstOrDefault(c => c.Identity.DeviceId == preferred)
+                // Without a newer connection, a USB receiver (always "connected" even with the
+                // headset off) yields to connected Bluetooth devices; the user can still pick it manually.
                 ?? candidates.Where(c => c.IsConnected).OrderBy(c => c.Identity.Transport == DeviceTransport.Usb)
                     .ThenByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault()
                 ?? candidates.FirstOrDefault(c => c.Identity.DeviceId == _active?.Identity.DeviceId)
