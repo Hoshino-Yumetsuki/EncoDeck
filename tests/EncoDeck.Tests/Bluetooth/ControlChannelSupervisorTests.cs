@@ -27,10 +27,20 @@ public class ControlChannelSupervisorTests
 
         public event EventHandler<bool>? ConnectionChanged;
 
+        public bool IsLeAudio { get; private set; }
+
+        public event EventHandler? TransportChanged;
+
         public void Set(bool connected)
         {
             IsConnected = connected;
             ConnectionChanged?.Invoke(this, connected);
+        }
+
+        public void SetLeAudio(bool leAudio)
+        {
+            IsLeAudio = leAudio;
+            TransportChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void Dispose()
@@ -184,6 +194,43 @@ public class ControlChannelSupervisorTests
         await WaitFor(store, DeviceConnectionState.ControlUnavailable);
         await Task.Delay(150, TestContext.Current.CancellationToken);
         Assert.Equal(1, connector.Attempts);
+    }
+
+    [Fact]
+    public async Task ClassicInsteadOfLeAudio_RetriesWithBackoff_AndTheLeAudioLinkCanRecover()
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector { FailWith = ChannelOpenStatus.ClassicInsteadOfLeAudio };
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlUnavailable);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
+        Assert.Equal(FastPolicy.MaxAttempts + 1, connector.Attempts);
+        Assert.Equal("Error_LeAudioOnClassic", store.Current.LastError?.ResourceKey);
+        Assert.False(store.Current.IsLeAudio);
+
+        connector.FailWith = null;
+        link.SetLeAudio(true);
+        await WaitFor(store, DeviceConnectionState.ControlReady);
+        Assert.True(store.Current.IsLeAudio);
+    }
+
+    [Fact]
+    public async Task LeAudioComesUpWhileServing_ReopensControlAndReleasesTheOldChannel()
+    {
+        var link = new FakeLink(true);
+        var connector = new FakeConnector();
+        var (supervisor, store) = Create(link, connector);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlReady);
+        var previous = connector.LastDevice!.Channel;
+
+        link.SetLeAudio(true);
+        await OppoDeviceControllerTests.WaitUntil(() => connector.Attempts == 2 && store.Current.Connection == DeviceConnectionState.ControlReady);
+        Assert.True(previous.IsDisposed);
+        Assert.True(store.Current.IsLeAudio);
     }
 
     [Fact]

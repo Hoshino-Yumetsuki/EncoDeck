@@ -85,12 +85,13 @@ public sealed partial class LeAudioSettings : UserControl
     {
         bool le = _bond?.PrimaryBonded == true;
         bool both = le && _bond!.SecondaryBonded;
-        Status.Text = _bond is null ? "" : Loc.Get(both ? "LeAudio_StatusLe" : le ? "LeAudio_StatusLeSingle" : "LeAudio_StatusClassic");
         // Nothing bonded (e.g. an earlier attempt failed): offer both ways back.
         bool unpaired = _bond is { PrimaryBonded: false, ClassicBonded: false };
+        Status.Text = _bond is null ? "" : Loc.Get(unpaired ? "LeAudio_StatusUnpaired" : both ? "LeAudio_StatusLe" : le ? "LeAudio_StatusLeSingle" : "LeAudio_StatusClassic");
         Switch.Visibility = both ? Visibility.Collapsed : Visibility.Visible;
         Restore.Visibility = le || unpaired ? Visibility.Visible : Visibility.Collapsed;
         Switch.IsEnabled = Restore.IsEnabled = !_busy && !_dialogOpen && _bond is not null;
+        OpenBluetooth.IsEnabled = !_busy && !_dialogOpen;
         Progress.Visibility = Cancel.Visibility = _busy ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -103,7 +104,7 @@ public sealed partial class LeAudioSettings : UserControl
     private async void OnRestore(object sender, RoutedEventArgs e)
     {
         if (await ConfirmAsync("LeAudio_ConfirmRestore", "LeAudio_Restore"))
-            await RunAsync(LeAudioPairing.RestoreClassicAsync);
+            await RunAsync(LeAudioPairing.RemoveLeAudioAsync);
     }
 
     private void OnCancel(object sender, RoutedEventArgs e) => _operation?.Cancel();

@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: GPL-3.0-only
+using System.Runtime.InteropServices;
+using EncoDeck.Bluetooth.LeAudio;
+using EncoDeck.Protocol.Transport;
+using EncoDeck.Tests.Fakes;
+
+namespace EncoDeck.Tests.Bluetooth;
+
+public class OppoControlChannelRouterTests
+{
+    [Theory]
+    [InlineData(ChannelOpenStatus.Opened)]
+    [InlineData(ChannelOpenStatus.DeviceUnreachable)]
+    [InlineData(ChannelOpenStatus.ServiceNotFound)]
+    [InlineData(ChannelOpenStatus.AccessDenied)]
+    [InlineData(ChannelOpenStatus.ConnectFailed)]
+    public async Task LeBond_NeverTouchesClassic_EvenWhenGattFails(ChannelOpenStatus status)
+    {
+        int classicOpens = 0, gattOpens = 0;
+        await using var channel = new FakeByteChannel();
+        var result = await OppoControlChannelRouter.OpenAsync(
+            () => Task.FromResult(true),
+            () => { gattOpens++; return Task.FromResult(new ChannelOpenResult(status, status == ChannelOpenStatus.Opened ? channel : null, null, "GATT")); },
+            () => { classicOpens++; throw new InvalidOperationException("Classic must not be touched."); });
+
+        Assert.Equal(0, classicOpens);
+        Assert.Equal(1, gattOpens);
+        Assert.Equal(status is ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ServiceNotFound ? ChannelOpenStatus.ConnectFailed : status, result.Status);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UnknownPairingState_DoesNotFallBackToClassic(bool comFailure)
+    {
+        int opens = 0;
+        var result = await OppoControlChannelRouter.OpenAsync(
+            () => throw (comFailure ? new COMException("Windows is reconnecting") : new InvalidOperationException("Pairing change in progress")),
+            () => { opens++; throw new InvalidOperationException(); },
+            () => { opens++; throw new InvalidOperationException(); });
+
+        Assert.Equal(0, opens);
+        Assert.Equal(ChannelOpenStatus.ConnectFailed, result.Status);
+    }
+
+    [Fact]
+    public async Task ClassicBond_OpensClassicAfterCheckingLePairing()
+    {
+        var calls = new List<string>();
+        var result = await OppoControlChannelRouter.OpenAsync(
+            () => { calls.Add("pairing"); return Task.FromResult(false); },
+            () => throw new InvalidOperationException("GATT must not be opened."),
+            () => { calls.Add("classic"); return Task.FromResult(ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "Classic")); });
+
+        Assert.Equal(["pairing", "classic"], calls);
+        Assert.Equal("Classic", result.Detail);
+    }
+
+    [Fact]
+    public async Task Cancellation_DoesNotOpenEitherTransport()
+    {
+        await Assert.ThrowsAsync<OperationCanceledException>(() => OppoControlChannelRouter.OpenAsync(
+            () => throw new OperationCanceledException(),
+            () => throw new InvalidOperationException(),
+            () => throw new InvalidOperationException()));
+    }
+
+    [Fact]
+    public void PairingTransition_BlocksRoutingUntilOperationEnds()
+    {
+        const ulong address = 0x112233445567;
+        Assert.False(LeAudioLink.IsPairingChanging(address));
+        using (LeAudioLink.BeginPairingChange(address))
+        {
+            Assert.True(LeAudioLink.IsPairingChanging(address));
+            Assert.Throws<InvalidOperationException>(() => LeAudioLink.BeginPairingChange(address));
+        }
+        Assert.False(LeAudioLink.IsPairingChanging(address));
+    }
+}

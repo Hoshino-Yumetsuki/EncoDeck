@@ -20,6 +20,9 @@ public sealed record DeviceState
 
     public DeviceConnectionState Connection { get; init; } = DeviceConnectionState.NotDetected;
 
+    /// <summary>The audio runs over LE Audio (LC3) rather than Classic Bluetooth (A2DP).</summary>
+    public bool IsLeAudio { get; init; }
+
     public BatteryStatus Battery { get; init; } = BatteryStatus.Unknown;
 
     public Observed<WearStatus>? Wear { get; init; }

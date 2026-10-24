@@ -23,6 +23,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     private BluetoothDevice? _device;
     private ImmutableArray<BluetoothLEDevice> _leDevices;
     private volatile bool _connected;
+    private volatile bool _leAudio;
     private int _searching;
     private bool _disposed;
 
@@ -31,6 +32,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         _device = device;
         _leDevices = leDevices;
         _connected = Evaluate();
+        _leAudio = EvaluateLe();
         _device.ConnectionStatusChanged += OnConnectionStatusChanged;
         foreach (var le in leDevices) le.ConnectionStatusChanged += OnConnectionStatusChanged;
         // Only the primary bonded so far (e.g. the LE Audio switch is still pairing the other earbud).
@@ -40,6 +42,10 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     public bool IsConnected => _connected;
 
     public event EventHandler<bool>? ConnectionChanged;
+
+    public bool IsLeAudio => _leAudio;
+
+    public event EventHandler? TransportChanged;
 
     public static async Task<BluetoothLinkMonitor?> CreateAsync(string deviceId, CancellationToken cancellationToken)
     {
@@ -53,7 +59,15 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
             return null;
         }
         if (device is null) return null;
-        return new BluetoothLinkMonitor(device, await BondedLeIdentitiesAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false));
+        try
+        {
+            return new BluetoothLinkMonitor(device, await BondedLeIdentitiesAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false));
+        }
+        catch
+        {
+            device.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -72,7 +86,17 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
             return [];
         }
         if (le is null) return [];
-        if (!le.DeviceInformation.Pairing.IsPaired)
+        bool bonded;
+        try
+        {
+            bonded = await LeAudioLink.IsBondedAsync(address, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            le.Dispose();
+            throw;
+        }
+        if (!bonded)
         {
             le.Dispose();
             return [];
@@ -132,16 +156,21 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         }
     }
 
-    private bool Evaluate() =>
-        _device?.ConnectionStatus == BluetoothConnectionStatus.Connected
-        || _leDevices.Any(le => le.ConnectionStatus == BluetoothConnectionStatus.Connected);
+    private bool Evaluate() => _device?.ConnectionStatus == BluetoothConnectionStatus.Connected || EvaluateLe();
+
+    private bool EvaluateLe() => _leDevices.Any(le => le.ConnectionStatus == BluetoothConnectionStatus.Connected);
 
     private void OnConnectionStatusChanged(object sender, object args)
     {
-        bool connected;
-        try { connected = Evaluate(); }
+        bool connected, leAudio;
+        try { connected = Evaluate(); leAudio = EvaluateLe(); }
         catch (ObjectDisposedException) { return; }
         if (sender is BluetoothLEDevice && _leDevices.Length == 1) _ = FindSecondaryAsync(1);
+        if (leAudio != _leAudio)
+        {
+            _leAudio = leAudio;
+            TransportChanged?.Invoke(this, EventArgs.Empty);
+        }
         if (connected == _connected) return;
         _connected = connected;
         ConnectionChanged?.Invoke(this, connected);

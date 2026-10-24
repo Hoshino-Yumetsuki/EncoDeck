@@ -18,9 +18,11 @@ namespace EncoDeck.Bluetooth.Gatt;
 /// notification is read whole before the next, which keeps frames intact as long as a frame fits
 /// one notification (OPPO frames are far below the LE Audio MTU).
 /// Both earbuds expose the service but only the current primary answers, and the roles swap
-/// (e.g. after one earbud went into the case), so every bonded earbud of the pair is used:
-/// writes go to all connected ones, notifications from any are read, and an earbud that
-/// connects later joins. Verified on the Enco X4.
+/// (e.g. after one earbud went into the case). As in the official client, both earbuds are
+/// subscribed but each command is written to one earbud only: writing it to both made the other
+/// earbud drop out of the LE Audio stream (mono, then silence). The target is the primary
+/// (public address); an earbud that stays silent after a write hands over to the other one.
+/// An earbud that connects later joins. Verified on the Enco X4.
 /// </summary>
 internal sealed class OppoGattByteChannel : IDuplexByteChannel
 {
@@ -40,13 +42,20 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         public GattWriteOption WriteOption { get; } = write.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Write)
             ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
         public bool Subscribed { get; set; }
+        public long LastWrite;
+        public long LastNotify;
     }
+
+    /// <summary>An earbud that sent nothing this long after a write is taken as not the primary.</summary>
+    private static readonly long SilentAfterWrite = TimeSpan.FromSeconds(3).Ticks;
 
     private readonly Lock _gate = new();
     /// <summary>The bonded earbuds of the pair, connected or not; owned until dispose.</summary>
     private ImmutableArray<BluetoothLEDevice> _candidates = [];
     private ImmutableArray<Endpoint> _endpoints = [];
     private readonly HashSet<ulong> _joining = [];
+    private ulong _primaryAddress;
+    private Endpoint? _active;
     private readonly Channel<byte[]> _notifications = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions
     {
         SingleReader = true,
@@ -72,17 +81,19 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
     /// </summary>
     internal static async Task<ChannelOpenResult> OpenAsync(ulong bluetoothAddress, CancellationToken cancellationToken)
     {
-        var channel = new OppoGattByteChannel();
+        var channel = new OppoGattByteChannel { _primaryAddress = bluetoothAddress };
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(JoinTimeout);
         try
         {
             var primary = await BluetoothLEDevice.FromBluetoothAddressAsync(bluetoothAddress, BluetoothAddressType.Public).AsTask(timeout.Token).ConfigureAwait(false);
-            if (primary is null || !primary.DeviceInformation.Pairing.IsPaired)
+            if (primary is null)
             {
-                primary?.Dispose();
-                return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The earbuds are not paired over LE Audio.");
+                return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The paired LE Audio identity is not available yet.");
             }
+            // The connector verified the bond via Windows' paired AEPs. A freshly reopened
+            // BluetoothLEDevice may still report IsPaired=false during reconnect.
+            channel._candidates = [primary];
             List<BluetoothLEDevice> candidates = [primary];
             try
             {
@@ -201,8 +212,35 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
 
     private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
     {
-        if (Volatile.Read(ref _stopped) == 0 && args.CharacteristicValue.Length > 0)
-            _notifications.Writer.TryWrite(args.CharacteristicValue.ToArray());
+        if (Volatile.Read(ref _stopped) != 0 || args.CharacteristicValue.Length == 0) return;
+        // Only noted: the other earbud may push events too, which must not pull commands over to it.
+        if (_endpoints.FirstOrDefault(e => ReferenceEquals(e.Notify, sender)) is { } endpoint)
+            Interlocked.Exchange(ref endpoint.LastNotify, DateTime.UtcNow.Ticks);
+        _notifications.Writer.TryWrite(args.CharacteristicValue.ToArray());
+    }
+
+    /// <summary>
+    /// The earbud to write to: the current one unless it stayed silent after the last write (then
+    /// the other one); initially the primary at the public address, else any connected earbud.
+    /// </summary>
+    private Endpoint? PickTarget()
+    {
+        var connected = _endpoints.Where(e => e.Device.ConnectionStatus == BluetoothConnectionStatus.Connected).ToList();
+        if (connected.Count == 0) return null;
+        long now = DateTime.UtcNow.Ticks;
+        var active = Volatile.Read(ref _active);
+        if (active is not null && connected.Contains(active))
+        {
+            long wrote = Interlocked.Read(ref active.LastWrite), heard = Interlocked.Read(ref active.LastNotify);
+            bool silent = wrote > heard && now - wrote > SilentAfterWrite;
+            if (!silent || connected.Count == 1) return active;
+            var other = connected.First(e => !ReferenceEquals(e, active));
+            Volatile.Write(ref _active, other);
+            return other;
+        }
+        var target = connected.FirstOrDefault(e => e.Device.BluetoothAddress == _primaryAddress) ?? connected[0];
+        Volatile.Write(ref _active, target);
+        return target;
     }
 
     /// <summary>
@@ -278,7 +316,7 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         return count;
     }
 
-    /// <summary>Writes to every connected earbud; only the current primary answers. Fails only if no write succeeds.</summary>
+    /// <summary>Writes to one earbud (see <see cref="PickTarget"/>); if that write fails, to the other one.</summary>
     public async ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
@@ -289,11 +327,17 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         bool delivered = false;
         try
         {
-            foreach (var endpoint in _endpoints)
+            var target = PickTarget();
+            IEnumerable<Endpoint> order = target is null ? [] : _endpoints.Where(e => !ReferenceEquals(e, target)).Prepend(target);
+            foreach (var endpoint in order)
             {
                 if (endpoint.Device.ConnectionStatus != BluetoothConnectionStatus.Connected) continue;
+                Interlocked.Exchange(ref endpoint.LastWrite, DateTime.UtcNow.Ticks);
                 last = await WriteToAsync(endpoint, data, linked.Token).ConfigureAwait(false);
-                delivered |= last == GattCommunicationStatus.Success;
+                if (last != GattCommunicationStatus.Success) continue;
+                delivered = true;
+                Volatile.Write(ref _active, endpoint);
+                break;
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)

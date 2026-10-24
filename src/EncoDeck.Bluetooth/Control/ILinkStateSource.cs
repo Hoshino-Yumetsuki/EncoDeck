@@ -8,4 +8,10 @@ public interface ILinkStateSource : IDisposable
 
     /// <summary>Raised on an arbitrary thread when <see cref="IsConnected"/> changes.</summary>
     event EventHandler<bool>? ConnectionChanged;
+
+    /// <summary>The audio runs over LE Audio (LC3) rather than Classic Bluetooth.</summary>
+    bool IsLeAudio => false;
+
+    /// <summary>Raised on an arbitrary thread when <see cref="IsLeAudio"/> changes.</summary>
+    event EventHandler? TransportChanged { add { } remove { } }
 }

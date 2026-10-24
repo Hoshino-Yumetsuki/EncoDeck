@@ -26,6 +26,19 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Small codec tag next to a connection status (e.g. "LC3" while on LE Audio). -->
+    <Style x:Key="CodecBadgeStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="5,0,5,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="CodecBadgeTextStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
     <!-- Switch for settings rows: WinUI's own ToggleSwitch template with the track in the right-hand
          column (as in Windows Settings), so the knob sits flush with the right edge and nothing is clipped. -->
     <Style x:Key="TrailingSwitchStyle" TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">

@@ -14,6 +14,7 @@
     <Button x:Name="Switch" Click="OnSwitch" />
     <Button x:Name="Restore" Click="OnRestore" />
     <Button x:Name="Cancel" Click="OnCancel" Visibility="Collapsed" />
+    <HyperlinkButton x:Name="OpenBluetooth" x:Uid="LeAudio_OpenBluetooth" NavigateUri="ms-settings:bluetooth" />
    </StackPanel>
    <TextBlock x:Uid="LeAudio_Disclaimer" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    <Expander x:Uid="LeAudio_Help" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">

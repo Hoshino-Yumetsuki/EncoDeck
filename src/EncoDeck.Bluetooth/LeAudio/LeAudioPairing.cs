@@ -10,10 +10,10 @@ namespace EncoDeck.Bluetooth.LeAudio;
 public enum LeAudioPairingStage
 {
     RemovingPairings,
+    WaitingForCleanup,
     WaitingForPairingMode,
     PairingPrimary,
     PairingSecondary,
-    PairingClassic,
 }
 
 public enum LeAudioPairingOutcome
@@ -22,8 +22,8 @@ public enum LeAudioPairingOutcome
     Paired,
     /// <summary>Only the primary earbud is bonded: audio plays on one side.</summary>
     PrimaryOnly,
-    /// <summary>The Classic pairing was restored.</summary>
-    ClassicRestored,
+    /// <summary>This PC's pairings were removed; the user pairs the earbuds again in Windows Settings.</summary>
+    Removed,
     PairingModeNotSeen,
     PairingFailed,
 }
@@ -69,12 +69,20 @@ public static class LeAudioPairing
     {
         using var le = await OpenLeAsync(primary, cancellationToken).ConfigureAwait(false);
         using var classic = await OpenClassicAsync(primary, cancellationToken).ConfigureAwait(false);
-        var secondary = await FindSecondaryBondsAsync(primary, le?.Name, cancellationToken).ConfigureAwait(false);
-        return new LeAudioBondState(
-            le?.DeviceInformation.Pairing.IsPaired == true,
-            le?.ConnectionStatus == BluetoothConnectionStatus.Connected,
-            secondary.Count > 0,
-            classic?.DeviceInformation.Pairing.IsPaired == true);
+        bool primaryBonded = await LeAudioLink.IsBondedAsync(primary, cancellationToken).ConfigureAwait(false);
+        var secondary = await FindSecondaryBondsAsync(primary, le?.Name ?? classic?.Name, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return new LeAudioBondState(
+                primaryBonded,
+                le?.ConnectionStatus == BluetoothConnectionStatus.Connected,
+                secondary.Count > 0,
+                classic?.DeviceInformation.Pairing.IsPaired == true);
+        }
+        finally
+        {
+            foreach (var other in secondary) other.Dispose();
+        }
     }
 
     /// <summary>
@@ -88,8 +96,15 @@ public static class LeAudioPairing
         var advert = await WaitForPairingModeAsync(primary, cancellationToken).ConfigureAwait(false);
         if (advert is null) return new(LeAudioPairingOutcome.PairingModeNotSeen);
 
+        // Windows may publish the CTKD Classic entry before the LE bond is visible. Block control
+        // opens throughout this interval so discovery cannot start RFCOMM while LE pairing runs.
+        using var pairingChange = LeAudioLink.BeginPairingChange(primary);
         progress?.Report(LeAudioPairingStage.RemovingPairings);
         await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
+        // Pairing LE before Windows has torn down the old Classic device makes CTKD bring back its
+        // A2DP/HFP services: the primary then stays on Classic audio and only the other earbud plays.
+        progress?.Report(LeAudioPairingStage.WaitingForCleanup);
+        await WaitForNodesRemovedAsync(primary, "BTHENUM", cancellationToken).ConfigureAwait(false);
 
         progress?.Report(LeAudioPairingStage.PairingPrimary);
         var status = await PairLeAsync(primary, cancellationToken).ConfigureAwait(false);
@@ -105,41 +120,54 @@ public static class LeAudioPairing
     }
 
     /// <summary>
-    /// Once the earbuds are in pairing mode, removes the LE bonds and pairs them over Classic again,
-    /// which brings back Windows' A2DP/HFP connection.
+    /// Removes this PC's pairings of the earbuds (both LE bonds and the Classic bond Windows derived
+    /// from them, which carries no audio). The user then pairs them again in Windows Settings, which
+    /// sets up Classic audio (A2DP/HFP) with its own connection handling.
     /// </summary>
-    public static async Task<LeAudioPairingResult> RestoreClassicAsync(ulong primary, IProgress<LeAudioPairingStage>? progress, CancellationToken cancellationToken)
+    public static async Task<LeAudioPairingResult> RemoveLeAudioAsync(ulong primary, IProgress<LeAudioPairingStage>? progress, CancellationToken cancellationToken)
     {
-        progress?.Report(LeAudioPairingStage.WaitingForPairingMode);
-        if (await WaitForPairingModeAsync(primary, cancellationToken).ConfigureAwait(false) is null)
-            return new(LeAudioPairingOutcome.PairingModeNotSeen);
-
+        using var pairingChange = LeAudioLink.BeginPairingChange(primary);
         progress?.Report(LeAudioPairingStage.RemovingPairings);
         await RemoveAllAsync(primary, cancellationToken).ConfigureAwait(false);
-
-        progress?.Report(LeAudioPairingStage.PairingClassic);
-        var status = DevicePairingResultStatus.Failed;
-        for (int attempt = 0; attempt < PairAttempts && status is not (DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired); attempt++)
-        {
-            if (attempt > 0) await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
-            using var classic = await OpenClassicAsync(primary, cancellationToken).ConfigureAwait(false);
-            if (classic is null) continue;
-            status = await PairAsync(classic.DeviceInformation.Pairing, DevicePairingProtectionLevel.Default, cancellationToken).ConfigureAwait(false);
-        }
-        return status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired
-            ? new(LeAudioPairingOutcome.ClassicRestored)
-            : new(LeAudioPairingOutcome.PairingFailed, status.ToString());
+        progress?.Report(LeAudioPairingStage.WaitingForCleanup);
+        await WaitForNodesRemovedAsync(primary, "BTHLE", cancellationToken).ConfigureAwait(false);
+        return new(LeAudioPairingOutcome.Removed);
     }
+
+    /// <summary>
+    /// Waits until Windows removed the device nodes of <paramref name="primary"/> whose instance id starts
+    /// with <paramref name="enumerator"/> (BTHENUM = Classic, BTHLE = LE), then a little longer.
+    /// Verified on the Enco X4: pairing 1–2 s after unpairing is too early, 30 s later is fine.
+    /// </summary>
+    private static async Task WaitForNodesRemovedAsync(ulong primary, string enumerator, CancellationToken cancellationToken)
+    {
+        string address = primary.ToString("X12", System.Globalization.CultureInfo.InvariantCulture);
+        var deadline = DateTime.UtcNow + NodeRemovalTimeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            var nodes = await Windows.Devices.Enumeration.Pnp.PnpObject.FindAllAsync(
+                Windows.Devices.Enumeration.Pnp.PnpObjectType.Device, ["System.Devices.DeviceInstanceId"],
+                $"System.Devices.DeviceInstanceId:~~\"{address}\"").AsTask(cancellationToken).ConfigureAwait(false);
+            bool left = nodes.Any(n => n.Properties.TryGetValue("System.Devices.DeviceInstanceId", out var id)
+                && id is string text && text.StartsWith(enumerator, StringComparison.OrdinalIgnoreCase));
+            if (!left) break;
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+        await Task.Delay(NodeRemovalSettle, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static readonly TimeSpan NodeRemovalTimeout = TimeSpan.FromSeconds(40);
+    private static readonly TimeSpan NodeRemovalSettle = TimeSpan.FromSeconds(5);
 
     private static async Task RemoveAllAsync(ulong primary, CancellationToken cancellationToken)
     {
         using var le = await OpenLeAsync(primary, cancellationToken).ConfigureAwait(false);
-        foreach (var secondary in await FindSecondaryBondsAsync(primary, le?.Name, cancellationToken).ConfigureAwait(false))
+        using var classic = await OpenClassicAsync(primary, cancellationToken).ConfigureAwait(false);
+        foreach (var secondary in await FindSecondaryBondsAsync(primary, le?.Name ?? classic?.Name, cancellationToken).ConfigureAwait(false))
         {
             using (secondary) await UnpairAsync(secondary.DeviceInformation.Pairing, cancellationToken).ConfigureAwait(false);
         }
         if (le is not null) await UnpairAsync(le.DeviceInformation.Pairing, cancellationToken).ConfigureAwait(false);
-        using var classic = await OpenClassicAsync(primary, cancellationToken).ConfigureAwait(false);
         if (classic is not null) await UnpairAsync(classic.DeviceInformation.Pairing, cancellationToken).ConfigureAwait(false);
     }
 
@@ -253,7 +281,10 @@ public static class LeAudioPairing
 
     private static async Task UnpairAsync(DeviceInformationPairing pairing, CancellationToken cancellationToken)
     {
-        if (pairing.IsPaired) await pairing.UnpairAsync().AsTask(cancellationToken).ConfigureAwait(false);
+        if (!pairing.IsPaired) return;
+        var result = await pairing.UnpairAsync().AsTask(cancellationToken).ConfigureAwait(false);
+        if (result.Status is not (DeviceUnpairingResultStatus.Unpaired or DeviceUnpairingResultStatus.AlreadyUnpaired))
+            throw new InvalidOperationException($"Windows could not remove the earbuds' pairing: {result.Status}");
     }
 
     private static async Task<BluetoothLEDevice?> OpenLeAsync(ulong address, CancellationToken cancellationToken)

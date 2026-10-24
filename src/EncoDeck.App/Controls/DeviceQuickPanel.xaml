@@ -19,6 +19,10 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <ProgressRing Width="12" Height="12" IsActive="{x:Bind ViewModel.IsBusyConnecting, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsBusyConnecting, Mode=OneWay}" />
                     <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" />
+                    <Border Style="{StaticResource CodecBadgeStyle}" Visibility="{x:Bind ViewModel.IsLeAudio, Mode=OneWay}"
+                            x:Uid="Codec_LeAudio" ToolTipService.ToolTip="LE Audio (LC3)">
+                        <TextBlock Text="LC3" Style="{StaticResource CodecBadgeTextStyle}" />
+                    </Border>
                 </StackPanel>
             </StackPanel>
             <Button Grid.Column="2" x:Uid="Panel_OpenApp" Click="OnOpenApp" Style="{StaticResource SubtleButtonStyle}" Padding="8" VerticalAlignment="Top"

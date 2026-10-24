@@ -35,6 +35,11 @@ public enum ChannelOpenStatus
     ConnectFailed,
     /// <summary>The selected device's LE control endpoint was not found during bounded discovery.</summary>
     ControlEndpointNotFound,
+    /// <summary>
+    /// A Classic connection is visible but the bonded LE control link is not ready yet.
+    /// Retry with bounded backoff; this does not establish which audio codec Windows is using.
+    /// </summary>
+    ClassicInsteadOfLeAudio,
 }
 
 public sealed record ChannelOpenResult(ChannelOpenStatus Status, IDuplexByteChannel? Channel, Guid? ServiceUuid, string? Detail)

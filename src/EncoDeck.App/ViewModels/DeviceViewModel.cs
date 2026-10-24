@@ -104,6 +104,9 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial bool IsBusyConnecting { get; set; }
     [ObservableProperty] public partial bool IsControlUnavailable { get; set; }
     [ObservableProperty] public partial bool IsLinkDown { get; set; }
+
+    /// <summary>The audio runs over LE Audio (shown as an "LC3" tag next to the status).</summary>
+    [ObservableProperty] public partial bool IsLeAudio { get; set; }
     [ObservableProperty] public partial string? DeviceImagePath { get; set; }
     [ObservableProperty] public partial string? LeftArtworkPath { get; set; }
     [ObservableProperty] public partial string? RightArtworkPath { get; set; }
@@ -280,6 +283,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsBusyConnecting = state.Connection is DeviceConnectionState.ControlConnecting or DeviceConnectionState.Reconnecting or DeviceConnectionState.AudioConnected;
         IsControlUnavailable = state.Connection == DeviceConnectionState.ControlUnavailable;
         IsLinkDown = state.Connection is DeviceConnectionState.PairedNotConnected or DeviceConnectionState.Disconnected;
+        IsLeAudio = state.IsLeAudio && !IsLinkDown;
         // Until the earbuds connect and report their ids, use the ones remembered from last time
         // (restored by the device cache) or the model's own product id, so the art shows at once.
         uint? productId = state.ProductId;

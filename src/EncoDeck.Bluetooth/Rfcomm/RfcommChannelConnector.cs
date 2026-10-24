@@ -25,7 +25,6 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
 
     public async Task<ChannelOpenResult> OpenAsync(string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
     {
-        ChannelOpenResult? gattFailure = null, connectFailure = null;
         BluetoothDevice? device;
         try
         {
@@ -42,94 +41,99 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
 
         using (device)
         {
-            var access = await device.RequestAccessAsync().AsTask(cancellationToken);
-            if (access != DeviceAccessStatus.Allowed)
+            if (serviceUuids.Any(OppoServiceUuids.IsCandidate))
             {
-                return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"Device access: {access}");
-            }
-
-            var identity = new DeviceIdentity(deviceId, device.Name, new BluetoothAddress(device.BluetoothAddress));
-            if (serviceUuids.Contains(MoondropConstants.SppServiceId) &&
-                profiles.Match(identity) is MoondropProfile { RfcommChannel: { } channel })
-            {
-                var result = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, channel, cancellationToken).ConfigureAwait(false);
-                if (result.Status == ChannelOpenStatus.Opened) return result;
-                connectFailure = result;
-                _logger.LogInformation("Known MOONDROP RFCOMM channel failed: {Detail}", result.Detail);
-            }
-
-            // OPPO earbuds switched to LE Audio keep only an LE link; their control moves to GATT 079A.
-            if (device.ConnectionStatus != BluetoothConnectionStatus.Connected && serviceUuids.Any(OppoServiceUuids.IsCandidate))
-            {
-                var result = await OppoGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
-                if (result.Status == ChannelOpenStatus.Opened) return result;
-                _logger.LogInformation("OPPO GATT connect failed: {Detail}", result.Detail);
-                // On LE Audio, RFCOMM would page the Classic link that Windows keeps down (and disturb
-                // the LE links); report the GATT failure so the supervisor retries instead.
-                if (result.Status != ChannelOpenStatus.DeviceUnreachable || await LeAudioLink.IsConnectedAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false))
-                    return result.Status is ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ServiceNotFound
-                        ? ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, result.Detail ?? "OPPO GATT")
-                        : result;
-                gattFailure = result;
-            }
-
-            foreach (var uuid in serviceUuids)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (uuid == SennheiserProfile.GattServiceId)
-                {
-                    var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
-                    if (result.Status == ChannelOpenStatus.Opened) return result;
-                    gattFailure = result;
-                    _logger.LogInformation("Sennheiser GAIA GATT connect failed: {Detail}", result.Detail);
-                    continue;
-                }
-                if (uuid == MoondropConstants.GattServiceId)
-                {
-                    var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
-                    if (result.Status == ChannelOpenStatus.Opened) return result;
-                    gattFailure = result;
-                    _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
-                    continue;
-                }
-                RfcommDeviceServicesResult services;
-                try
-                {
-                    // Cached first: avoids a radio round-trip when Windows already has the SDP record.
-                    services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Cached).AsTask(cancellationToken);
-                    if (services.Services.Count == 0)
+                return await OppoControlChannelRouter.OpenAsync(
+                    async () =>
                     {
-                        services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
-                    }
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    _logger.LogWarning("SDP lookup for {Service} failed: 0x{HResult:X8}", uuid, ex.HResult);
-                    continue;
-                }
-
-                if (services.Error != BluetoothError.Success)
-                {
-                    _logger.LogInformation("SDP lookup for {Service}: {Error}", uuid, services.Error);
-                    if (services.Error is BluetoothError.DeviceNotConnected or BluetoothError.RadioNotAvailable)
-                    {
-                        if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Contains(SennheiserProfile.GattServiceId))
-                            return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
-                    }
-                    continue;
-                }
-
-                foreach (var service in services.Services)
-                {
-                    var result = await TryConnectAsync(service, uuid, cancellationToken).ConfigureAwait(false);
-                    service.Dispose();
-                    if (result.Status == ChannelOpenStatus.Opened) return result;
-                    connectFailure = result;
-                    _logger.LogInformation("RFCOMM connect to {Service} failed: {Detail}", uuid, result.Detail);
-                }
+                        if (LeAudioLink.IsPairingChanging(device.BluetoothAddress))
+                            throw new InvalidOperationException("The earbuds' pairing is being changed.");
+                        bool bonded = await LeAudioLink.IsBondedAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                        if (LeAudioLink.IsPairingChanging(device.BluetoothAddress))
+                            throw new InvalidOperationException("The earbuds' pairing is being changed.");
+                        return bonded;
+                    },
+                    () => OppoGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken),
+                    () => OpenClassicAsync(device, deviceId, serviceUuids, cancellationToken)).ConfigureAwait(false);
             }
+            return await OpenClassicAsync(device, deviceId, serviceUuids, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<ChannelOpenResult> OpenClassicAsync(BluetoothDevice device, string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
+    {
+        ChannelOpenResult? gattFailure = null, connectFailure = null;
+        var access = await device.RequestAccessAsync().AsTask(cancellationToken);
+        if (access != DeviceAccessStatus.Allowed)
+        {
+            return ChannelOpenResult.Failed(ChannelOpenStatus.AccessDenied, $"Device access: {access}");
         }
 
+        var identity = new DeviceIdentity(deviceId, device.Name, new BluetoothAddress(device.BluetoothAddress));
+        if (serviceUuids.Contains(MoondropConstants.SppServiceId) &&
+            profiles.Match(identity) is MoondropProfile { RfcommChannel: { } channel })
+        {
+            var result = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, channel, cancellationToken).ConfigureAwait(false);
+            if (result.Status == ChannelOpenStatus.Opened) return result;
+            connectFailure = result;
+            _logger.LogInformation("Known MOONDROP RFCOMM channel failed: {Detail}", result.Detail);
+        }
+
+        foreach (var uuid in serviceUuids)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (uuid == SennheiserProfile.GattServiceId)
+            {
+                var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("Sennheiser GAIA GATT connect failed: {Detail}", result.Detail);
+                continue;
+            }
+            if (uuid == MoondropConstants.GattServiceId)
+            {
+                var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
+                continue;
+            }
+            RfcommDeviceServicesResult services;
+            try
+            {
+                // Cached first: avoids a radio round-trip when Windows already has the SDP record.
+                services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Cached).AsTask(cancellationToken);
+                if (services.Services.Count == 0)
+                {
+                    services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("SDP lookup for {Service} failed: 0x{HResult:X8}", uuid, ex.HResult);
+                continue;
+            }
+
+            if (services.Error != BluetoothError.Success)
+            {
+                _logger.LogInformation("SDP lookup for {Service}: {Error}", uuid, services.Error);
+                if (services.Error is BluetoothError.DeviceNotConnected or BluetoothError.RadioNotAvailable)
+                {
+                    if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Contains(SennheiserProfile.GattServiceId))
+                        return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
+                }
+                continue;
+            }
+
+            foreach (var service in services.Services)
+            {
+                var result = await TryConnectAsync(service, uuid, cancellationToken).ConfigureAwait(false);
+                service.Dispose();
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                connectFailure = result;
+                _logger.LogInformation("RFCOMM connect to {Service} failed: {Detail}", uuid, result.Detail);
+            }
+        }
         // A control socket that exists but failed to connect is usually busy right after audio
         // connects; report it (retryable) rather than a permanent GATT or SDP outcome.
         return connectFailure ?? gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");

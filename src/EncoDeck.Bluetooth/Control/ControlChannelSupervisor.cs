@@ -73,6 +73,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         _trace = trace;
         _linkSettleDelay = linkSettleDelay ?? DefaultLinkSettleDelay;
         _link.ConnectionChanged += OnLinkChanged;
+        _link.TransportChanged += OnTransportChanged;
     }
 
     /// <summary>The controller while the channel is ready; null otherwise.</summary>
@@ -98,6 +99,22 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     {
         lock (_gate) _manualRetry = true;
         Wake();
+    }
+
+    private int _transportChanged;
+
+    private void OnTransportChanged(object? sender, EventArgs e)
+    {
+        UpdateTransport();
+        // E.g. the LE Audio link came up after a Classic-only reconnect: try control again.
+        Interlocked.Exchange(ref _transportChanged, 1);
+        Wake();
+    }
+
+    private void UpdateTransport()
+    {
+        bool leAudio = _link.IsLeAudio;
+        _store.TryUpdate(_identity.DeviceId, s => s.IsLeAudio == leAudio ? s : s with { IsLeAudio = leAudio });
     }
 
     private void OnLinkChanged(object? sender, bool connected)
@@ -147,7 +164,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             }
             firstIteration = false;
 
-            if (TakeManualRetry())
+            if (TakeManualRetry() | Interlocked.Exchange(ref _transportChanged, 0) == 1)
             {
                 attempt = 0;
                 exhausted = false;
@@ -222,9 +239,16 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 ChannelOpenStatus.ServiceNotFound => "The earbuds do not expose a supported control service.",
                 ChannelOpenStatus.AccessDenied => "Windows denied access to the Bluetooth device.",
                 ChannelOpenStatus.ControlEndpointNotFound => open.Detail ?? "The Bluetooth LE control endpoint was not found.",
+                ChannelOpenStatus.ClassicInsteadOfLeAudio => open.Detail ?? "The earbuds reconnected over Classic Bluetooth instead of LE Audio.",
                 _ => "Could not open the control channel.",
-            }, open.Status == ChannelOpenStatus.ControlEndpointNotFound ? "Error_ControlEndpointNotFound" : null);
-            return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ControlEndpointNotFound ? ServeOutcome.Permanent : ServeOutcome.Failed;
+            }, open.Status switch
+            {
+                ChannelOpenStatus.ControlEndpointNotFound => "Error_ControlEndpointNotFound",
+                ChannelOpenStatus.ClassicInsteadOfLeAudio => "Error_LeAudioOnClassic",
+                _ => null,
+            });
+            return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ControlEndpointNotFound
+                ? ServeOutcome.Permanent : ServeOutcome.Failed;
         }
 
         _logger.LogInformation("Control channel opened: {Channel}", open.Channel.Description);
@@ -245,7 +269,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 return ServeOutcome.Failed;
             }
 
-            if (!_link.IsConnected || ct.IsCancellationRequested) return ServeOutcome.EndedByLinkOrUser;
+            if (!_link.IsConnected || ct.IsCancellationRequested || Volatile.Read(ref _transportChanged) != 0) return ServeOutcome.EndedByLinkOrUser;
             if (closed.IsCompleted)
             {
                 SetError("The control channel closed during the handshake.");
@@ -268,6 +292,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
                 }
                 if (!_link.IsConnected) return ServeOutcome.EndedByLinkOrUser;
                 if (TakeManualRetry()) return ServeOutcome.EndedByLinkOrUser;
+                if (Volatile.Read(ref _transportChanged) != 0) return ServeOutcome.EndedByLinkOrUser;
                 // Spurious wake (e.g. duplicate link-up event): keep serving.
             }
         }
@@ -301,7 +326,8 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
 
     private void SetConnection(DeviceConnectionState state)
     {
-        _store.TryUpdate(_identity.DeviceId, s => s.Connection == state ? s : s with { Connection = state });
+        bool leAudio = _link.IsLeAudio;
+        _store.TryUpdate(_identity.DeviceId, s => s.Connection == state && s.IsLeAudio == leAudio ? s : s with { Connection = state, IsLeAudio = leAudio });
     }
 
     private void SetError(string message, string? resourceKey = null)
@@ -337,6 +363,7 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _link.ConnectionChanged -= OnLinkChanged;
+        _link.TransportChanged -= OnTransportChanged;
         _lifetime.Cancel();
         Wake();
         if (_loop is not null)
