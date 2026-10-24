@@ -615,4 +615,35 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>切换设备</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未连接）</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>管理设备</value></data>
+  <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio（LC3）连接（实验性）</value></data>
+  <data name="LeAudio_Summary.Text" xml:space="preserve"><value>让 Windows 通过 LE Audio 使用 LC3 编码连接这副耳机，取代传统蓝牙的 A2DP。电脑的蓝牙需支持 LE Audio。</value></data>
+  <data name="LeAudio_Switch" xml:space="preserve"><value>切换到 LE Audio</value></data>
+  <data name="LeAudio_Restore" xml:space="preserve"><value>恢复传统蓝牙</value></data>
+  <data name="LeAudio_StatusLe" xml:space="preserve"><value>当前：LE Audio（LC3），左右耳均已配对。</value></data>
+  <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>当前：LE Audio，但只有一只耳机已配对，声音可能只在一侧。可以重新切换一次。</value></data>
+  <data name="LeAudio_StatusClassic" xml:space="preserve"><value>当前：传统蓝牙（A2DP）。</value></data>
+  <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>更改耳机的连接方式？</value></data>
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck 会先删除这副耳机在本电脑上的蓝牙配对（手机等其他设备不受影响），然后请你把耳机放回充电盒、打开盖子，长按充电盒按键进入配对模式。EncoDeck 会自动通过 LE Audio 配对两只耳机，期间声音会中断。
+
+切换后，Windows 的蓝牙列表里会出现两个同名条目（其中一个是另一只耳机），声音输出改为“扬声器 (耳机名)”。</value></data>
+  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck 会删除这副耳机的 LE Audio 配对，然后请你让耳机进入配对模式，再通过传统蓝牙重新配对。期间声音会中断。</value></data>
+  <data name="LeAudio_Stage_RemovingPairings" xml:space="preserve"><value>正在删除这副耳机在本电脑上的配对…</value></data>
+  <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>请把两只耳机放回充电盒，打开盖子，长按充电盒按键直到指示灯闪烁（最多等待 2 分钟）…</value></data>
+  <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>已检测到配对模式，正在通过 LE Audio 配对第一只耳机…</value></data>
+  <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>正在配对另一只耳机…</value></data>
+  <data name="LeAudio_Stage_PairingClassic" xml:space="preserve"><value>已检测到配对模式，正在通过传统蓝牙重新配对…</value></data>
+  <data name="LeAudio_Result_Paired" xml:space="preserve"><value>已切换到 LE Audio。戴上耳机，在声音设置中选择“扬声器 (耳机名)”作为输出。</value></data>
+  <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>只配对上了一只耳机，声音可能只在一侧。请重新进入配对模式后再试一次。</value></data>
+  <data name="LeAudio_Result_ClassicRestored" xml:space="preserve"><value>已恢复传统蓝牙连接。</value></data>
+  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>没有检测到耳机的配对模式。原有配对已删除，请重试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
+  <data name="LeAudio_Result_PairingFailed" xml:space="preserve"><value>配对失败。请让耳机重新进入配对模式后再试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
+  <data name="LeAudio_Cancelled" xml:space="preserve"><value>已取消。若配对已被删除，请重试，或在 Windows 蓝牙设置中重新添加耳机。</value></data>
+  <data name="LeAudio_Error" xml:space="preserve"><value>操作失败：{0}</value></data>
+  <data name="LeAudio_Disclaimer.Text" xml:space="preserve"><value>实验性功能：目前只在 OPPO Enco X4 上实机验证过。在 LE Audio 连接下，空间音频、Hi-Res、设备双连等功能可能不可用。</value></data>
+  <data name="LeAudio_Help.Header" xml:space="preserve"><value>LE Audio 使用说明</value></data>
+  <data name="LeAudio_Guide.Content" xml:space="preserve"><value>查看详细说明与工作原理</value></data>
+  <data name="LeAudio_HelpRequirements.Text" xml:space="preserve"><value>需要 Windows 11 24H2 或更新版本，以及支持 LE Audio 的蓝牙适配器和驱动（例如 Intel 的“Smart Sound Technology for Bluetooth LE Audio”）。建议在 设置 → 蓝牙和设备 → 设备 中打开“可用时使用 LE 音频”。</value></data>
+  <data name="LeAudio_HelpSwitch.Text" xml:space="preserve"><value>这副耳机不会以 LE 方式出现在 Windows 的“添加设备”中，所以那里总是按传统蓝牙配对。EncoDeck 会直接对耳机的 LE 地址发起配对，Windows 随后自动建立传统蓝牙控制链路。另一只耳机不广播，它的地址从第一只耳机的广播中读取。整个过程不会改动耳机上的任何设置。</value></data>
+  <data name="LeAudio_HelpLimits.Text" xml:space="preserve"><value>切换后，蓝牙列表中另一只耳机会单独显示为一个同名条目。EncoDeck 在 LE Audio 下通过 GATT 控制耳机，降噪、电量等功能照常可用。已知问题：开始播放时，左右耳偶尔会相差约 7.5 ms，声像偏向一侧；停止所有声音几秒后重新播放即可重新对齐。</value></data>
+  <data name="LeAudio_HelpRestore.Text" xml:space="preserve"><value>要换回传统蓝牙，点击“恢复传统蓝牙”并按提示进入配对模式；也可以在 Windows 蓝牙设置中删除两个同名条目后重新添加耳机。</value></data>
 </root>

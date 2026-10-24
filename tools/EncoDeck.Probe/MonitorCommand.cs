@@ -94,6 +94,7 @@ internal static class MonitorCommand
             $"promptVolume={s.PromptVolume?.Value.ToString() ?? "?"}",
             $"bass={(s.BassEngine?.Value is { } b ? $"{b.Current} in {b.Min}..{b.Max}" : "?")}",
             $"headMotion={s.HeadMotionType?.Value.ToString() ?? "?"}",
+            $"leBrSwitch={(s.LeAudioSwitch?.Value is { } le ? $"{(le.Enabled ? 1 : 0)}/owner {(le.Owner ? 1 : 0)}" : "?")}",
             $"cycle={(s.NoiseCycle?.Value is { } c ? $"L=0x{c.LeftMask:X4} R=0x{c.RightMask:X4}" : "?")}",
             $"smartLevel={s.SmartLevelId ?? "-"}",
         };

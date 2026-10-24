@@ -29,6 +29,7 @@ internal static class ProbeApp
                 "get" => await QueryCommands.GetAsync(options, ct),
                 "set-anc" => await WriteCommands.SetNoiseControlAsync(options, ct),
                 "set-eq" => await WriteCommands.SetEqualizerAsync(options, ct),
+                "le-br-switch" => await WriteCommands.SetLeBrSwitchAsync(options, ct),
                 "monitor" => await MonitorCommand.RunAsync(options, ct),
                 "render-model" => await RenderModelCommand.RunAsync(options, ct),
                 _ => Unknown(options.Command),
@@ -75,6 +76,8 @@ internal static class ProbeApp
                       [--dwell-ms 6000]   each write, then restore the original mode
                       [--no-restore]      (only indices documented for the model are accepted).
               set-eq --preset N[,N..]     Select device EQ preset(s) with read-back, then restore.
+              le-br-switch [--state 0|1]  Experimental: print the LE/BR switch (0x0136); with --state
+                           [--dwell-ms 3000]   also set it (0x0433) and read it back. Not restored.
 
             Runtime:
               monitor [--seconds N]       Run the app's device runtime headlessly, print state changes

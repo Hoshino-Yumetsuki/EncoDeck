@@ -227,6 +227,8 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
             return open.Status is ChannelOpenStatus.ServiceNotFound or ChannelOpenStatus.AccessDenied or ChannelOpenStatus.ControlEndpointNotFound ? ServeOutcome.Permanent : ServeOutcome.Failed;
         }
 
+        _logger.LogInformation("Control channel opened: {Channel}", open.Channel.Description);
+
         // Reconnecting: start from the model and settings the earbuds had (the UI keeps showing them).
         var profile = _store.Current is { Profile: IControllableProfile current } state && state.Device?.DeviceId == _identity.DeviceId && current.Brand == _profile.Brand ? current : _profile;
         IDeviceController? controller = null;

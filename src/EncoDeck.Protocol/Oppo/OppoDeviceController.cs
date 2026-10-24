@@ -190,6 +190,8 @@ public sealed partial class OppoDeviceController : IDeviceController
                 requests.Add(new OppoRequest(OppoCommand.QueryPriorityDevice, [0x02]));
             }
             if (Model.FeatureSwitches.Any(f => f.Toggle == DeviceToggle.HeadGestures)) requests.Add(new OppoRequest(OppoCommand.QueryHeadMotionType, []));
+            // Read-only: an answer tells the UI the firmware can run LE Audio (skipped unless the bitmap allows it).
+            requests.Add(new OppoRequest(OppoCommand.QueryLeBrSwitch, []));
             requests.Add(new OppoRequest(OppoCommand.QueryWearState, []));
         }
         return requests;

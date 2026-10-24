@@ -122,6 +122,16 @@ public static class OppoFeatureParsers
         return type is 0 or 1;
     }
 
+    /// <summary><c>0x8136 [st][bits]</c>: bit0 switch on, bit1 owner, bit2 reset flag (official parser).</summary>
+    public static bool TryParseLeAudioSwitch(OppoFrame frame, out LeAudioSwitchState state)
+    {
+        state = new LeAudioSwitchState(false, false, false);
+        if (!IsOkResponse(frame, OppoCommand.QueryLeBrSwitch, 2)) return false;
+        int bits = frame.Payload[1];
+        state = new LeAudioSwitchState((bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0);
+        return true;
+    }
+
     /// <summary>Custom EQ list from <c>0x8122</c> or the <c>0x0506</c> push (same body without status).</summary>
     public static bool TryParseCustomEqualizers(OppoFrame frame, out IReadOnlyList<CustomEqualizer> presets)
     {

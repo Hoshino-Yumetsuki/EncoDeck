@@ -5,6 +5,7 @@ using EncoDeck.Core.Privacy;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Brands.Sennheiser;
+using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,7 +16,7 @@ using Windows.Networking.Sockets;
 
 namespace EncoDeck.Bluetooth.Rfcomm;
 
-/// <summary>Opens the first matching control service over RFCOMM or GAIA GATT.</summary>
+/// <summary>Opens the first matching control service over RFCOMM, GAIA GATT or OPPO GATT.</summary>
 public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILogger<RfcommChannelConnector>? logger = null) : IChannelConnector
 {
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
@@ -54,6 +55,15 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                 if (result.Status == ChannelOpenStatus.Opened) return result;
                 connectFailure = result;
                 _logger.LogInformation("Known MOONDROP RFCOMM channel failed: {Detail}", result.Detail);
+            }
+
+            // OPPO earbuds switched to LE Audio keep only an LE link; their control moves to GATT 079A.
+            if (device.ConnectionStatus != BluetoothConnectionStatus.Connected && serviceUuids.Any(OppoServiceUuids.IsCandidate))
+            {
+                var result = await OppoGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("OPPO GATT connect failed: {Detail}", result.Detail);
             }
 
             foreach (var uuid in serviceUuids)

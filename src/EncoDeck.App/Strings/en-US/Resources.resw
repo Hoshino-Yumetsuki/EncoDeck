@@ -615,4 +615,35 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Switch device</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0} (not connected)</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>Manage devices</value></data>
+  <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio (LC3) connection (experimental)</value></data>
+  <data name="LeAudio_Summary.Text" xml:space="preserve"><value>Lets Windows connect these earbuds over LE Audio with the LC3 codec instead of Classic Bluetooth A2DP. Your PC's Bluetooth must support LE Audio.</value></data>
+  <data name="LeAudio_Switch" xml:space="preserve"><value>Switch to LE Audio</value></data>
+  <data name="LeAudio_Restore" xml:space="preserve"><value>Restore Classic Bluetooth</value></data>
+  <data name="LeAudio_StatusLe" xml:space="preserve"><value>Current: LE Audio (LC3), both earbuds paired.</value></data>
+  <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>Current: LE Audio, but only one earbud is paired, so sound may play on one side only. Switch again to fix it.</value></data>
+  <data name="LeAudio_StatusClassic" xml:space="preserve"><value>Current: Classic Bluetooth (A2DP).</value></data>
+  <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>Change how the earbuds connect?</value></data>
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck first removes this PC's Bluetooth pairing with the earbuds (your phone and other devices are not affected). Then put the earbuds in the case, open the lid and hold the case button to enter pairing mode. EncoDeck pairs both earbuds over LE Audio automatically; audio stops meanwhile.
+
+Afterwards Windows lists two entries with the same name (one is the other earbud), and audio plays through "Speakers (earbud name)".</value></data>
+  <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck removes the earbuds' LE Audio pairing. Then put them in pairing mode and EncoDeck pairs them over Classic Bluetooth again. Audio stops meanwhile.</value></data>
+  <data name="LeAudio_Stage_RemovingPairings" xml:space="preserve"><value>Removing this PC's pairing with the earbuds…</value></data>
+  <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>Put both earbuds in the case, open the lid and hold the case button until the light flashes (waiting up to 2 minutes)…</value></data>
+  <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>Pairing mode detected. Pairing the first earbud over LE Audio…</value></data>
+  <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>Pairing the other earbud…</value></data>
+  <data name="LeAudio_Stage_PairingClassic" xml:space="preserve"><value>Pairing mode detected. Pairing over Classic Bluetooth…</value></data>
+  <data name="LeAudio_Result_Paired" xml:space="preserve"><value>Switched to LE Audio. Put the earbuds on and choose "Speakers (earbud name)" as the output in Sound settings.</value></data>
+  <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>Only one earbud was paired, so sound may play on one side only. Enter pairing mode again and retry.</value></data>
+  <data name="LeAudio_Result_ClassicRestored" xml:space="preserve"><value>Classic Bluetooth is restored.</value></data>
+  <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>Pairing mode was not detected. The old pairing has been removed; retry, or add the earbuds again in Windows Bluetooth settings.</value></data>
+  <data name="LeAudio_Result_PairingFailed" xml:space="preserve"><value>Pairing failed. Put the earbuds in pairing mode again and retry, or add them again in Windows Bluetooth settings.</value></data>
+  <data name="LeAudio_Cancelled" xml:space="preserve"><value>Cancelled. If the pairing was already removed, retry or add the earbuds again in Windows Bluetooth settings.</value></data>
+  <data name="LeAudio_Error" xml:space="preserve"><value>Failed: {0}</value></data>
+  <data name="LeAudio_Disclaimer.Text" xml:space="preserve"><value>Experimental: so far verified only on the OPPO Enco X4. Over LE Audio, spatial audio, Hi-Res and dual-device connection may be unavailable.</value></data>
+  <data name="LeAudio_Help.Header" xml:space="preserve"><value>About LE Audio</value></data>
+  <data name="LeAudio_Guide.Content" xml:space="preserve"><value>Read the guide and how it works</value></data>
+  <data name="LeAudio_HelpRequirements.Text" xml:space="preserve"><value>Requires Windows 11 24H2 or later and a Bluetooth adapter and driver with LE Audio support (for example Intel "Smart Sound Technology for Bluetooth LE Audio"). Turning on "Use LE Audio when available" in Settings → Bluetooth &amp; devices → Devices is recommended.</value></data>
+  <data name="LeAudio_HelpSwitch.Text" xml:space="preserve"><value>These earbuds do not appear as an LE device in Windows' "Add device", so pairing there always uses Classic Bluetooth. EncoDeck pairs the earbuds' LE address directly, and Windows then sets up the Classic control link by itself. The other earbud does not advertise; its address is read from the first earbud's advertisement. No setting on the earbuds is changed.</value></data>
+  <data name="LeAudio_HelpLimits.Text" xml:space="preserve"><value>Afterwards the other earbud is listed separately in Bluetooth settings under the same name. Over LE Audio, EncoDeck controls the earbuds over GATT, so noise control, battery and the other features keep working. Known issue: when playback starts, one earbud is occasionally about 7.5 ms behind the other, pulling the sound to one side; stop all audio for a few seconds and play again to realign.</value></data>
+  <data name="LeAudio_HelpRestore.Text" xml:space="preserve"><value>To go back to Classic Bluetooth, click "Restore Classic Bluetooth" and enter pairing mode when asked, or remove both entries with the earbuds' name in Windows Bluetooth settings and add the earbuds again.</value></data>
 </root>

@@ -12,6 +12,12 @@ public enum SpatialAudioMode
 /// <summary>Game sound enhancement: the selected type and the types the earbuds support (0 = off).</summary>
 public sealed record GameSoundState(int SelectedType, IReadOnlyList<int> SupportedTypes);
 
+/// <summary>
+/// The earbuds' LE/BR switch (the official "game low latency with LE Audio" setting). Answering
+/// it means the firmware can run LE Audio; <see cref="Owner"/> and <see cref="ResetFlag"/> are raw bits.
+/// </summary>
+public sealed record LeAudioSwitchState(bool Enabled, bool Owner, bool ResetFlag);
+
 /// <summary>Bass engine (BassWave) level with the range the earbuds report.</summary>
 public sealed record BassEngineState(int Min, int Max, int Current);
 

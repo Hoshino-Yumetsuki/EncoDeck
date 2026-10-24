@@ -64,6 +64,10 @@ public sealed partial class OppoDeviceController : IAdvancedDeviceCommands
         {
             _store.TryUpdate(_identity.DeviceId, s => s with { HeadMotionType = Observed.From(headType, now, source) });
         }
+        else if (OppoFeatureParsers.TryParseLeAudioSwitch(frame, out var leAudio))
+        {
+            _store.TryUpdate(_identity.DeviceId, s => s with { LeAudioSwitch = Observed.From(leAudio, now, source) });
+        }
     }
 
     private void ApplySourceDevices(OppoFrame frame)

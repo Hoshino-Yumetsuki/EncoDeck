@@ -19,6 +19,8 @@ public static class OppoCommand
     public const ushort QueryBassEngine = 0x0124;
     public const ushort QueryPriorityDevice = 0x0132;
     public const ushort QueryHeadMotionType = 0x0134;
+    /// <summary>LE/BR switch ("game low latency with LE Audio"): <c>[st][bits]</c>, bit0 on, bit1 owner, bit2 reset.</summary>
+    public const ushort QueryLeBrSwitch = 0x0136;
     public const ushort QueryProductId = 0x0103;
     public const ushort QueryFirmware = 0x0105;
     public const ushort QueryBattery = 0x0106;
@@ -51,6 +53,8 @@ public static class OppoCommand
     public const ushort SetPromptVolume = 0x0427;
     public const ushort OperateMultiConnect = 0x0429;
     public const ushort SetHeadMotionType = 0x0431;
+    /// <summary>Sets the LE/BR switch, <c>[01]</c> on / <c>[00]</c> off. Not needed to pair or use LE Audio on Windows.</summary>
+    public const ushort SetLeBrSwitch = 0x0433;
     public const ushort SetNoiseControl = 0x0404;
     public const ushort SetEqualizer = 0x0406;
     public const ushort SetCustomEqualizer = 0x0418;
@@ -85,6 +89,7 @@ public static class OppoCommand
         QueryBassEngine => "QueryBassEngine",
         QueryPriorityDevice => "QueryPriorityDevice",
         QueryHeadMotionType => "QueryHeadMotionType",
+        QueryLeBrSwitch => "QueryLeBrSwitch",
         QueryColor => "QueryColor",
         SetKeyFunction => "SetKeyFunction",
         FreeMusicRequest => "FreeMusicRequest",
@@ -95,6 +100,7 @@ public static class OppoCommand
         SetPromptVolume => "SetPromptVolume",
         OperateMultiConnect => "OperateMultiConnect",
         SetHeadMotionType => "SetHeadMotionType",
+        SetLeBrSwitch => "SetLeBrSwitch",
         CustomEqualizerChangedNotification => "CustomEqualizerChanged",
         BassEngineChangedNotification => "BassEngineChanged",
         GameEqRequest => "GameEqRequest",
