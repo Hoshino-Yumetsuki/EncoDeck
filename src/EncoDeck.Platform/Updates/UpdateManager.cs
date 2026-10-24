@@ -56,8 +56,8 @@ public sealed record UpdateStatus
 
 /// <summary>
 /// Checks GitHub Releases shortly after start-up and when the main window opens (when enabled, at most once
-/// per <c>checkInterval</c>), downloads a newer installer in the background and starts it only when the user
-/// asks. All work runs off the UI thread; one check or download at a time.
+/// per <c>checkInterval</c>) and otherwise once a day, downloads a newer installer in the background and starts
+/// it only when the user asks. All work runs off the UI thread; one check or download at a time.
 /// </summary>
 public sealed class UpdateManager : IAsyncDisposable
 {
@@ -125,16 +125,28 @@ public sealed class UpdateManager : IAsyncDisposable
             _client.CleanUpInstalled();
             await Task.Delay(_firstCheckDelay, ct).ConfigureAwait(false);
             await CheckIfDueAsync().ConfigureAwait(false);
+            // A tray-only session never opens the main window: keep checking once a day in the background.
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(BackgroundWake, ct).ConfigureAwait(false);
+                if (_settings.Current.AutoCheckUpdates != false && IsDue(DateTimeOffset.UtcNow, BackgroundInterval))
+                    await CheckCoreAsync(automatic: true, ct).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
-        catch (Exception ex) { _logger.LogWarning(ex, "Start-up update check failed"); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Update loop stopped"); }
     }
+
+    private static readonly TimeSpan BackgroundWake = TimeSpan.FromHours(1);
+    private static readonly TimeSpan BackgroundInterval = TimeSpan.FromHours(24);
 
     /// <summary>Automatic check (may download), when enabled and the last one is older than the check interval; e.g. when the main window opens.</summary>
     public Task CheckIfDueAsync() =>
         _settings.Current.AutoCheckUpdates != false && IsDue(DateTimeOffset.UtcNow) ? CheckCoreAsync(automatic: true, _shutdown.Token) : Task.CompletedTask;
 
-    internal bool IsDue(DateTimeOffset now) => Status.LastChecked is not { } last || now - last >= _checkInterval || last > now.AddDays(1);
+    internal bool IsDue(DateTimeOffset now) => IsDue(now, _checkInterval);
+
+    private bool IsDue(DateTimeOffset now, TimeSpan interval) => Status.LastChecked is not { } last || now - last >= interval || last > now.AddDays(1);
 
     /// <summary>User-initiated check; never downloads by itself.</summary>
     public Task CheckNowAsync() => CheckCoreAsync(automatic: false, _shutdown.Token);
