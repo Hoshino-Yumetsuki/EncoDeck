@@ -7,23 +7,25 @@ using EncoDeck.Protocol.Transport;
 
 namespace EncoDeck.Protocol.Brands.Sennheiser;
 
-internal sealed class SennheiserController(IDuplexByteChannel channel, ControllerContext context, SennheiserProfile profile, bool earbuds, bool slider)
+internal sealed partial class SennheiserController(IDuplexByteChannel channel, ControllerContext context, SennheiserProfile profile, bool earbuds, bool slider)
     : RequestReplyController(channel, context)
 {
     private readonly SennheiserFrameCodec _codec = new();
     private bool _noiseReady;
     protected override IReadOnlyList<BrandPacket> Decode(ReadOnlySpan<byte> bytes) => _codec.Feed(bytes);
+    private Task<BrandPacket?> Exchange(ushort command, byte[] payload, Func<byte[], bool> valid, CancellationToken ct) =>
+        ExchangeAsync(SennheiserFrameCodec.Encode(command, payload), p =>
+            p.Command == (command | 0x180) || (p.Command == (command | 0x100) && valid(p.Payload)), ct);
     private async Task<BrandPacket?> Query(ushort command, byte[] payload, Func<byte[], bool> valid, CancellationToken ct)
     {
-        var reply = await ExchangeAsync(SennheiserFrameCodec.Encode(command, payload), p =>
-            p.Command == (command | 0x180) || (p.Command == (command | 0x100) && valid(p.Payload)), ct).ConfigureAwait(false);
+        var reply = await Exchange(command, payload, valid, ct).ConfigureAwait(false);
         return reply?.Type == 2 ? reply : null;
     }
     protected override async Task<bool> StartSessionAsync(CancellationToken ct)
     {
-        if (!(await RefreshAsync(ct).ConfigureAwait(false)).IsSuccess) return false;
-        foreach (byte feature in slider ? new byte[] { 3, 13 } : new byte[] { 3 })
+        foreach (byte feature in profile.IsTw4 ? new byte[] { 3, 4, 12, 13 } : slider ? new byte[] { 3, 13 } : new byte[] { 3 })
             await Query(0x0007, [feature], p => p.Length == 0, ct).ConfigureAwait(false);
+        if (!(await RefreshAsync(ct).ConfigureAwait(false)).IsSuccess) return false;
         StartPolling();
         return true;
     }
@@ -39,7 +41,8 @@ internal sealed class SennheiserController(IDuplexByteChannel channel, Controlle
             await Query(0x1201, [], p => p.Length == 6, cancellationToken).ConfigureAwait(false);
             await Query(0x1206, [], p => p.Length is > 0 and <= 100, cancellationToken).ConfigureAwait(false);
             if (slider) _noiseReady = await Query(0x1A03, [], p => p is [<= 100], cancellationToken).ConfigureAwait(false) is not null;
-            Store.TryUpdate(DeviceId, s => s with { Profile = profile.WithNoise(_noiseReady) });
+            if (profile.IsTw4) await RefreshTw4Async(cancellationToken).ConfigureAwait(false);
+            else Store.TryUpdate(DeviceId, s => s with { Profile = profile.WithNoise(_noiseReady) });
             return CommandResult.Ok;
         }
         finally { Operations.Release(); }
@@ -51,6 +54,7 @@ internal sealed class SennheiserController(IDuplexByteChannel channel, Controlle
         if (packet.Type is not (1 or 2)) return;
         ushort command = (ushort)(packet.Command & ~0x180);
         byte[] p = packet.Payload;
+        if (profile.IsTw4 && HandleTw4Packet(packet, command)) { Touch(); return; }
         if (command == 0x0603 && ValidBattery(p))
         {
             for (int i = 0; i < p.Length; i++) if (p[i] <= 100)
@@ -84,6 +88,7 @@ internal sealed class SennheiserController(IDuplexByteChannel channel, Controlle
     }
     public override async Task<CommandResult> SetNoiseControlAsync(NoiseControlState target, CancellationToken cancellationToken)
     {
+        if (profile.IsTw4) return await SetTw4NoiseAsync(target, cancellationToken).ConfigureAwait(false);
         if (!slider || !_noiseReady || target.LevelId is not null || target.Mode is not (NoiseControlMode.NoiseCancellation or NoiseControlMode.Transparency))
             return CommandResult.Unsupported("This model exposes confirmed ANC/transparency endpoints only; ANC off is not inferred.");
         await Operations.WaitAsync(cancellationToken).ConfigureAwait(false);

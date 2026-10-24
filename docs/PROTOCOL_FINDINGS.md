@@ -227,3 +227,15 @@ EncoDeck 尚未实现，也未在 X4 上抓取广播；开盒弹窗需先用实�
 - [PuddingPods `f527afe`](https://github.com/lingbai-rong/PuddingPods/tree/f527afe503749d7d2ceadbf5529c0639d7de1f7f) 的公开树只有文档 / 构建包装文件，没有应用源码可追踪完整读写路径。参考项目致谢的 `MegaSuite/moondrop-link-desktop` 在本次核查时不可公开访问，无法核实实现或许可证。
 - EDGE 应用版本已通过真实 BASIC 命令 5 回包读取；详细双设备管理、详细固件信息、佩戴 / 充电状态、查找耳机、贴合度检测、硬件降噪循环和 OTA 仍不受支持。型号档案和 feature 常量不替代实际回包证据。
 
+## 11. 森海塞尔 MOMENTUM TW 4（GAIA v3）
+
+2026-10-24：依据本地官方 Smart Control 4.9.3 base APK（SHA-256 `194be9f1d9fa8fde255c49e87cc6ab5c85d6e01a572fdd6c6053ed65bbe101de`）的 `assets/app/tw4.json`、`Tw4Product`、MMI 枚举及约束独立实现。降噪状态机另核对了 [TW4 真机抓包记录](https://github.com/sandrolucy/Sennheiser-MOMENTUM-TW4-widget-gaia-protocol)，帧结构参考 [GAIA v3 协议记录](https://github.com/xndbogdan/sennheiser-control/blob/main/PROTOCOL.md)。未分发 APK 或其应用源码。
+
+- 优先沿用 RFCOMM UUID `a2129ff3-081b-4c45-8afe-469d9c4842ec`；保留现有 GATT 回退。注册 feature `3` 电池、`4` 音频、`12` 通透、`13` ANC。请求/响应/通知/错误 type 位分别为 `0` / `0x100` / `0x80` / `0x180`；帧版本 3/4 均可接收。
+- ANC 开关 GET/SET `1A05` / `1A04`、通透开关 GET/SET `1805` / `1804`，状态严格为单字节 0/1。`1803` 是保存的通透等级，不能用它判断通透开关。TW4 实测通知 `1A83` 大于 0 表示通透开、0 表示关；`1885` 也是通透布尔通知。通透变更可能不伴随 ANC 通知，因此独立维护两个状态，显示优先级为通透 → ANC → 关闭。
+- ANC 模式 GET `1A01` 是三个 `[mode,state]` 对；mode 1 为抗风噪（0/1/2），2/3 为布尔状态。标准 / 抗风噪分别 SET `1A00 [1,0/1]`，再开启 ANC。切到降噪或关闭先关闭通透；SET 的空 ACK 不修改显示状态，最终回读两个开关与抗风噪模式。中途失败也读取实际状态，避免局部成功后显示旧模式。
+- Smart Pause GET/SET `080D` / `080C` 映射佩戴检测；低延迟 GET/SET `0818` / `0817` 映射独立低延迟开关，通知 `0898`。每项分别通过有效回读开放，不由型号名直接宣称可写。
+- 触控 MMI GET `1601 [side,pattern]` → `[side,pattern,function]`，SET `1600 [side,pattern,function]` → 空 ACK。wire side 左=1、右=0（与通用 `EarSide` 不同）；pattern 单击/双击/三击/长按=1/2/3/4。每个槽位分别读，写之前重新读，写之后按同一 side/pattern 回读确认；错误侧或错误动作的应答不能完成请求。
+- TW4 官方允许动作：0 无、1 播放暂停、2 下一首、3 上一首、4/5 音量增减、6 通透切换、7 语音助手、9 ANC 切换、13 触控锁定切换。播放/切歌仅用于单/双/三击，音量仅长按，锁定仅三击/长按；其余可用于所有四种动作。不改通话映射，未知功能值只显示并保留。
+- 已通过 TW4 模拟设备读写、拒绝/超时/回读不一致、通知缺失/格式错误、版本 4 分片、动作约束和其他森海型号隔离测试，以及真实 WinUI 截图检查。用户截图固件为 5.19.1；本机无已连接 TW4，未将模拟测试标为真机验证。
+

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Manage Store submission
+
+on:
+  workflow_dispatch:
+    inputs:
+      submission_id:
+        description: Exact Store submission ID
+        required: true
+        type: string
+      action:
+        description: Read status or delete the named pending submission
+        required: true
+        type: choice
+        default: Status
+        options: [Status, Delete]
+
+permissions:
+  contents: read
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manage the specified submission
+        shell: pwsh
+        env:
+          STORE_TENANT_ID: ${{ secrets.STORE_TENANT_ID }}
+          STORE_CLIENT_ID: ${{ secrets.STORE_CLIENT_ID }}
+          STORE_CLIENT_SECRET: ${{ secrets.STORE_CLIENT_SECRET }}
+          SUBMISSION_ID: ${{ inputs.submission_id }}
+          SUBMISSION_ACTION: ${{ inputs.action }}
+        run: ./build/manage-store-submission.ps1 -Action $env:SUBMISSION_ACTION -SubmissionId $env:SUBMISSION_ID

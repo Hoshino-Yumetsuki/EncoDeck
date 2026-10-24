@@ -174,6 +174,42 @@ internal static class UiSnapshot
             host.Settings.Update(s => s with { EnableExperimentalFeatures = false });
             host.Store.Reset(sample);
         }
+        if (sample.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { IsTw4: true })
+        {
+            var diagnostics = new List<string> { "Synthetic TW4 states, no Bluetooth runtime. Selection handlers use the unattached manager and must roll back rejected requests." };
+            async Task CaptureTw4Async(string name, DeviceState state)
+            {
+                host.Store.Reset(state);
+                main.Navigate("Controls");
+                await Task.Delay(400);
+                foreach (var box in Descendants(main.Content).OfType<ComboBox>().Where(b => b.Name.StartsWith("Sennheiser", StringComparison.Ordinal)))
+                {
+                    bool visible = true;
+                    for (DependencyObject? ancestor = box; ancestor is not null; ancestor = VisualTreeHelper.GetParent(ancestor))
+                        if (ancestor is UIElement { Visibility: Visibility.Collapsed }) visible = false;
+                    diagnostics.Add($"{name} {box.Name}: visible={visible} enabled={box.IsEnabled} selected={(box.SelectedItem as ComboBoxItem)?.Tag} text={(box.SelectedItem as ComboBoxItem)?.Content}");
+                }
+                await CaptureAsync(main, Path.Combine(outDir, $"{name}-Controls.png"));
+            }
+            await CaptureTw4Async("TW4-UnknownAction", sample with
+            {
+                KeyFunctions = Observed.From<IReadOnlyList<KeyFunction>>(
+                    sample.KeyFunctions!.Value.Select(k => k.Side == EarSide.Left && k.Action == GestureAction.TripleSqueeze ? k with { Function = 222 } : k).ToArray(),
+                    DateTimeOffset.UtcNow, StateSource.QueryResponse),
+            });
+            await CaptureTw4Async("TW4-Disconnected", sample with { Connection = DeviceConnectionState.Disconnected });
+            await CaptureTw4Async("TW4-UnknownState", sample with { KeyFunctions = null });
+            await CaptureTw4Async("TW4-Restored", sample);
+            if (Descendants(main.Content).OfType<ComboBox>().FirstOrDefault(b => b.Name == "SennheiserLeftSingleSqueeze") is { IsEnabled: true } gesture)
+            {
+                gesture.SelectedIndex = 0;
+                await Task.Delay(350);
+                diagnostics.Add($"Rejected gesture requested=0 rendered={(gesture.SelectedItem as ComboBoxItem)?.Tag} reported={host.Store.Current.KeyFunctions?.Value.First(k => k.Side == EarSide.Left && k.Action == GestureAction.SingleSqueeze).Function} error={app.Device.HasError}");
+                await CaptureAsync(main, Path.Combine(outDir, "TW4-RejectedGesture-Controls.png"));
+            }
+            await File.WriteAllLinesAsync(Path.Combine(outDir, "tw4-controls.txt"), diagnostics);
+            host.Store.Reset(sample);
+        }
         main.Close();
 
         try

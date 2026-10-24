@@ -101,6 +101,10 @@ LHDC V5 encoder, MS-PL Windows driver samples, and the bundled .NET and PowerShe
 
 ## Additional headset interoperability research
 
+HONOR AI Space 10.60.09.300 and HONOR audio plugin 7.0.1.495 were inspected locally for interoperability facts. No APK, proprietary code, tutorial video or firmware is distributed. HONOR artwork is downloaded through EncoAPI and remains the property of its rights holders; it is not covered by the code's GPL. Supported models and scope are recorded in `docs/COMPATIBILITY.md`.
+
 AKG Hybrid and Sennheiser wire formats and model facts were independently implemented from official application configurations. Sennheiser Smart Control 4.9.3 and Rapoo Headset Control 1.0.0.2 were inspected locally; no APK, proprietary application code, vendor DLL, driver or firmware is distributed. Sennheiser GAIA framing was cross-checked against https://github.com/xndbogdan/sennheiser-control/blob/main/PROTOCOL.md. New artwork is served by the separate EncoAPI service and remains the property of its rights holders.
+
+MOMENTUM TW 4 controls were independently implemented from the official application's TW4 command definitions and action constraints. ANC/transparency notification behaviour was cross-checked against the device capture findings at https://github.com/sandrolucy/Sennheiser-MOMENTUM-TW4-widget-gaia-protocol; no code from that project is included.
 
 MCHOSE X9 and Razer BlackShark receiver query formats were independently implemented from protocol facts documented by HeadsetControl (https://github.com/Sapd/HeadsetControl/blob/master/lib/devices/mchose_x9.hpp) and HaloBattery (https://github.com/HeyOkay/HaloBattery/tree/main/providers). The official MOONDROP 2.25 APK was inspected locally for animation resources; its binaries, playback/loading GIFs and proprietary code are not distributed.

@@ -651,4 +651,27 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="LeAudio_HelpSwitch.Text" xml:space="preserve"><value>These earbuds do not appear as an LE device in Windows' "Add device", so pairing there uses Classic Bluetooth. EncoDeck pairs their LE address directly, and Windows generates an associated Classic pairing record. Over LE Audio, EncoDeck uses GATT control only. The other earbud's address is read from the first earbud's advertisement. No setting on the earbuds is changed.</value></data>
   <data name="LeAudio_HelpLimits.Text" xml:space="preserve"><value>Afterwards the other earbud is listed separately in Bluetooth settings under the same name. Over LE Audio, EncoDeck controls the earbuds over GATT, so noise control, battery and the other features keep working. Known issue: when playback starts, one earbud is occasionally about 7.5 ms behind the other, pulling the sound to one side; stop all audio for a few seconds and play again to realign.</value></data>
   <data name="LeAudio_HelpRestore.Text" xml:space="preserve"><value>To return to Classic Bluetooth, click Restore Classic Bluetooth to remove this PC's earbud pairings. After cleanup, put the earbuds in pairing mode and manually pair them using Add device in Windows Bluetooth settings. EncoDeck does not pair them over Classic Bluetooth automatically.</value></data>
+  <data name="Honor_Anc_Cozy" xml:space="preserve"><value>Comfortable</value></data>
+  <data name="Honor_Anc_General" xml:space="preserve"><value>Moderate</value></data>
+  <data name="Honor_Anc_Ultra" xml:space="preserve"><value>Deep</value></data>
+  <data name="Honor_Anc_Dynamic" xml:space="preserve"><value>Intelligent</value></data>
+  <data name="Honor_Eq_Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="Honor_Eq_Vocals" xml:space="preserve"><value>Vocals</value></data>
+  <data name="Honor_Eq_Pop" xml:space="preserve"><value>Pop</value></data>
+  <data name="Honor_Eq_Subwoofer" xml:space="preserve"><value>Subwoofer</value></data>
+  <data name="Honor_Eq_Default" xml:space="preserve"><value>Default</value></data>
+  <data name="Honor_Eq_Bass" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="Honor_Eq_Treble" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="Honor_Eq_Classic" xml:space="preserve"><value>Classic</value></data>
+  <data name="Honor_Eq_DeepBass" xml:space="preserve"><value>Deep bass</value></data>
+  <data name="Honor_Eq_WarmVocals" xml:space="preserve"><value>Warm vocals</value></data>
+  <data name="Honor_Eq_BrightTreble" xml:space="preserve"><value>Bright treble</value></data>
+  <data name="Sennheiser_NormalAnc" xml:space="preserve"><value>Normal</value></data>
+  <data name="Sennheiser_ToggleTransparency" xml:space="preserve"><value>Toggle transparency</value></data>
+  <data name="Sennheiser_ToggleAnc" xml:space="preserve"><value>Toggle noise cancelling</value></data>
+  <data name="Sennheiser_ToggleTouchLock" xml:space="preserve"><value>Lock / unlock touch controls</value></data>
+  <data name="Sennheiser_Hold" xml:space="preserve"><value>Touch and hold</value></data>
+  <data name="Sennheiser_UnknownAction" xml:space="preserve"><value>Unknown action (0x{0})</value></data>
+  <data name="Sennheiser_LowLatency" xml:space="preserve"><value>Low latency mode</value></data>
+  <data name="Sennheiser_LowLatencyDescription" xml:space="preserve"><value>Reduce earbud audio delay for games and videos.</value></data>
 </root>

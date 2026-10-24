@@ -53,6 +53,8 @@ public sealed class FeaturesViewModel
 
     public bool IsMoondrop => State.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile;
 
+    public bool IsSennheiserTw4 => State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { IsTw4: true };
+
     public bool AllowExperimental => IsMoondrop && _settings.Current.EnableExperimentalFeatures;
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
@@ -201,6 +203,12 @@ public sealed class FeaturesViewModel
         .FirstOrDefault(k => k.Side == side && k.Button == 0 && k.Action == action)?.Function;
 
     public Task<CommandResult> SetMoondropGestureAsync(EarSide side, GestureAction action, int function) =>
+        Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
+
+    public int? SennheiserFunction(EarSide side, GestureAction action) => State.KeyFunctions?.Value
+        .FirstOrDefault(k => k.Side == side && k.Button == 0 && k.Action == action)?.Function;
+
+    public Task<CommandResult> SetSennheiserGestureAsync(EarSide side, GestureAction action, int function) =>
         Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
 
     /// <summary>

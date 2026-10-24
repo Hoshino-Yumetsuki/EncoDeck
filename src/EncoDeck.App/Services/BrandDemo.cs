@@ -11,6 +11,7 @@ using EncoDeck.Core.Resources;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Brands.Moondrop;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.App.ViewModels;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.UI.Dispatching;
@@ -178,6 +179,10 @@ internal sealed class BrandDemo
 
     private static IReadOnlyList<KeyFunction> DemoKeys(IDeviceProfile profile, OppoModelDefinition? model)
     {
+        if (profile is SennheiserProfile { IsTw4: true })
+            return (from side in new[] { EarSide.Left, EarSide.Right }
+                    from action in SennheiserGestures.Actions
+                    select new KeyFunction(side, 0, action, action == GestureAction.SqueezeAndHold ? (side == EarSide.Left ? 5 : 4) : 1)).ToArray();
         if (profile is MoondropProfile)
             return [.. from side in new[] { EarSide.Left, EarSide.Right }
                        from pair in new[] { (GestureAction.SingleSqueeze, 1), (GestureAction.DoubleSqueeze, 2), (GestureAction.TripleSqueeze, 3),

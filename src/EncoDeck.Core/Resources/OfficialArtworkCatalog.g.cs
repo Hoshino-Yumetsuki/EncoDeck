@@ -603,5 +603,12 @@ public static partial class OfficialArtworkCatalog
         new("razer-usb-kraken-v3-pro", "razer", "Razer Kraken V3 Pro"),
         new("razer-usb-kraken-v4", "razer", "Razer Kraken V4"),
         new("razer-usb-kraken-v4-pro", "razer", "Razer Kraken V4 Pro"),
+        new("honor-zb05", "honor", "HONOR Earbuds 2 SE"),
+        new("honor-l001", "honor", "HONOR Earbuds 3 Pro"),
+        new("honor-l008", "honor", "HONOR Earbuds X3"),
+        new("honor-l010", "honor", "HONOR Earbuds X3i"),
+        new("honor-l012", "honor", "HONOR Earbuds 3i"),
+        new("honor-l013", "honor", "HONOR Earbuds X5"),
+        new("honor-le7p", "honor", "HONOR Earbuds 3i Premium"),
     ];
 }

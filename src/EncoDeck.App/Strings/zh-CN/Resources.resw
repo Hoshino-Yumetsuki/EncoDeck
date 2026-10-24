@@ -651,4 +651,27 @@
   <data name="LeAudio_HelpSwitch.Text" xml:space="preserve"><value>这副耳机不会以 LE 方式出现在 Windows 的“添加设备”中，所以那里总是按传统蓝牙配对。EncoDeck 会直接对耳机的 LE 地址发起配对，Windows 随后自动生成关联的传统蓝牙配对记录。LE Audio 模式下，EncoDeck 只通过 GATT 控制耳机。另一只耳机的地址从第一只耳机的广播中读取。整个过程不会改动耳机上的任何设置。</value></data>
   <data name="LeAudio_HelpLimits.Text" xml:space="preserve"><value>切换后，蓝牙列表中另一只耳机会单独显示为一个同名条目。EncoDeck 在 LE Audio 下通过 GATT 控制耳机，降噪、电量等功能照常可用。已知问题：开始播放时，左右耳偶尔会相差约 7.5 ms，声像偏向一侧；停止所有声音几秒后重新播放即可重新对齐。</value></data>
   <data name="LeAudio_HelpRestore.Text" xml:space="preserve"><value>要换回传统蓝牙，点击“恢复传统蓝牙”清理本电脑上的耳机配对；完成后让耳机进入配对模式，在 Windows 蓝牙设置中通过“添加设备”手动配对。EncoDeck 不会自动做传统蓝牙配对。</value></data>
+  <data name="Honor_Anc_Cozy" xml:space="preserve"><value>舒适</value></data>
+  <data name="Honor_Anc_General" xml:space="preserve"><value>均衡</value></data>
+  <data name="Honor_Anc_Ultra" xml:space="preserve"><value>深度</value></data>
+  <data name="Honor_Anc_Dynamic" xml:space="preserve"><value>智慧降噪</value></data>
+  <data name="Honor_Eq_Standard" xml:space="preserve"><value>标准</value></data>
+  <data name="Honor_Eq_Vocals" xml:space="preserve"><value>人声</value></data>
+  <data name="Honor_Eq_Pop" xml:space="preserve"><value>流行</value></data>
+  <data name="Honor_Eq_Subwoofer" xml:space="preserve"><value>超重低音</value></data>
+  <data name="Honor_Eq_Default" xml:space="preserve"><value>默认</value></data>
+  <data name="Honor_Eq_Bass" xml:space="preserve"><value>低音增强</value></data>
+  <data name="Honor_Eq_Treble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="Honor_Eq_Classic" xml:space="preserve"><value>经典</value></data>
+  <data name="Honor_Eq_DeepBass" xml:space="preserve"><value>深沉低音</value></data>
+  <data name="Honor_Eq_WarmVocals" xml:space="preserve"><value>温暖人声</value></data>
+  <data name="Honor_Eq_BrightTreble" xml:space="preserve"><value>明亮高音</value></data>
+  <data name="Sennheiser_NormalAnc" xml:space="preserve"><value>标准</value></data>
+  <data name="Sennheiser_ToggleTransparency" xml:space="preserve"><value>切换通透</value></data>
+  <data name="Sennheiser_ToggleAnc" xml:space="preserve"><value>切换降噪</value></data>
+  <data name="Sennheiser_ToggleTouchLock" xml:space="preserve"><value>锁定 / 解锁触控</value></data>
+  <data name="Sennheiser_Hold" xml:space="preserve"><value>长按</value></data>
+  <data name="Sennheiser_UnknownAction" xml:space="preserve"><value>未知动作 (0x{0})</value></data>
+  <data name="Sennheiser_LowLatency" xml:space="preserve"><value>低延迟模式</value></data>
+  <data name="Sennheiser_LowLatencyDescription" xml:space="preserve"><value>减少耳机播放声音的延迟，适用于游戏和视频。</value></data>
 </root>

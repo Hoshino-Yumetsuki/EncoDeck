@@ -2,6 +2,7 @@
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Edifier;
 using EncoDeck.Protocol.Brands.Huawei;
+using EncoDeck.Protocol.Brands.Honor;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Brands.Vivo;
 using EncoDeck.Protocol.Brands.Xiaomi;
@@ -19,6 +20,7 @@ public static class BuiltInProfiles
         .. XiaomiProfiles.CreateBuiltIn(),
         .. VivoProfiles.CreateBuiltIn(),
         .. HuaweiProfiles.CreateBuiltIn(),
+        .. HonorProfiles.CreateBuiltIn(),
         .. MoondropProfiles.CreateBuiltIn(),
         .. Sony.SonyAkgProfiles.CreateBuiltIn(),
         .. Sennheiser.SennheiserProfiles.Create(),

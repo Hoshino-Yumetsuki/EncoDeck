@@ -2,6 +2,7 @@
 using System.Buffers.Binary;
 using System.Threading.Channels;
 using EncoDeck.Bluetooth.Usb;
+using EncoDeck.Bluetooth.Control;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
@@ -35,6 +36,54 @@ public sealed class HeadsetAdapterTests
         Assert.IsAssignableFrom<IControllableProfile>(profile);
         Assert.Equal(id, profile!.ModelId);
         Assert.NotEmpty(profile.ControlServiceUuids);
+    }
+
+    [Theory]
+    [InlineData("AKG N5 Hybrid", true)]
+    [InlineData("AKG N9 Hybrid", false)]
+    public async Task BuiltInAkgHybridAdvancesFromAudioConnectedToControlReady(string name, bool earbuds)
+    {
+        // 1.4.0 selected an artwork-only profile and remained AudioConnected without an error.
+        var identity = Identity(name);
+        var profile = Assert.IsType<AkgHybridProfile>(new DeviceProfileRegistry(BuiltInProfiles.Create()).Match(identity));
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = identity, Profile = profile, Connection = DeviceConnectionState.AudioConnected });
+        var device = new SimulatedChannel(false);
+        var connector = new HybridConnector(identity.DeviceId, device);
+        using var link = new ConnectedLink();
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        store.StateChanged += (_, e) =>
+        {
+            if (e.Current.Connection == DeviceConnectionState.ControlReady) ready.TrySetResult();
+        };
+        await using var supervisor = new ControlChannelSupervisor(identity, profile, link, connector, store, linkSettleDelay: TimeSpan.Zero);
+        supervisor.Start();
+        await ready.Task.WaitAsync(TimeSpan.FromSeconds(5), Ct);
+
+        Assert.NotNull(supervisor.Controller);
+        Assert.Null(store.Current.LastError);
+        Assert.Equal(90, store.Current.Battery.Left?.Value.Level);
+        Assert.Equal(earbuds ? 80 : (int?)null, store.Current.Battery.Right?.Value.Level);
+        Assert.Equal(NoiseControlMode.NoiseCancellation, store.Current.NoiseControl?.Value.Mode);
+        Assert.Null(device.LastAncWrite);
+    }
+
+    private sealed class ConnectedLink : ILinkStateSource
+    {
+        public bool IsConnected => true;
+        public event EventHandler<bool>? ConnectionChanged { add { } remove { } }
+        public void Dispose() { }
+    }
+
+    private sealed class HybridConnector(string deviceId, IDuplexByteChannel channel) : IChannelConnector
+    {
+        public Task<ChannelOpenResult> OpenAsync(string selectedId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
+        {
+            Assert.Equal(deviceId, selectedId);
+            Assert.Contains(Guid.Parse("00000000-0000-0000-0099-aabbccddeeff"), serviceUuids);
+            Assert.Contains(Guid.Parse("00001101-0000-1000-8000-00805f9b34fb"), serviceUuids);
+            return Task.FromResult(new ChannelOpenResult(ChannelOpenStatus.Opened, channel, serviceUuids[0], null));
+        }
     }
 
     [Fact]

@@ -7,6 +7,7 @@ using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo.Models;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -26,6 +27,8 @@ public sealed partial class ControlsPage : Page
     private readonly List<(int Type, RadioButton Button)> _gameSoundButtons = [];
     private readonly List<(OppoGestureRow Row, ComboBox Box)> _gestureBoxes = [];
     private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _moondropGestures = [];
+    private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _sennheiserGestures = [];
+    private bool _sennheiserGestureWrite;
     private readonly HashSet<string> _moondropWrites = [];
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
@@ -127,10 +130,35 @@ public sealed partial class ControlsPage : Page
 
         _gestureBoxes.Clear();
         _moondropGestures.Clear();
+        _sennheiserGestures.Clear();
         GestureHost.Children.Clear();
         CallGestureHost.Children.Clear();
         foreach (var row in Features.GestureRows(callControls: false)) GestureHost.Children.Add(GestureRow(row));
         foreach (var row in Features.GestureRows(callControls: true)) CallGestureHost.Children.Add(GestureRow(row));
+        if (Features.IsSennheiserTw4)
+        {
+            foreach (var side in new[] { EarSide.Left, EarSide.Right })
+            foreach (var action in SennheiserGestures.Actions)
+            {
+                var box = new ComboBox { Name = $"Sennheiser{side}{action}", MinWidth = 200, Tag = (side, action) };
+                foreach (int function in SennheiserGestures.Functions(action))
+                    box.Items.Add(new ComboBoxItem { Content = Loc.Get(SennheiserGestures.LabelKey(function)), Tag = function });
+                box.Items.Add(new ComboBoxItem { IsEnabled = false }); // Preserve unrecognised device assignments in the display.
+                box.SelectionChanged += OnSennheiserGestureChanged;
+                string label = action switch
+                {
+                    GestureAction.SingleSqueeze => "Gesture_Tap1", GestureAction.DoubleSqueeze => "Gesture_Tap2",
+                    GestureAction.TripleSqueeze => "Gesture_Tap3", _ => "Sennheiser_Hold",
+                };
+                var row = new SettingRow
+                {
+                    Header = $"{Loc.Get(side == EarSide.Left ? "Gesture_Left" : "Gesture_Right")} · {Loc.Get(label)}",
+                    Action = box,
+                };
+                _sennheiserGestures.Add((side, action, box, row));
+                GestureHost.Children.Add(row);
+            }
+        }
         if (Features.IsMoondrop)
         {
             foreach (var side in new[] { EarSide.Left, EarSide.Right })
@@ -258,6 +286,9 @@ public sealed partial class ControlsPage : Page
     {
         bool available = f.Has(DeviceCapability.GamingMode) && f.HasSwitch(DeviceToggle.GamingMode);
         GameCard.Visibility = Show(available);
+        GameOptions.Visibility = Show(!f.IsSennheiserTw4);
+        GameTitle.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatency" : "Game_Title.Text");
+        GameSummary.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatencyDescription" : "Game_Summary.Text");
         if (!available) return;
         bool? master = f.Toggle(DeviceToggle.GamingMode);
         bool busy = f.IsPending("toggle:") || f.IsPending("game-sound");
@@ -359,6 +390,28 @@ public sealed partial class ControlsPage : Page
 
     private void SyncGestures(FeaturesViewModel f, bool ready)
     {
+        if (f.IsSennheiserTw4)
+        {
+            bool tw4Available = f.Has(DeviceCapability.TouchCustomization)
+                && _sennheiserGestures.Any(row => f.SennheiserFunction(row.Side, row.Action) is not null);
+            GestureCard.Visibility = Show(tw4Available);
+            EarSelector.Visibility = CycleSection.Visibility = CallGestureTitle.Visibility = Visibility.Collapsed;
+            foreach (var (side, action, box, row) in _sennheiserGestures)
+            {
+                int? function = f.SennheiserFunction(side, action);
+                row.Visibility = Show(tw4Available && function is not null);
+                var items = box.Items.Cast<ComboBoxItem>().ToList();
+                int selected = items.FindIndex(item => item.Tag is int code && code == function);
+                if (function is int unknown && selected < 0)
+                {
+                    items[^1].Content = Loc.Format("Sennheiser_UnknownAction", unknown.ToString("X2"));
+                    selected = items.Count - 1;
+                }
+                box.SelectedIndex = selected;
+                box.IsEnabled = ready && tw4Available && function is not null && !f.IsPending("key-function") && !_sennheiserGestureWrite;
+            }
+            return;
+        }
         if (f.IsMoondrop)
         {
             bool moondropAvailable = ready && f.Has(DeviceCapability.TouchCustomization)
@@ -547,6 +600,19 @@ public sealed partial class ControlsPage : Page
         Sync();
         try { await f.SetGainAsync(level); }
         finally { _moondropWrites.Remove("gain"); Sync(); }
+    }
+
+    private async void OnSennheiserGestureChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        if (_syncing || !IsLoaded || sender is not ComboBox { IsEnabled: true, Tag: ValueTuple<EarSide, GestureAction> target,
+                SelectedItem: ComboBoxItem { IsEnabled: true, Tag: int function } }
+            || !f.IsSennheiserTw4 || !f.IsReady || !f.Has(DeviceCapability.TouchCustomization)
+            || f.SennheiserFunction(target.Item1, target.Item2) is not int current || current == function || _sennheiserGestureWrite) return;
+        _sennheiserGestureWrite = true;
+        Sync();
+        try { await f.SetSennheiserGestureAsync(target.Item1, target.Item2, function); }
+        finally { _sennheiserGestureWrite = false; Sync(); }
     }
 
     private async void OnMoondropGestureChanged(object sender, SelectionChangedEventArgs e)

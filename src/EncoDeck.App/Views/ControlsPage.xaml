@@ -26,8 +26,8 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="2">
-                            <TextBlock x:Uid="Game_Title" Text="Game mode" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock x:Uid="Game_Summary" Text="Low latency and enhanced game sound." Style="{StaticResource SecondaryTextStyle}" />
+                            <TextBlock x:Name="GameTitle" x:Uid="Game_Title" Text="Game mode" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Name="GameSummary" x:Uid="Game_Summary" Text="Low latency and enhanced game sound." Style="{StaticResource SecondaryTextStyle}" />
                         </StackPanel>
                         <ToggleSwitch x:Name="GameModeSwitch" Grid.Column="1" Style="{StaticResource TrailingSwitchStyle}" Toggled="OnGameModeToggled" />
                     </Grid>

@@ -5,6 +5,7 @@ using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Huawei;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Brands.Sony;
+using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Brands.Xiaomi;
 
 namespace EncoDeck.Protocol.Brands;
@@ -27,6 +28,7 @@ public static class DemoDiscovery
 
     public static IDeviceProfile AfterSession(IDeviceProfile profile, string deviceName) => profile switch
     {
+        SennheiserProfile { IsTw4: true } tw4 => tw4.WithControls(true, true, true, true, true),
         SonyAkgProfile sony => sony.WithNoiseSupport(true).WithWearDetection(sony.Form == DeviceForm.Earbuds)
             .WithEqualizers(sony.Brand == "sony" ? SonyPresets : []),
         XiaomiDeviceProfile xiaomi => new ushort[] { 4, 7, 11, 29, 47, 161 }

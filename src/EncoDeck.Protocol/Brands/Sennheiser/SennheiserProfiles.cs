@@ -24,7 +24,8 @@ public static class SennheiserProfiles
      new SennheiserProfile("cx500", "CX 500", true, false, [])];
 }
 
-public sealed class SennheiserProfile(string code, string name, bool earbuds, bool slider, string[] aliases, bool noiseReady = false) : IControllableProfile
+public sealed class SennheiserProfile(string code, string name, bool earbuds, bool slider, string[] aliases,
+    bool noiseReady = false, bool windReady = false, bool smartPauseReady = false, bool lowLatencyReady = false, bool gesturesReady = false) : IControllableProfile
 {
     public static Guid GattServiceId { get; } = new("63331337-23c1-11e5-b696-feff819cdc9f");
     public string Brand => "sennheiser";
@@ -33,13 +34,28 @@ public sealed class SennheiserProfile(string code, string name, bool earbuds, bo
     public string ImageKey => ModelId;
     public DeviceForm Form => earbuds ? DeviceForm.Earbuds : DeviceForm.Headphones;
     public bool IsGeneric => false;
+    public bool IsTw4 => code == "tw4";
     public SennheiserProfile WithNoise(bool ready) => new(code, name, earbuds, slider, aliases, ready);
+    internal SennheiserProfile WithControls(bool noise, bool wind, bool smartPause, bool lowLatency, bool gestures) =>
+        new(code, name, earbuds, slider, aliases, noise, wind, smartPause, lowLatency, gestures);
+    public IReadOnlyCollection<DeviceToggle> Toggles =>
+        [.. smartPauseReady ? new[] { DeviceToggle.InEarDetection } : [], .. lowLatencyReady ? new[] { DeviceToggle.GamingMode } : []];
     public IDeviceCapabilities Capabilities => DeviceCapabilities.CreateBuilder()
         .Set(DeviceCapability.BatteryLevel, CapabilitySupport.Supported, "Smart Control 4.9.3 GAIA v3 model configuration; hardware validation pending.")
+        .Set(DeviceCapability.InEarDetection, smartPauseReady ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "TW4 Smart Pause; valid live readback required.")
+        .Set(DeviceCapability.GamingMode, lowLatencyReady ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "TW4 device-side low latency; valid live readback required.")
+        .Set(DeviceCapability.TouchCustomization, gesturesReady ? CapabilitySupport.Supported : CapabilitySupport.Unknown, "TW4 per-ear MMI mappings; only read-back slots are writable.")
         .Set(DeviceCapability.NoiseCancellation, noiseReady ? CapabilitySupport.Supported : CapabilitySupport.Unknown,
-            "Headband transparency endpoints only after valid live readback; no ANC-off command is inferred.").Build();
+            IsTw4 ? "TW4 independent ANC/transparency status and optional anti-wind mode, gated by live readback."
+                : "Headband transparency endpoints only after valid live readback; no ANC-off command is inferred.").Build();
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions => noiseReady ?
-    [new(NoiseControlMode.NoiseCancellation, null, "Noise cancelling", "NoiseMode_NoiseCancellation", CapabilitySupport.Supported),
+    [.. IsTw4 ? new[] { new NoiseControlOption(NoiseControlMode.Off, null, "Off", "NoiseMode_Off", CapabilitySupport.Supported) } : [],
+     new(NoiseControlMode.NoiseCancellation, null, "Noise cancelling", "NoiseMode_NoiseCancellation", CapabilitySupport.Supported),
+     .. IsTw4 && windReady ? new[]
+     {
+         new NoiseControlOption(NoiseControlMode.NoiseCancellation, "normal", "Normal", "Sennheiser_NormalAnc", CapabilitySupport.Supported),
+         new NoiseControlOption(NoiseControlMode.NoiseCancellation, "anti-wind", "Wind noise reduction", "NoiseLevel_AntiWind", CapabilitySupport.Supported),
+     } : [],
      new(NoiseControlMode.Transparency, null, "Transparency", "NoiseMode_Transparency", CapabilitySupport.Supported)] : [];
     public IReadOnlyList<EqualizerPreset> EqualizerPresets => [];
     public IReadOnlyList<Guid> ControlServiceUuids => [new("a2129ff3-081b-4c45-8afe-469d9c4842ec"), GattServiceId];

@@ -46,6 +46,14 @@ Windows EDGE 优先通过公共 Winsock `AF_BTH/SOCK_STREAM/BTHPROTO_RFCOMM` 打
 
 以下 Probe 命令示例主要面向 OPPO。其他品牌的 `monitor` 可用于观察统一设备运行时，不能把 OPPO 专用写入命令直接用于其他品牌。
 
+### AKG N5 / N9 Hybrid 停留在 AudioConnected
+
+2026-10-24 的 N5 Hybrid 诊断包记录 `app=1.4.0.0`、`model=akg-n5hybrid`、`connection=AudioConnected`，电量与能力全部未知，且没有控制连接日志。1.4.0 中 N5 / N9 Hybrid 使用 `AkgArtworkProfile`，只识别型号和展示素材，不实现 `IControllableProfile`，因此不会启动控制连接；反复重连也不会改变这一点。
+
+1.5.0 已将两款型号接入 `AkgHybridProfile` 和 Airoha RACE 控制器。遇到上述旧版诊断时，先升级至 1.5.0 或更新版本，在 Windows 蓝牙设置中连接耳机后再测试。降噪入口须收到有效 ANC 回包才开放；无需开启实验性功能。
+
+`HeadsetAdapterTests.BuiltInAkgHybridAdvancesFromAudioConnectedToControlReady` 覆盖实际内置型号注册、服务 UUID 传递、生产 supervisor、RACE 初始化与电量 / 降噪状态读取，并确认初始化不写 ANC。它使用模拟通道，不能证明 Windows SDP、真实 RFCOMM 连接或特定固件兼容性。升级后仍失败时，请重新导出诊断包，依据控制通道日志继续定位。
+
 ## 2. 用 EncoDeck.Probe 验证真实耳机
 
 先在 Windows 蓝牙设置中连接耳机，然后：
