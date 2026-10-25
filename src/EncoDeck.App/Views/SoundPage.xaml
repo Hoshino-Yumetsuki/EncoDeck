@@ -5,9 +5,8 @@
     xmlns:controls="using:EncoDeck.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
-        <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
-        <Grid Width="{Binding ViewportWidth, ElementName=PageScroll}">
-        <StackPanel MaxWidth="{StaticResource PageMaxWidth}" Padding="32,8,32,32" Spacing="16">
+        <Grid>
+        <StackPanel MaxWidth="{StaticResource PageMaxWidth}" HorizontalAlignment="Center" Padding="32,8,32,32" Spacing="16">
             <InfoBar
                 IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                 Severity="Error"
