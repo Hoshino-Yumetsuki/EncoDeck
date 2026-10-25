@@ -30,7 +30,7 @@ internal static class UiSnapshot
 {
     public const string Argument = "--ui-snapshot";
 
-    private static readonly string[] Pages = ["Home", "Sound", "Controls", "Devices", "Settings"];
+    private static readonly string[] Pages = ["Home", "Sound", "Controls", "Devices", "Labs", "Settings"];
 
     public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null, string? artworkDirectory = null, string? profileId = null)
     {

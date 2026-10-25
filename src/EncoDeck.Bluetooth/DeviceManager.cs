@@ -214,6 +214,7 @@ public sealed class DeviceManager : IDeviceManager
 
             if (choice.Identity.Transport == DeviceTransport.Usb && choice.Profile is UsbHeadsetProfile usb)
             {
+                _logger.LogInformation("Active USB device: {Model}", usb.ModelId);
                 _usbIdentity = choice.Identity;
                 _usbStop = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
                 _store.Reset(DeviceState.Empty with { Device = choice.Identity, Profile = usb, Connection = DeviceConnectionState.UsbReceiverConnected });
@@ -390,7 +391,8 @@ public sealed class DeviceManager : IDeviceManager
         {
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct, _lifetime.Token);
             bounded.CancelAfter(TimeSpan.FromSeconds(8));
-            var status = await UsbHidBattery.ReadStatusAsync(container, bounded.Token).ConfigureAwait(false);
+            var status = await UsbHidBattery.ReadStatusAsync(container, bounded.Token, _logger).ConfigureAwait(false);
+            _logger.LogInformation("USB headset status: battery={Battery}, cable={Cable}, radio={Radio}", status.Level, status.IsCharging, status.IsConnected);
             int? level = status.Level;
             _store.TryUpdate(identity.DeviceId, s => s with
             {

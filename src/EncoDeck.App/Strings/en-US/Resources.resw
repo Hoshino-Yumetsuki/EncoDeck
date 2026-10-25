@@ -122,6 +122,8 @@
   <data name="Nav_Controls.Content" xml:space="preserve"><value>Controls</value></data>
   <data name="Nav_Devices.Content" xml:space="preserve"><value>Devices</value></data>
   <data name="Nav_Settings.Content" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_Labs.Content" xml:space="preserve"><value>Labs</value></data>
+  <data name="Labs_Summary.Text" xml:space="preserve"><value>Experimental audio features. They change Windows Bluetooth or audio settings and are not guaranteed to work on every device.</value></data>
   <data name="Home_GenericModel.Title" xml:space="preserve"><value>Unrecognized model</value></data>
   <data name="Home_NoDevice_Title.Text" xml:space="preserve"><value>No supported earbuds found</value></data>
   <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>Pair your earbuds in Windows Bluetooth settings first. EncoDeck finds paired earbuds automatically.</value></data>
@@ -337,7 +339,7 @@
   <data name="Home_Spatial.Text" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="Home_GameMode.Header" xml:space="preserve"><value>Game mode</value></data>
   <data name="Home_Model_Name" xml:space="preserve"><value>3D model of the earbuds; drag or use the arrow keys to rotate</value></data>
-  <data name="Home_GenericModel_Message" xml:space="preserve"><value>These earbuds (product ID {0}) are not in the official app's model list either, so only battery and firmware information is shown.</value></data>
+  <data name="Home_GenericModel_Message" xml:space="preserve"><value>These earbuds (product ID {0}) are not in the model list, so only battery and firmware information is shown.</value></data>
   <data name="Error_CycleAtLeastOne" xml:space="preserve"><value>Select at least 1 item</value></data>
   <data name="Gesture_CycleTitle" xml:space="preserve"><value>Noise control modes for {0}</value></data>
   <data name="Gesture_CycleNote" xml:space="preserve"><value>At least {0} items need to be selected</value></data>
@@ -415,6 +417,8 @@
   <data name="Home_DeviceBusy" xml:space="preserve"><value>Working…</value></data>
   <data name="Home_DeviceConnected" xml:space="preserve"><value>Connected · tap to disconnect</value></data>
   <data name="Home_DeviceTapToConnect" xml:space="preserve"><value>Tap to connect</value></data>
+  <data name="Home_DeviceLastConnected" xml:space="preserve"><value>Connected last time</value></data>
+  <data name="Home_DeviceNotConnected" xml:space="preserve"><value>Not connected</value></data>
   <data name="Home_DeviceThisPc_Hint" xml:space="preserve"><value>Disconnect this PC in Windows Bluetooth settings</value></data>
   <data name="Home_DeviceThisPc_Title" xml:space="preserve"><value>This is this PC</value></data>
   <data name="Home_DeviceThisPc_Message" xml:space="preserve"><value>The earbuds are connected to this PC. To disconnect this PC, disconnect the earbuds in Windows Bluetooth settings.</value></data>

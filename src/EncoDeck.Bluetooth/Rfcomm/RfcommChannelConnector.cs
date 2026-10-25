@@ -5,6 +5,7 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.Privacy;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
+using EncoDeck.Protocol.Brands.Edifier;
 using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Brands.Sony;
 using EncoDeck.Protocol.Oppo;
@@ -87,6 +88,14 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         foreach (var uuid in serviceUuids)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (EdifierConstants.IsGattService(uuid))
+            {
+                var result = await EdifierGattByteChannel.OpenAsync(device.BluetoothAddress, uuid, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("EDIFIER GATT connect failed: {Detail}", result.Detail);
+                continue;
+            }
             if (uuid == SennheiserProfile.GattServiceId)
             {
                 var result = await GaiaGattByteChannel.OpenSennheiserAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);

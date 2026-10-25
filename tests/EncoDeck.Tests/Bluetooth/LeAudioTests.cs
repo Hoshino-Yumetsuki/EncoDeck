@@ -87,6 +87,27 @@ public class LeAudioTests
     }
 
     [Fact]
+    public void SecondaryLookup_UsesTheSetPairingContainerInsteadOfTheName()
+    {
+        var set = Guid.NewGuid();
+        var bonds = new (string, Guid?)[]
+        {
+            ("BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-11:22:33:44:55:66", set),
+            ("BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-99:88:77:66:55:44", set),
+            ("BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-11:22:33:44:a1:b2", Guid.NewGuid()),
+        };
+        Assert.Equal(["BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-99:88:77:66:55:44"], LeAudioPairing.SelectContainerPeers(Primary, set, bonds));
+    }
+
+    [Fact]
+    public void SecondaryLookup_WithoutAContainer_FindsNoContainerPeer()
+    {
+        var bonds = new (string, Guid?)[] { ("BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-11:22:33:44:a1:b2", null) };
+        Assert.Empty(LeAudioPairing.SelectContainerPeers(Primary, null, bonds));
+        Assert.Empty(LeAudioPairing.SelectContainerPeers(Primary, Guid.Empty, [("BluetoothLE#BluetoothLEaa:bb:cc:dd:ee:ff-11:22:33:44:a1:b2", Guid.Empty)]));
+    }
+
+    [Fact]
     public void X4Bitmap_AllowsTheLeBrSwitchQuery()
     {
         // The X4's handshake bitmap: bit 64 gates 0x0136 / 0x0433 like the official client.

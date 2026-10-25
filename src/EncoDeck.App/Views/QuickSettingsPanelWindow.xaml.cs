@@ -23,7 +23,9 @@ public sealed partial class QuickSettingsPanelWindow : Window
     private const double ExitMilliseconds = 160;
 
     private EventHandler<object>? _frame;
+    /// <summary>What the panel shows on screen (physical pixels); the window rectangle is larger by <see cref="_invisible"/>.</summary>
     private PixelRect _target;
+    private WindowInterop.FrameInsets _invisible;
     private double _y;
     private double _alpha;
     private int _slide;
@@ -78,8 +80,11 @@ public sealed partial class QuickSettingsPanelWindow : Window
             Leave();
             return;
         }
-        ContentPanel.Measure(new Windows.Foundation.Size(width / scale, double.PositiveInfinity));
-        int height = (int)Math.Ceiling(ContentPanel.DesiredSize.Height * scale);
+        // The target is what shows of the window: it is as wide as the cards, its invisible resize
+        // borders stick out around them and its thin border takes a little of the content's room.
+        (_invisible, var border) = WindowInterop.GetFrame(this);
+        ContentPanel.Measure(new Windows.Foundation.Size(Math.Max(1, width - border.Horizontal) / scale, double.PositiveInfinity));
+        int height = (int)Math.Ceiling(ContentPanel.DesiredSize.Height * scale) + border.Vertical;
         if (PopupPlacement.PlaceAboveQuickSettings(cards, monitor.WorkArea, height, margin) is not { } target)
         {
             Leave();
@@ -108,7 +113,7 @@ public sealed partial class QuickSettingsPanelWindow : Window
         bool resized = target.X != _target.X || target.Width != _target.Width || target.Height != _target.Height;
         _target = target;
         _leaving = false;
-        if (resized) WindowInterop.MoveAndResize(this, target with { Y = (int)Math.Round(_y) });
+        if (resized) WindowInterop.MoveAndResize(this, WindowRect(target));
         if (!ShellEnvironment.AnimationsEnabled())
         {
             Apply(target.Y, 1);
@@ -167,7 +172,7 @@ public sealed partial class QuickSettingsPanelWindow : Window
         bool animate = ShellEnvironment.AnimationsEnabled();
         _y = animate ? target.Y + _slide : target.Y;
         _alpha = animate ? 0 : 1;
-        WindowInterop.MoveAndResize(this, target with { Y = (int)Math.Round(_y) });
+        WindowInterop.MoveAndResize(this, WindowRect(target));
         WindowInterop.SetWindowAlpha(this, (byte)Math.Round(255 * _alpha));
         WindowInterop.GetAppWindow(this).Show(activateWindow: false);
         _ = WindowInterop.EnsureTopmost(this);
@@ -186,9 +191,13 @@ public sealed partial class QuickSettingsPanelWindow : Window
     {
         if (_closed) return;
         var actual = WindowInterop.GetWindowBounds(this);
-        if (Math.Abs(actual.X - target.X) <= 1 && Math.Abs(actual.Width - target.Width) <= 1 && Math.Abs(actual.Height - target.Height) <= 1) return;
-        WindowInterop.MoveAndResize(this, target with { Y = (int)Math.Round(_y) });
+        var wanted = WindowRect(target);
+        if (Math.Abs(actual.X - wanted.X) <= 1 && Math.Abs(actual.Width - wanted.Width) <= 1 && Math.Abs(actual.Height - wanted.Height) <= 1) return;
+        WindowInterop.MoveAndResize(this, wanted);
     }
+
+    /// <summary>The window rectangle that shows <paramref name="visible"/>, at the animated Y.</summary>
+    private PixelRect WindowRect(PixelRect visible) => _invisible.Around(visible with { Y = (int)Math.Round(_y) });
 
     private void HideNow()
     {
@@ -233,7 +242,7 @@ public sealed partial class QuickSettingsPanelWindow : Window
     {
         _y = y;
         _alpha = Math.Clamp(alpha, 0, 1);
-        WindowInterop.MoveTo(this, _target.X, (int)Math.Round(y));
+        WindowInterop.MoveTo(this, _target.X - _invisible.Left, (int)Math.Round(y) - _invisible.Top);
         WindowInterop.SetWindowAlpha(this, (byte)Math.Round(255 * _alpha));
     }
 

@@ -1,16 +1,43 @@
 // SPDX-License-Identifier: GPL-3.0-only
 namespace EncoDeck.Protocol.Brands.Usb;
 
-/// <summary>1532:0552 only. See https://github.com/leag/razer-barracuda/blob/main/docs/PROTOCOL.md.</summary>
+/// <summary>Barracuda X receivers. The replacement 0550 uses the official YSTech HID envelope.</summary>
 public static class BarracudaXProtocol
 {
-    public static bool IsReceiver(ushort vendor, ushort product) => vendor == 0x1532 && product == 0x0552;
+    public static bool IsReceiver(ushort vendor, ushort product) => vendor == 0x1532 && product is 0x0552 or 0x0550;
     public static bool IsCollection(ushort vendor, ushort product, ushort page, ushort usage) =>
         IsReceiver(vendor, product) && page == 0xFF00 && usage == 1;
 
     public static byte[] Handshake()
     {
         var report = new byte[64]; report[0] = 1; report[1] = 0x40; return report;
+    }
+
+    // AWToolLIB2 HID.ystech_write64: CRC-16/CCITT with initial value 0, over the
+    // entire padded report with the CRC field zeroed. The status reply is obtained
+    // separately through GetInputReport, not through the interrupt input event.
+    public static byte[] ReplacementHandshake() => ReplacementReport(0x84, [1]);
+
+    public static byte[] ReplacementQuery(byte sequence, byte command, bool remote = false)
+    {
+        byte[] original = Query(sequence, command, remote);
+        return ReplacementReport(0x80, original.AsSpan(3, original[2]));
+    }
+
+    private static byte[] ReplacementReport(byte command, ReadOnlySpan<byte> payload)
+    {
+        var report = new byte[64];
+        report[0] = 2; report[1] = command; report[2] = (byte)payload.Length;
+        payload.CopyTo(report.AsSpan(5));
+        ushort crc = 0;
+        foreach (byte value in report)
+        {
+            crc ^= (ushort)(value << 8);
+            for (int bit = 0; bit < 8; bit++)
+                crc = (ushort)((crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1);
+        }
+        report[3] = (byte)crc; report[4] = (byte)(crc >> 8);
+        return report;
     }
 
     public static byte[] Query(byte sequence, byte command, bool remote = false)
@@ -48,11 +75,14 @@ public static class BarracudaXProtocol
 public sealed class BarracudaXDecoder
 {
     private readonly List<byte> _pending = [];
-    public IReadOnlyList<byte[]> Feed(ReadOnlySpan<byte> report)
+    public IReadOnlyList<byte[]> Feed(ReadOnlySpan<byte> report, bool replacement = false)
     {
-        if (report.Length < 3 || report[0] != 1 || report[1] != 0x80 || report[2] > report.Length - 3)
+        int header = replacement ? 2 : 3;
+        int count = report.Length >= header ? report[header - 1] : 0;
+        if (report.Length < header || report[0] != (replacement ? 2 : 1) ||
+            (!replacement && report[1] != 0x80) || count > report.Length - header)
         { _pending.Clear(); return []; }
-        _pending.AddRange(report.Slice(3, report[2]).ToArray());
+        _pending.AddRange(report.Slice(header, count).ToArray());
         var frames = new List<byte[]>();
         while (_pending.Count >= 10)
         {

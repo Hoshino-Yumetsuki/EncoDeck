@@ -54,6 +54,11 @@
                         <FontIcon Glyph="&#xE772;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Uid="Nav_Labs" Content="Labs" Tag="Labs">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xF196;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem x:Uid="Nav_Settings" Content="Settings" Tag="Settings">

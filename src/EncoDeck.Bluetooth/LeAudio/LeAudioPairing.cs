@@ -148,8 +148,14 @@ public static class LeAudioPairing
     /// cancellation before pairing mode leaves the existing pairings untouched.
     /// </summary>
     public static async Task<LeAudioPairingResult> SwitchToLeAudioAsync(ulong primary, IProgress<LeAudioPairingStage>? progress, CancellationToken cancellationToken, Func<bool, CancellationToken, Task<CommandResult>>? setLeBrSwitch = null,
-        Func<CancellationToken, Task<CommandResult>>? disableMultipoint = null)
+        Func<CancellationToken, Task<CommandResult>>? disableMultipoint = null,
+        bool useSetPairing = true, Action<string>? diagnosticLog = null)
     {
+        void Log(string message)
+        {
+            LeAudioPairing.Log(message);
+            diagnosticLog?.Invoke(message);
+        }
         cancellationToken.ThrowIfCancellationRequested();
         using var pairingOperation = LeAudioLink.BeginPairingOperation(primary);
         progress?.Report(LeAudioPairingStage.DisablingMultipoint);
@@ -206,15 +212,18 @@ public static class LeAudioPairing
         progress?.Report(LeAudioPairingStage.WaitingForCleanup);
         await WaitForNodesRemovedAsync(primary, "BTH", cancellationToken, advert.Secondary).ConfigureAwait(false);
 
+        var setPairing = useSetPairing ? new LeAudioSetPairing(primary, advert.Secondary.Value, Log) : null;
+        Log($"LE pairing strategy: {(useSetPairing ? "Windows set discovery + explicit peer fallback" : "legacy explicit addresses")}");
         progress?.Report(LeAudioPairingStage.PairingPrimary);
         Log("pairing primary");
-        var status = await PairLeAsync(primary, cancellationToken).ConfigureAwait(false);
+        var status = await PairLeAsync(primary, cancellationToken, setPairing, Log).ConfigureAwait(false);
         if (status is not (DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired))
         {
             Log($"primary failed ({status}), retrying once");
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
-            status = await PairLeAsync(primary, cancellationToken).ConfigureAwait(false);
+            status = await PairLeAsync(primary, cancellationToken, setPairing, Log).ConfigureAwait(false);
         }
+        setPairing?.LogSummary();
         bool primaryBonded = status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired
             && await LeAudioLink.IsBondedAsync(primary, cancellationToken).ConfigureAwait(false);
         Log($"primary status: {status} bonded={primaryBonded}");
@@ -232,8 +241,11 @@ public static class LeAudioPairing
         }
 
         progress?.Report(LeAudioPairingStage.PairingSecondary);
+        Log(await LeAudioLink.IsBondedAsync(secondary, cancellationToken).ConfigureAwait(false)
+            ? "Secondary already bonded; verifying existing LE identity"
+            : "Secondary not yet bonded; using explicit LE address fallback");
         Log($"pairing secondary {new BluetoothAddress(secondary)}");
-        var secondaryStatus = await PairLeAsync(secondary, cancellationToken).ConfigureAwait(false);
+        var secondaryStatus = await PairLeAsync(secondary, cancellationToken, diagnosticLog: Log).ConfigureAwait(false);
         bool secondaryBonded = secondaryStatus is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired
             && await LeAudioLink.IsBondedAsync(secondary, cancellationToken).ConfigureAwait(false);
         Log($"secondary status: {secondaryStatus} bonded={secondaryBonded}");
@@ -241,7 +253,7 @@ public static class LeAudioPairing
         {
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
             Log($"secondary retry {new BluetoothAddress(secondary)}");
-            secondaryStatus = await PairLeAsync(secondary, cancellationToken).ConfigureAwait(false);
+            secondaryStatus = await PairLeAsync(secondary, cancellationToken, diagnosticLog: Log).ConfigureAwait(false);
             secondaryBonded = secondaryStatus is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired
                 && await LeAudioLink.IsBondedAsync(secondary, cancellationToken).ConfigureAwait(false);
             Log($"secondary retry status: {secondaryStatus} bonded={secondaryBonded}");
@@ -256,6 +268,15 @@ public static class LeAudioPairing
         {
             try
             {
+                // Audio PnP enumeration can finish after both ACL links. Inspect without changing
+                // endpoints while waiting, then call the existing guarded suppression only once.
+                Log("Waiting up to 20 seconds for the LE Audio render endpoint");
+                var endpointDeadline = System.Diagnostics.Stopwatch.StartNew();
+                while (!(await LeAudioClassicAudioEndpoint.InspectAsync(primary, cancellationToken).ConfigureAwait(false)).LeAudioRenderPresent
+                    && endpointDeadline.Elapsed < TimeSpan.FromSeconds(20))
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                }
                 // Only the Classic A2DP render node is disabled, and only after both LE links are up.
                 endpointResult = await LeAudioClassicAudioEndpoint.SuppressAsync(primary, true, cancellationToken).ConfigureAwait(false);
             }
@@ -420,26 +441,34 @@ public static class LeAudioPairing
         finally { foreach (var secondary in secondaries) secondary.Dispose(); }
     }
 
+    private const string AepContainerId = "System.Devices.Aep.ContainerId";
+
     /// <summary>
-    /// Bonded LE devices that are the other earbud: the same LE name and the same first four
-    /// address bytes as the primary (the secondary's address only differs in its last two bytes).
+    /// Bonded LE devices that are the other earbud. A Windows set pairing puts both LE identities
+    /// (and the CTKD Classic node) into one device container, which identifies the peer exactly.
+    /// Older per-address pairings keep separate containers; those fall back to the address learned
+    /// from the pairing advert, then to the same LE name and the same first four address bytes.
     /// </summary>
     internal static async Task<List<BluetoothLEDevice>> FindSecondaryBondsAsync(ulong primary, string? name, CancellationToken cancellationToken)
     {
         var found = new List<BluetoothLEDevice>();
-        var bonded = await DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromPairingState(true), [], DeviceInformationKind.AssociationEndpoint)
+        var bonded = await DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromPairingState(true), [AepContainerId], DeviceInformationKind.AssociationEndpoint)
             .AsTask(cancellationToken).ConfigureAwait(false);
+        var leBonds = bonded.Select(i => (i.Id, Container: ContainerOf(i))).ToList();
+        var container = leBonds.FirstOrDefault(b => IsAddress(b.Id, primary)).Container
+            ?? await FindClassicContainerAsync(primary, cancellationToken).ConfigureAwait(false);
+        var containerPeers = SelectContainerPeers(primary, container, leBonds).ToHashSet(StringComparer.OrdinalIgnoreCase);
         // BluetoothLEDevice.Name can be "Bluetooth <address>" for BOTH buds, even though their
         // paired AEPs both correctly say "OPPO Enco X4". Never match the transient device names.
         string? bondName = ResolveBondName(primary, name, bonded.Select(i => (i.Id, i.Name)));
         bool hasExactPeer = KnownSecondaryAddresses.TryGetValue(primary, out ulong exactPeer);
         string? peerSuffix = hasExactPeer ? "-" + new BluetoothAddress(exactPeer).ToFullString() : null;
-        if (string.IsNullOrEmpty(bondName) && !hasExactPeer) return found;
-        // Open only same-named bonds; some bonded entries are not openable as BluetoothLEDevice at all.
+        if (containerPeers.Count == 0 && string.IsNullOrEmpty(bondName) && !hasExactPeer) return found;
+        // Open only candidate bonds; some bonded entries are not openable as BluetoothLEDevice at all.
         try
         {
-            foreach (var info in bonded.Where(i => hasExactPeer
-                ? i.Id.EndsWith(peerSuffix!, StringComparison.OrdinalIgnoreCase) : i.Name == bondName))
+            foreach (var info in bonded.Where(i => containerPeers.Count > 0 ? containerPeers.Contains(i.Id)
+                : hasExactPeer ? i.Id.EndsWith(peerSuffix!, StringComparison.OrdinalIgnoreCase) : i.Name == bondName))
             {
                 BluetoothLEDevice? device;
                 try
@@ -451,7 +480,8 @@ public static class LeAudioPairing
                     continue;
                 }
                 if (device is null) continue;
-                if (hasExactPeer ? device.BluetoothAddress == exactPeer
+                if (containerPeers.Count > 0 ? device.BluetoothAddress != primary
+                    : hasExactPeer ? device.BluetoothAddress == exactPeer
                     : device.BluetoothAddress != primary && device.BluetoothAddress >> 16 == primary >> 16) found.Add(device);
                 else device.Dispose();
             }
@@ -463,6 +493,25 @@ public static class LeAudioPairing
             foreach (var device in found) device.Dispose();
             throw;
         }
+    }
+
+    /// <summary>Other LE bonds in the primary's device container (empty when the container is unknown).</summary>
+    internal static IEnumerable<string> SelectContainerPeers(ulong primary, Guid? container, IEnumerable<(string Id, Guid? Container)> leBonds) =>
+        container is not { } c || c == Guid.Empty ? []
+            : leBonds.Where(b => b.Container == c && !IsAddress(b.Id, primary)).Select(b => b.Id);
+
+    private static bool IsAddress(string aepId, ulong address) =>
+        aepId.EndsWith("-" + new BluetoothAddress(address).ToFullString(), StringComparison.OrdinalIgnoreCase);
+
+    private static Guid? ContainerOf(DeviceInformation info) =>
+        info.Properties.TryGetValue(AepContainerId, out var value) && value is Guid id ? id : null;
+
+    /// <summary>The container of the Classic (CTKD) bond, for when the primary's LE bond itself is missing.</summary>
+    private static async Task<Guid?> FindClassicContainerAsync(ulong primary, CancellationToken cancellationToken)
+    {
+        var classic = await DeviceInformation.FindAllAsync(BluetoothDevice.GetDeviceSelectorFromPairingState(true), [AepContainerId], DeviceInformationKind.AssociationEndpoint)
+            .AsTask(cancellationToken).ConfigureAwait(false);
+        return classic.Where(i => IsAddress(i.Id, primary)).Select(ContainerOf).FirstOrDefault(c => c is not null);
     }
 
     internal static string? ResolveBondName(ulong primary, string? deviceName, IEnumerable<(string Id, string Name)> bonds)
@@ -522,8 +571,13 @@ public static class LeAudioPairing
     }
 
     /// <summary>The first attempt right after the advert turns connectable may fail, so retry a few times.</summary>
-    private static async Task<DevicePairingResultStatus> PairLeAsync(ulong address, CancellationToken cancellationToken)
+    private static async Task<DevicePairingResultStatus> PairLeAsync(ulong address, CancellationToken cancellationToken, LeAudioSetPairing? setPairing = null, Action<string>? diagnosticLog = null)
     {
+        void Log(string message)
+        {
+            if (diagnosticLog is null) LeAudioPairing.Log(message);
+            else diagnosticLog(message);
+        }
         var status = DevicePairingResultStatus.Failed;
         for (int attempt = 0; attempt < PairAttempts; attempt++)
         {
@@ -536,18 +590,45 @@ public static class LeAudioPairing
             }
             Log($"pair {new BluetoothAddress(address)} attempt {attempt}: conn={device.ConnectionStatus} canPair={device.DeviceInformation.Pairing.CanPair} paired={device.DeviceInformation.Pairing.IsPaired}");
             if (device.DeviceInformation.Pairing.IsPaired) return DevicePairingResultStatus.AlreadyPaired;
-            status = await PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.Encryption, cancellationToken).ConfigureAwait(false);
-            if (status == DevicePairingResultStatus.Failed)
+            using var attemptTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            attemptTimeout.CancelAfter(TimeSpan.FromSeconds(60));
+            try
             {
-                // Some earbuds reject the encrypted pairing request while in pairing mode but accept
-                // Just Works first; Windows encrypts the link afterwards.
-                Log($"pair {new BluetoothAddress(address)} attempt {attempt}: encryption failed, trying Just Works");
-                status = await PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.None, cancellationToken).ConfigureAwait(false);
+                status = setPairing is null
+                    ? await PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.Encryption, attemptTimeout.Token).ConfigureAwait(false)
+                    : await setPairing.PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.Encryption, attemptTimeout.Token).ConfigureAwait(false);
+                if (status == DevicePairingResultStatus.Failed)
+                {
+                    Log($"pair {new BluetoothAddress(address)} attempt {attempt}: encryption failed, trying Just Works");
+                    status = setPairing is null
+                        ? await PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.None, attemptTimeout.Token).ConfigureAwait(false)
+                        : await setPairing.PairAsync(device.DeviceInformation.Pairing, DevicePairingProtectionLevel.None, attemptTimeout.Token).ConfigureAwait(false);
+                }
+                if (status == DevicePairingResultStatus.OperationAlreadyInProgress)
+                    status = await WaitForExistingPairingAsync(address, attemptTimeout.Token, Log).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // Do not start another operation while Windows may still be finishing native pairing.
+                Log("LE pairing attempt timed out; stopping without starting an overlapping retry");
+                throw new TimeoutException("Windows LE pairing did not finish within 60 seconds. No overlapping retry was started; check the current bonds before trying again.");
             }
             Log($"pair {new BluetoothAddress(address)} attempt {attempt}: {status}");
             if (status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired) return status;
         }
         return status;
+    }
+
+    internal static async Task<DevicePairingResultStatus> WaitForExistingPairingAsync(ulong address, CancellationToken ct, Action<string> log)
+    {
+        log("LE pairing already in progress; waiting for its bond without submitting another PairAsync");
+        for (int i = 0; i < 30; i++)
+        {
+            if (await LeAudioLink.IsBondedAsync(address, ct).ConfigureAwait(false))
+                return DevicePairingResultStatus.AlreadyPaired;
+            await Task.Delay(TimeSpan.FromSeconds(1), ct).ConfigureAwait(false);
+        }
+        throw new TimeoutException("An existing Windows pairing operation is still unresolved; no overlapping retry or fallback was started.");
     }
 
     /// <summary>Earbuds have no display or keypad: accept Just Works / numeric comparison without a Windows prompt.</summary>

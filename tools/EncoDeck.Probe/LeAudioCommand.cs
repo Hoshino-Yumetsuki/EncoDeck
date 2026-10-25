@@ -30,8 +30,11 @@ internal static class LeAudioCommand
                 return 2;
             }
             var result = await LeAudioPairing.SwitchToLeAudioAsync(device.Address.Value, new Stages(Log), ct,
-                disableMultipoint: token => DisableMultipointAsync(device, token));
+                disableMultipoint: token => DisableMultipointAsync(device, token),
+                useSetPairing: !options.Has("legacy-pairing"), diagnosticLog: Log);
             Log($"Pair result: {result.Outcome}; {result.Detail}");
+            if (result.AudioEndpoint is { } endpoint)
+                Log($"Endpoint: {endpoint.State}; activeLeRender={endpoint.LeAudioRenderPresent}; residualClassic={endpoint.HasResidualClassicAudio}; {endpoint.Detail}");
             if (result.Outcome is not (LeAudioPairingOutcome.Paired or LeAudioPairingOutcome.PairedWaitingForLinks)) return 5;
         }
         if (!await LeAudioLink.IsBondedAsync(device.Address.Value, ct))

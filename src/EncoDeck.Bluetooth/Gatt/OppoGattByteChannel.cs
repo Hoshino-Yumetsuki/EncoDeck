@@ -74,7 +74,7 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         _shutdownToken = _shutdown.Token;
     }
 
-    public string Description => $"OPPO GATT 079A ({_endpoints.Length} earbud(s))";
+    public string Description => $"OPPO GATT 079A ({_endpoints.Length} earbud(s); joined {string.Join(", ", _endpoints.Select(e => e.Device.BluetoothAddress == _primaryAddress ? "primary" : "secondary"))})";
 
     /// <summary>
     /// Opens the channel on the bonded LE identity at <paramref name="bluetoothAddress"/> and the other
@@ -109,8 +109,7 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
             foreach (var device in candidates) device.ConnectionStatusChanged += channel.OnConnectionStatusChanged;
 
             ChannelOpenResult? failure = null;
-            ulong preferred = PreferredTargets.GetValueOrDefault(bluetoothAddress, bluetoothAddress);
-            foreach (var device in candidates.OrderByDescending(d => d.BluetoothAddress == preferred))
+            ulong preferred = PreferredTargets.GetValueOrDefault(bluetoothAddress, bluetoothAddress);            foreach (var device in candidates.OrderByDescending(d => d.BluetoothAddress == preferred))
             {
                 if (device.ConnectionStatus != BluetoothConnectionStatus.Connected) continue;
                 failure = await channel.TryJoinAsync(device, timeout.Token).ConfigureAwait(false) ?? failure;

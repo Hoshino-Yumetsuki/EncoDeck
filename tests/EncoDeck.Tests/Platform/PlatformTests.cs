@@ -360,4 +360,53 @@ public class DeviceStateCacheTests
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void MultiConnectionList_IsRestoredWithoutAddresses()
+    {
+        string dir = Directory.CreateTempSubdirectory("encodeck-test").FullName;
+        try
+        {
+            string path = Path.Combine(dir, "cache.json");
+            var at = DateTimeOffset.Parse("2026-10-20T10:00:00Z");
+            var store1 = new DeviceStateStore();
+            var cache1 = new DeviceStateCache(path, store1, NullLogger<DeviceStateCache>.Instance);
+            cache1.Start();
+            store1.Reset(DeviceState.Empty with { Device = X4 });
+            store1.TryUpdate(X4.DeviceId, s => s with
+            {
+                SourceDevices = Observed.From<IReadOnlyList<SourceDevice>>(
+                [
+                    new([0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6], "Desk PC", 2, true, true, 2),
+                    new([0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F], "Phone", 1, false, false, 1),
+                ], at, StateSource.QueryResponse),
+            });
+            cache1.Dispose();
+            Assert.DoesNotContain("A1", File.ReadAllText(path), StringComparison.OrdinalIgnoreCase);
+
+            var store2 = new DeviceStateStore();
+            var cache2 = new DeviceStateCache(path, store2, NullLogger<DeviceStateCache>.Instance);
+            cache2.Start();
+            store2.Reset(DeviceState.Empty with { Device = X4 });
+            var restored = store2.Current.SourceDevices!;
+            Assert.Equal(StateSource.Cache, restored.Source);
+            Assert.Equal(["Desk PC", "Phone"], restored.Value.Select(d => d.Name));
+            Assert.All(restored.Value, d => Assert.Empty(d.Address));
+            Assert.True(restored.Value[0].IsThisDevice && restored.Value[0].IsConnected);
+            // Connecting is momentary: remembered as not connected.
+            Assert.Equal(0, restored.Value[1].State);
+
+            // The earbuds' own answer replaces it.
+            store2.TryUpdate(X4.DeviceId, s => s with
+            {
+                SourceDevices = Observed.From<IReadOnlyList<SourceDevice>>([new([0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6], "Desk PC", 2, true, true, 2)], at, StateSource.QueryResponse),
+            });
+            Assert.Single(store2.Current.SourceDevices!.Value);
+            cache2.Dispose();
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }

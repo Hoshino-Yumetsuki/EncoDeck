@@ -287,7 +287,10 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsControlUnavailable = state.Connection == DeviceConnectionState.ControlUnavailable;
         IsLinkDown = state.Connection is DeviceConnectionState.PairedNotConnected or DeviceConnectionState.Disconnected;
         IsLeAudio = state.IsLeAudio && !IsLinkDown;
-        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1)
+        // A single-body LC3 headset has only the one LE identity, so one link is all of it. Warn
+        // only for a pair whose other earbud is bonded, or earbuds whose other half was never found.
+        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1 && profile?.Form != DeviceForm.Headphones
+            && (state.LeAudioLinks.SecondaryBonded || profile is OppoDeviceProfile))
             ConnectionText = Loc.Get("Connection_LeAudioSingleEar");
         // Switched to LE Audio but LC3 is not up (e.g. after the case reopened): the earbuds only come
         // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect.

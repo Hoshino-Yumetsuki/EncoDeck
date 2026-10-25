@@ -269,6 +269,26 @@ internal static partial class WindowInterop
     public static void MoveAndResize(Window window, PixelRect rect) =>
         _ = SetWindowPos(GetHandle(window), 0, rect.X, rect.Y, rect.Width, rect.Height, SWP_NOZORDER | SWP_NOACTIVATE);
 
+    /// <summary>
+    /// The parts of a framed window that are not drawn, physical pixels per side: the window
+    /// rectangle includes invisible resize borders around what DWM shows (9 px each side but the
+    /// top at 150 %), and the visible frame keeps a thin border around the client area.
+    /// </summary>
+    public static (FrameInsets Invisible, FrameInsets Border) GetFrame(Window window)
+    {
+        nint hwnd = GetHandle(window);
+        if (!GetWindowRect(hwnd, out var w) || !GetClientRect(hwnd, out var c)
+            || DwmGetWindowRect(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, out var v, Marshal.SizeOf<RECT>()) != 0)
+        {
+            return (default, default);
+        }
+        var origin = new POINT { X = 0, Y = 0 };
+        _ = ClientToScreen(hwnd, ref origin);
+        var invisible = new FrameInsets(v.Left - w.Left, v.Top - w.Top, w.Right - v.Right, w.Bottom - v.Bottom);
+        var border = new FrameInsets(origin.X - v.Left, origin.Y - v.Top, v.Right - origin.X - c.Right, v.Bottom - origin.Y - c.Bottom);
+        return (invisible.Clamped(), border.Clamped());
+    }
+
     /// <summary>The tray icon's rectangle (physical pixels), or null. Returns the overflow chevron when the icon is hidden there.</summary>
     public static PixelRect? GetTrayIconRect(Guid iconId)
     {
@@ -284,6 +304,18 @@ internal static partial class WindowInterop
         public int Top;
         public int Right;
         public int Bottom;
+    }
+
+    /// <summary>A width per side, physical pixels.</summary>
+    public readonly record struct FrameInsets(int Left, int Top, int Right, int Bottom)
+    {
+        public int Horizontal => Left + Right;
+        public int Vertical => Top + Bottom;
+
+        /// <summary>The rectangle grown by these insets on every side.</summary>
+        public PixelRect Around(PixelRect rect) => PixelRect.FromLtrb(rect.X - Left, rect.Y - Top, rect.Right + Right, rect.Bottom + Bottom);
+
+        internal FrameInsets Clamped() => new(Math.Max(0, Left), Math.Max(0, Top), Math.Max(0, Right), Math.Max(0, Bottom));
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -420,6 +452,11 @@ internal static partial class WindowInterop
 
     [LibraryImport("dwmapi.dll")]
     private static partial int DwmGetWindowAttribute(nint hwnd, int attribute, out int value, int size);
+
+    private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+
+    [LibraryImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")]
+    private static partial int DwmGetWindowRect(nint hwnd, int attribute, out RECT value, int size);
 
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

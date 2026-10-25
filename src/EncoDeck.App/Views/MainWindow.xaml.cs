@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window
         ["Sound"] = typeof(SoundPage),
         ["Controls"] = typeof(ControlsPage),
         ["Devices"] = typeof(DevicesPage),
+        ["Labs"] = typeof(LabsPage),
         ["Settings"] = typeof(SettingsPage),
     };
 

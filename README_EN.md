@@ -21,9 +21,9 @@
 
 > 🍎 **On a Mac?** We recommend [HeyBuds](https://github.com/abaichuan1017/HeyBuds).
 
-EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings the everyday settings from HeyMelody to your PC: battery levels for the left and right earbuds and the case, noise control, EQ and spatial audio, touch controls and more. Most of the time it can live as just a tray icon, without keeping the main window open.
+EncoDeck is a Windows earbud control app built with **WinUI 3**. It brings everyday earbud settings to your PC: battery levels for the left and right earbuds and the case, noise control, EQ and spatial audio, touch controls and more. Most of the time it can live as just a tray icon, without keeping the main window open.
 
-**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, Xiaomi / Redmi, Sony, AKG, EDIFIER and MOONDROP** models. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
+**OPPO / OnePlus** earbuds are the primary target, with partial support for some **realme / DIZO, vivo / iQOO, HUAWEI, HONOR, Xiaomi / Redmi, Sony, AKG, Sennheiser, EDIFIER and MOONDROP** models, plus USB 2.4G gaming headsets. Available settings vary by model. **Hardware testing is currently done mainly on the OPPO Enco X4**; other models are implemented from protocol and model configuration data, and test reports are welcome.
 
 ## Screenshots
 
@@ -67,7 +67,7 @@ Sound options follow each model's configuration and actual capabilities.
 | **Spatial audio** | Switch between off, fixed spatial audio and head tracking (if supported) |
 | **Game mode** | Toggle low-latency mode and game sound enhancement; conflicts with other sound settings follow the earbuds' own rules |
 
-Some of these settings can already be read from real hardware, but writes are still mostly implemented from the HeyMelody protocol and haven't all been verified on hardware yet. See the [compatibility table](docs/COMPATIBILITY.md) for per-item details.
+Some of these settings can already be read from real hardware, but writes are still mostly implemented from the protocol and haven't all been verified on hardware yet. See the [compatibility table](docs/COMPATIBILITY.md) for per-item details.
 
 ### Earbud controls and device management
 
@@ -94,26 +94,29 @@ This is the *range of implemented features*: not every earbud supports all of th
 - When your earbuds connect to the PC, a popup near the taskbar shows the device name, battery levels and that model's connection animation; it stays out of the way while you're in full screen.
 - The popup animation doesn't open an audio output or show up in Windows media controls, so it won't pull your earbuds' audio away from your phone to the PC.
 - The home page shows a picture or model of your device. Pre-rendered models can be dragged left and right; models with `.vfxms` support can be rotated, zoomed and reset in real time.
-- Device artwork is fetched per model and color, then cached locally for reuse. Headphones without an official animation keep a static product image; only the popup window animates in and out.
+- Device artwork is fetched per model and color, then cached locally for reuse. Headphones without a manufacturer animation keep a static product image; only the popup window animates in and out.
 
 *The connection popup fires when the earbuds establish a Bluetooth connection; BLE lid-open detection (popping up when you open the case nearby) is not implemented yet.*
 
 ## Compatibility
 
-Support currently falls into two groups: models with configuration data from the official app to work from, and models ported from open-source protocol implementations. **A model being in the code does not mean those earbuds have been tested on real hardware.**
+Each brand is implemented from its protocol and model configuration data, some ported from open-source projects. **A model being in the code does not mean those earbuds have been tested on real hardware.**
 
 | Brand / model | Current support | Verification |
 | --- | --- | --- |
-| **OPPO Enco X4** | Battery, wear state, noise control and levels, plus EQ, spatial audio, gestures, dual connection and more | Battery and some noise control actions read/written on hardware; many advanced settings read on hardware, writes still being verified item by item |
-| **Other OPPO / OnePlus** | ~85 built-in model configurations; noise control, sound and touch settings per model capabilities | Mostly based on HeyMelody configuration and protocol; not yet tested on hardware |
+| **OPPO Enco X4** | Battery, wear state, noise control and levels, plus EQ, spatial audio, gestures, multipoint and more | Battery and some noise control actions read/written on hardware; many advanced settings read on hardware, writes still being verified item by item |
+| **Other OPPO / OnePlus** | ~85 built-in model configurations; noise control, sound and touch settings per model capabilities | Based on model configuration and protocol; not yet tested on hardware |
 | **realme / DIZO and some older OPPO / OnePlus** | ~50 more models, mainly battery, charging, wear state and firmware info | Not yet tested on hardware |
 | **vivo / iQOO** | ~43 models; battery and status, plus noise control, EQ, find earbuds and game mode on some models | Protocol port, not verified on hardware |
-| **HUAWEI** | 24 models; battery and model-specific ANC/levels, EQ, wear detection, low latency and multipoint; independent spatial audio/head tracking after device confirmation | Protocol port and official APK analysis; not verified on hardware |
-| **Xiaomi / Redmi** | Series matching with 48 official model capability records; battery, ANC/levels, EQ, low latency, multipoint, spatial audio/head tracking and prompt volume gated by model data and device readback | Official APK analysis; not verified on hardware |
-| **Sony** | 46 built-in model names; battery/charging, ANC/ambient sound and device-reported EQ presets | Official MDR protocol and simulated-device tests; not verified on hardware |
-| **AKG** | N400NC, N700NCM2, N200NC, Y600: battery, ANC/ambient and automatic play/pause; N700NC, N5 Hybrid, N9 Hybrid: recognition/artwork only | Official APK analysis; not verified on hardware |
-| **EDIFIER** | W820NB, W200BT and generic detection; battery, noise cancelling / transparency on some models | Protocol port, not verified on hardware |
+| **HUAWEI** | 24 models; battery and model-specific ANC/levels, EQ, wear detection, low latency and multipoint; independent spatial audio/head tracking after device confirmation | Protocol port; not verified on hardware |
+| **Xiaomi / Redmi** | Series matching with 48 model capability records; battery, ANC/levels, EQ, low latency, multipoint, spatial audio/head tracking and prompt volume gated by model data and device readback | Protocol implementation; not verified on hardware |
+| **Sony** | 46 built-in model names; battery/charging, ANC/ambient sound and device-reported EQ presets | MDR protocol and simulated-device tests; not verified on hardware |
+| **AKG** | N400NC, N700NCM2, N200NC, Y600: battery, ANC/ambient and automatic play/pause; N5 / N9 Hybrid: Airoha RACE battery and ANC after read-back; N700NC: recognition/artwork only | Protocol implementation; not verified on hardware |
+| **EDIFIER** | W820NB, W200BT; 28 Atom / Lolli models with identification, SPP / BLE and earbud / case battery; legacy noise control after valid read-back | Protocol implementation, not verified on hardware; [scope](docs/COMPATIBILITY.md#漫步者) |
 | **MOONDROP** | 17 model profiles plus generic recognition, not complete model support; GAIA BLE / RFCOMM, battery, model-specific ANC / anti-wind and gain; runtime-discovered LED, prompt switch / volume, both-ear TOUCHV2 and mutually exclusive LHDC / multipoint | EDGE firmware 1.3.0: Windows RFCOMM control connection and state reads verified on hardware; other models remain protocol ports / simulated validation; inferred controls require opt-in; spatial audio / head tracking unsupported |
+| **HONOR** | 7 models; battery, ANC / transparency and levels, wear detection, multipoint and device-reported EQ presets (per model) | Protocol implementation; not verified on hardware |
+| **Sennheiser** | 11 models with battery and firmware; ANC / transparency on MOMENTUM 4 / ACCENTUM; MOMENTUM TW 4 ANC, anti-wind, wear detection, low latency and touch customization | Protocol implementation and simulated-device tests; not verified on hardware |
+| **USB 2.4G gaming headsets** | 34 models recognized (EDIFIER HECATE, Dareu, Rapoo, MCHOSE, Razer); battery on MCHOSE X9, Razer BlackShark V2 Pro and Barracuda X | Not verified on hardware |
 
 For more models, per-feature details and verification records, see the **[device compatibility list](docs/COMPATIBILITY.md)**. If your earbuds aren't on the tested list but work fine, please share the model, firmware and your results.
 
@@ -133,7 +136,7 @@ Before using it, **pair and connect your earbuds in Windows Bluetooth settings**
 
 ### LHDC V5 (optional / experimental)
 
-The non-Store x64 build can optionally integrate [LHDC-Win](https://github.com/Wayne-u/LHDC-Win). After downloading the separate component from the Sound page, you can pick an audio device, set playback parameters, and try enabling LHDC or restoring the original Windows audio configuration.
+The non-Store x64 build can optionally integrate [LHDC-Win](https://github.com/Wayne-u/LHDC-Win). After downloading the separate component from the Labs page, you can pick an audio device, set playback parameters, and try enabling LHDC or restoring the original Windows audio configuration.
 
 This is not a regular earbud control feature: it involves test-signed drivers, admin rights and system audio configuration, and requires Windows 11 22H2+, x64 and earbuds that support LHDC V5. **The Store version doesn't support it, and real-world playback compatibility is still unverified on hardware.** EncoDeck never changes Secure Boot or system test mode on its own. Read the [LHDC guide and recovery steps](docs/LHDC.md) before trying it.
 

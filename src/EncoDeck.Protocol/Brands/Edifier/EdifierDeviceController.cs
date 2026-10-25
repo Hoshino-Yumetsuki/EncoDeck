@@ -16,21 +16,40 @@ public sealed class EdifierDeviceController : BrandControllerBase
     internal static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(2);
     internal static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(30);
 
-    private readonly EdifierFrameDecoder _decoder = new();
+    private EdifierFrameDecoder _decoder = new();
     private readonly Lock _gate = new();
     private readonly List<(byte Command, TaskCompletionSource<EdifierFrame> Waiter)> _waiters = [];
     private readonly CancellationTokenSource _pollStop = new();
     private Task? _pollTask;
+    private readonly EdifierProfile? _profile;
+    private bool _noiseConfirmed;
+    private bool _version2;
+    private bool IsTws => _profile?.IsTws == true;
 
-    public EdifierDeviceController(IDuplexByteChannel channel, ControllerContext context)
+    public EdifierDeviceController(IDuplexByteChannel channel, ControllerContext context, EdifierProfile? profile = null)
         : base(channel, context)
     {
+        _profile = profile;
+        _version2 = IsTws;
+        _decoder = new EdifierFrameDecoder(_version2);
     }
 
     protected override async Task<bool> StartSessionAsync(CancellationToken cancellationToken)
     {
+        if (IsTws)
+            Store.TryUpdate(DeviceId, s => s with { Profile = _profile!.WithNoiseConfirmed(false), NoiseControl = null });
         bool battery = await RefreshBatteryAsync(cancellationToken).ConfigureAwait(false);
-        bool noise = await RefreshNoiseAsync(cancellationToken).ConfigureAwait(false) is not null;
+        if (IsTws && !battery)
+        {
+            // Negotiate with read-only state queries; never send a control to guess a version.
+            lock (_gate)
+            {
+                _version2 = false;
+                _decoder = new EdifierFrameDecoder();
+            }
+            battery = await RefreshBatteryAsync(cancellationToken).ConfigureAwait(false);
+        }
+        bool noise = !_version2 && await RefreshNoiseAsync(cancellationToken).ConfigureAwait(false) is not null;
         if (!battery && !noise)
         {
             // An open RFCOMM channel that answers nothing is not speaking this protocol.
@@ -73,12 +92,13 @@ public sealed class EdifierDeviceController : BrandControllerBase
     public override async Task<CommandResult> RefreshAsync(CancellationToken cancellationToken)
     {
         bool battery = await RefreshBatteryAsync(cancellationToken).ConfigureAwait(false);
-        bool noise = await RefreshNoiseAsync(cancellationToken).ConfigureAwait(false) is not null;
-        return battery && noise ? CommandResult.Ok : new CommandResult(CommandStatus.Timeout, "Device did not answer every query.");
+        bool noise = !_version2 && await RefreshNoiseAsync(cancellationToken).ConfigureAwait(false) is not null;
+        return battery && (noise || IsTws && !_noiseConfirmed) ? CommandResult.Ok : new CommandResult(CommandStatus.Timeout, "Device did not answer every query.");
     }
 
     public override async Task<CommandResult> SetNoiseControlAsync(NoiseControlState target, CancellationToken cancellationToken)
     {
+        if (IsTws && !_noiseConfirmed) return NotSupported("Noise control has not been confirmed by this device.");
         byte? mode = target.Mode switch
         {
             NoiseControlMode.Off => EdifierConstants.NoiseOff,
@@ -143,7 +163,7 @@ public sealed class EdifierDeviceController : BrandControllerBase
 
     private async Task<bool> RefreshBatteryAsync(CancellationToken cancellationToken)
     {
-        var frame = await RequestAsync(EdifierConstants.QueryBattery, [], cancellationToken).ConfigureAwait(false);
+        var frame = await RequestAsync(IsTws ? EdifierConstants.QueryTwsState : EdifierConstants.QueryBattery, [], cancellationToken).ConfigureAwait(false);
         return frame is not null && Apply(frame, StateSource.QueryResponse);
     }
 
@@ -160,19 +180,41 @@ public sealed class EdifierDeviceController : BrandControllerBase
     {
         switch (frame.Command)
         {
-            case EdifierConstants.QueryBattery when frame.Payload is [var percent, ..] && percent <= 100:
+            case EdifierConstants.QueryTwsState when IsTws && ParseTwsBattery(frame.Payload, Now, source) is { } battery:
+                Store.TryUpdate(DeviceId, s => s with { Battery = battery, LastUpdateSource = source });
+                return true;
+            case EdifierConstants.QueryBattery when !IsTws && frame.Payload is [var percent, ..] && percent <= 100:
                 // Over-ear/neckband: one reading for the whole headset, shown in the Left slot.
                 var reading = Observed.From(new BatteryReading(percent, null), Now, source);
                 Store.TryUpdate(DeviceId, s => s with { Battery = s.Battery with { Left = reading }, LastUpdateSource = source });
                 return true;
-            case EdifierConstants.QueryNoiseMode when ParseNoise(frame.Payload) is { } noise:
+            case EdifierConstants.QueryNoiseMode when !_version2 && (!IsTws || frame.Payload.Length is 1 or 2) && ParseNoise(frame.Payload) is { } noise:
+                _noiseConfirmed = true;
                 Store.TryUpdate(DeviceId, s => s.NoiseControl?.Source == StateSource.Optimistic && source == StateSource.DeviceNotification
                     ? s
-                    : s with { NoiseControl = Observed.From(noise, Now, source), LastUpdateSource = source });
+                    : s with
+                    {
+                        Profile = IsTws ? _profile!.WithNoiseConfirmed() : s.Profile,
+                        NoiseControl = Observed.From(noise, Now, source), LastUpdateSource = source,
+                    });
                 return true;
             default:
                 return false;
         }
+    }
+
+    // Edifier Connect 8.5.3 CommandParser.parseDeviceState / parseTWSBattery.
+    // 0 means offline, 255 means unavailable. Neither is a zero-percent battery.
+    // Peer 1/2 means only left/right is connected; do not keep a stale other-ear reading.
+    internal static BatteryStatus? ParseTwsBattery(byte[] payload, DateTimeOffset now, StateSource source)
+    {
+        if (payload.Length < 3 || payload[0] is not (1 or 2 or 3)) return null;
+        Observed<BatteryReading>? Read(byte value) => value is >= 1 and <= 100
+            ? Observed.From(new BatteryReading(value, null), now, source) : null;
+        return new BatteryStatus(
+            payload[0] == 2 ? null : Read(payload[1]),
+            payload[0] == 1 ? null : Read(payload[2]),
+            payload.Length >= 4 ? Read(payload[3]) : null);
     }
 
     internal static NoiseControlState? ParseNoise(byte[] payload) => payload is [var mode, ..]
@@ -192,7 +234,8 @@ public sealed class EdifierDeviceController : BrandControllerBase
         lock (_gate) _waiters.Add((command, waiter));
         try
         {
-            if (!await WriteAsync(EdifierFrameCodec.Encode(command, payload), cancellationToken).ConfigureAwait(false)) return null;
+            byte[] request = _version2 ? EdifierFrameCodec.EncodeV2(command, payload) : EdifierFrameCodec.Encode(command, payload);
+            if (!await WriteAsync(request, cancellationToken).ConfigureAwait(false)) return null;
             return await waiter.Task.WaitAsync(RequestTimeout, Context.Time, cancellationToken).ConfigureAwait(false);
         }
         catch (TimeoutException)

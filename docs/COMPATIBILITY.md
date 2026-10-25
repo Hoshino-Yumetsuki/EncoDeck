@@ -1,10 +1,9 @@
-# 设备兼容性
+# 设备兼容性（COMPATIBILITY）
 
-以下为当前开发版的设备与功能列表；正式版以对应版本为准。同一行设备具有相同的功能范围。实际可用项仍取决于固件和设备返回的能力；目前主要在 OPPO Enco X4 上完成实机验证。
+以下为当前开发版的设备与功能列表；正式版以对应版本为准。同一行设备具有相同的功能范围。实际可用项仍取决于固件和设备返回的能力；目前主要在 OPPO Enco X4 上完成真机验证。除特别注明外，其他品牌的验证均为字节向量和模拟设备测试，不代表真机验证。
 
 ## OPPO / 一加 / realme / DIZO
 
-Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音量调节开关（耳机返回状态后可操作）；EQ 固件门槛、六段自定义 EQ、共享长按循环及无头部跟踪等差异见 [Free4 适配说明](ENCO_FREE4.md)。目前为配置和模拟协议验证，尚未完成 Free4 真机验证。
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
@@ -47,6 +46,40 @@ Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音
 | realme Buds Wireless 6 Neo、realme Buds Wireless 6、realme Buds Air 3S、realme Buds T300、realme Buds N1 Pro、realme Buds T310、realme Buds N1、realme Buds T200、realme Buds Clip、realme TechLife Buds、realme Buds T500 | 电量、充电状态、查找耳机、固件信息 |
 | OnePlus Buds N | 电量、充电状态、预设 EQ、自定义 EQ、手势设置、查找耳机、固件信息 |
 | realme Buds Air 5 Pro、realme Buds Air 5、realme Buds Air6 Pro、realme Buds Air6、realme Buds Air7、realme Buds Air7 Pro、realme Buds T500 Pro、realme Buds Air8、realme Buds Air8 Pro、realme Buds T500 Pro Harry Potter Edition | 电量、充电状态、佩戴检测开关、查找耳机、固件信息 |
+
+### Enco X4 验证状态
+
+X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取 ✅”表示会话启动时从真机读到并正确解析；“写入：协议实现”表示写入路径有单元测试，但会改变听感，尚未在真机上逐项发送。
+
+| 功能 | X4 真机验证 |
+| --- | --- |
+| 帧编解码、分片重组、会话、能力位图、SDP 服务发现、RFCOMM 连接 | ✅ |
+| 电量（左 / 右 / 盒、充电、主动上报）、充电盒“上次读取”缓存、佩戴 / 出入盒 | ✅ |
+| 降噪：关闭 / 降噪 / 通透及档位、自适应·标准 | ✅（写入回读）；自适应更少 / 更多噪音：写入：协议实现 |
+| 固件版本、产品 ID / 颜色 ID、确认式命令与回滚、应答耳机请求 | ✅ |
+| 预设 EQ、自定义 EQ、游戏模式、双设备连接、手势与通话手势、长捏降噪循环、点头 / 摇头接听、空间音频、BassWave、提示音量、佩戴检测、入睡暂停、Swift Pair、快捷语音指令 | 读取 ✅；写入：协议实现 |
+| 查找耳机、贴合度检测 | 写入：协议实现 |
+| 连接监督与重连 | 连接 / 断开 ✅；睡眠唤醒与长期稳定性待测 |
+
+### Enco Free4 标准版 / 丹拿版
+
+按型号配置核对，测试使用模拟设备，尚未真机验证。
+
+| 项目 | 说明 |
+| --- | --- |
+| 型号识别 | 标准版 `068C10`；丹拿版 `06C010`，先按蓝牙名称识别，再以设备上报的产品 ID 确认 |
+| 降噪 | 深度 / 中度 / 轻度 / 智能；自适应为独立模式，无自适应偏好档位 |
+| 长按循环 | 双耳共用，可在降噪、自适应、通透、关闭中选择，至少选择一种 |
+| 预设 EQ | 基础 3 种，另一种从固件 118 起提供；丹拿版另有专属预设（其中一种从固件 136 起提供） |
+| 自定义 EQ | 62 / 250 / 1k / 4k / 8k / 16k Hz，增益 −6～+6 dB，最多 3 组 |
+| 空间音频 | 关闭 / 固定，无头部跟踪；开启空间音频会先关闭 Hi-Res |
+| 智能音量调节 | 位于“更多设置”，耳机返回状态后才可操作，写入后回读确认 |
+
+真机仍需核对：连接初始化、实际能力位图、全部降噪档位、智能音量调节、手势、自定义 EQ 和双设备连接。
+
+### 双设备管理
+
+双设备连接开关、设备列表和远程管理是三项独立能力。固件不支持远程管理时，EncoDeck 只保留开关和设备列表，并提示到对应设备的蓝牙设置中连接、断开或移除；支持时，每次操作都回读设备列表确认目标设备状态。
 
 ## vivo / iQOO
 
@@ -101,13 +134,19 @@ Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音
 - TOUCHV2 为五字节双耳半字节配置；支持单击、双击、三击、长按 1 秒 / 3 秒，同耳两种长按互斥。动作 4 / 5（音量）明确标为推断且需实验性开关；未知动作 8–15 仅显示 / 保留读回值，不可选择写入。
 - EDGE 直接打开已知 RFCOMM 通道，以带帧 BASIC 应用版本查询确认连接；其他 RFCOMM 型号保留带帧 / 裸 CSR API 探测。固定长度回包增量解析，裸可变长度回包依赖 40ms 静默分段；任意粘包 / payload 内长停顿仍不可靠。BLE 端点仅按已知地址绑定，不按同名自动选择。
 - 空间音频与头部跟踪始终为 Unsupported，不属于实验性功能。低延迟（仅见 HyperOS 设置）、EQ / 9ECA、双设备详细管理、详细固件信息，以及佩戴 / 充电 / 查找 / 贴合度 / 降噪循环 / OTA 均未支持；EDGE 可读取应用版本，不含固件升级。
-- 本轮验证：43 项控制通道 / MOONDROP 定向、全套 516 项测试通过。实际生产连接器、控制器、supervisor 与现有 Probe monitor 均在 Windows EDGE 固件 1.3.0 进入 `ControlReady`，刷新读到电量、降噪、增益及双设备状态；未发设置写入、未断开音频。证据见 `artifacts/verification/windows-control-channel.txt`。此前模拟 GATT 与实际 WinUI 页面验证不代替其他型号真机验证。
+- EDGE 固件 1.3.0 在 Windows 上进入 `ControlReady`，可读到电量、降噪、增益及双设备状态；设置写入尚未在真机上发送。其他型号仅有模拟测试。
 
 ## 索尼
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
 | INZONE H9 II、LinkBuds、LinkBuds Clip、LinkBuds Fit、LinkBuds Open、LinkBuds S、MDR-XB950B1、MDR-XB950N1、ULT WEAR、WF-1000X、WF-1000XM3、WF-1000XM4、WF-1000XM5、WF-1000XM6、WF-C500、WF-C510、WF-C700N、WF-C710N、WF-H800、WF-SP700N、WF-SP800N、WF-SP900、WH-1000XM2、WH-1000XM3、WH-1000XM4、WH-1000XM4C、WH-1000XM5、WH-1000XM6、WH-CH520、WH-CH530 series、WH-CH700N、WH-CH720N、WH-CH730N series、WH-H800、WH-H810、WH-H900N、WH-H910N、WH-XB700、WH-XB900N、WH-XB910N、WI-1000X、WI-1000XM2、WI-C100、WI-C600N、WI-H700、WI-SP600N | 电量 / 充电状态（按设备上报）；降噪 / 环境声、预设 EQ（需设备确认） |
+
+索尼控制通道使用需认证的加密 RFCOMM 连接，按设备提供的顺序尝试两个控制服务；握手失败后，下次重试优先换用另一服务，成功后优先复用已验证的服务。未收到应答时每 750 ms 重发原帧，最多 10 次后结束会话。
+
+尚未覆盖：ULT 组合 EQ、自定义 EQ、环境声档位、手势、双设备连接。
+
+**连接失败时的复测方法**：先在 Windows 中连接耳机，观察是否出现电量和 `ControlReady`；排查时可暂时断开手机等其他控制客户端。仍失败时导出诊断包，查看 `RFCOMM connecting` 的服务与保护级别、`Sony handshake failed` 是否切换了备用服务，以及 `Sony MDR protocol ... confirmed` 是否出现。能播放音频不代表控制通道可用。
 
 ## AKG
 
@@ -121,13 +160,16 @@ Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
-| REDMI Buds 6 Pro 电竞版、REDMI Buds 7S、REDMI Buds 8、REDMI Buds 8 Active、REDMI Buds 8 Lite、REDMI Buds 8 Pro、REDMI Buds 8 活力版、REDMI Buds 8 青春版、REDMI Buds 8S、REDMI Headphones Neo、REDMI 头戴降噪耳机、REDMI Buds 6 Pro、REDMI Buds SE、Redmi Buds 4、Redmi Buds 4 Active、Redmi Buds 4 Pro、Redmi Buds 4 哈利·波特版、Redmi Buds 4活力版、Redmi Buds 5、Redmi Buds 5 AAPE、Redmi Buds 5 Pro、Redmi Buds 5 Pro Gaming、Redmi Buds 6 Active、Redmi Buds 6 Lite、Redmi Buds 6 Play、Redmi Buds 6 活力版、Redmi Buds 6 青春版、Redmi Buds 6S、Redmi Buds 6、Xiaomi Air 5、Xiaomi Buds 3、Xiaomi Buds 3 Pro、Xiaomi Buds 3 Star Wars、Xiaomi Buds 3T Pro、Xiaomi Buds 4、Xiaomi Buds 4 Pro、Xiaomi Buds 5、Xiaomi Buds 6、Xiaomi OpenWear Stereo、Xiaomi OpenWear Stereo Pro、Xiaomi 开放式耳机、Xiaomi 开放式耳机 Pro、Xiaomi 真无线降噪耳机 3 迪士尼100周年限定版、Xiaomi 耳夹式耳机、Xiaomi 骨传导耳机2、Xiaomi Buds 5 Pro、Xiaomi Buds 5 Pro Wi-Fi、小米 Air4 SE | 电量；降噪 / 通透及档位、预设 EQ、游戏低延迟、双设备开关、空间音频 / 头部跟踪、提示音量（按官方型号配置与设备回读开放） |
+| REDMI Buds 6 Pro 电竞版、REDMI Buds 7S、REDMI Buds 8、REDMI Buds 8 Active、REDMI Buds 8 Lite、REDMI Buds 8 Pro、REDMI Buds 8 活力版、REDMI Buds 8 青春版、REDMI Buds 8S、REDMI Headphones Neo、REDMI 头戴降噪耳机、REDMI Buds 6 Pro、REDMI Buds SE、Redmi Buds 4、Redmi Buds 4 Active、Redmi Buds 4 Pro、Redmi Buds 4 哈利·波特版、Redmi Buds 4活力版、Redmi Buds 5、Redmi Buds 5 AAPE、Redmi Buds 5 Pro、Redmi Buds 5 Pro Gaming、Redmi Buds 6 Active、Redmi Buds 6 Lite、Redmi Buds 6 Play、Redmi Buds 6 活力版、Redmi Buds 6 青春版、Redmi Buds 6S、Redmi Buds 6、Xiaomi Air 5、Xiaomi Buds 3、Xiaomi Buds 3 Pro、Xiaomi Buds 3 Star Wars、Xiaomi Buds 3T Pro、Xiaomi Buds 4、Xiaomi Buds 4 Pro、Xiaomi Buds 5、Xiaomi Buds 6、Xiaomi OpenWear Stereo、Xiaomi OpenWear Stereo Pro、Xiaomi 开放式耳机、Xiaomi 开放式耳机 Pro、Xiaomi 真无线降噪耳机 3 迪士尼100周年限定版、Xiaomi 耳夹式耳机、Xiaomi 骨传导耳机2、Xiaomi Buds 5 Pro、Xiaomi Buds 5 Pro Wi-Fi、小米 Air4 SE | 电量；降噪 / 通透及档位、预设 EQ、游戏低延迟、双设备开关、空间音频 / 头部跟踪、提示音量（按型号配置与设备回读开放） |
 
 ## 漫步者
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
 | EDIFIER W820NB、EDIFIER W200BT | 电量、降噪、通透 |
+| EDIFIER Lolli 3、EDIFIER Lolli3 ANC、EDIFIER LolliPods 2022、EDIFIER Lolli Pro 2、EDIFIER Lolli Pods Pro、EDIFIER LolliClip、EDIFIER ATOMBUDS at03、EDIFIER Atombuds AS02、EDIFIER AtomBuds、EDIFIER ATOMBUDS A1、EDIFIER Lolli Pro 3、EDIFIER Lolli Pro 2S、EDIFIER Atom Max、EDIFIER AtomBuds Plus、EDIFIER Lolli Pro 3i、EDIFIER Lolli ANC、EDIFIER Lolli Pro 5、EDIFIER Atom Lace、EDIFIER Atom Dot、EDIFIER LolliClip AI、EDIFIER Lolli Air、EDIFIER Lolli Pro SE、EDIFIER Atom CC、EDIFIER Atom ANC、EDIFIER Atom Evo、EDIFIER Lolli5 ANC、EDIFIER LolliClip SE、EDIFIER Atom Max 2.0 | 左右耳与充电盒电量；降噪 / 通透仅在耳机回读确认后显示 |
+
+真无线型号按型号使用 SPP 或 GATT 控制通道（Lolli Pods Pro 仅 GATT），连接后先用只读状态查询协商帧版本，不发送控制命令试探。电量来自 TWS 状态查询，离线（0）和不可用（255）不显示为 0%；只有单耳在线时不保留另一耳的旧读数。真无线型号均未真机验证，暂不支持充电状态、降噪档位和 EQ。
 
 ## 未列出的型号
 
@@ -148,19 +190,32 @@ Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音
 
 - 降噪 / 关闭 / 通透；读取 ANC 模式成功后提供标准降噪 / 抗风噪。
 - Smart Pause（佩戴检测 / 摘下自动暂停）、耳机低延迟模式。
-- 左右耳单击、双击、三击和长按自定义；按官方动作约束提供播放、切歌、音量、语音助手、降噪 / 通透与触控锁定切换。通话手势不开放改写，未知动作保留显示。
+- 左右耳单击、双击、三击和长按自定义；按型号动作约束提供播放、切歌、音量、语音助手、降噪 / 通透与触控锁定切换。通话手势不开放改写，未知动作保留显示。
 - 各项功能分别在有效回读后开放；写入要求 ACK 与实际状态回读一致。注册 ANC 与通透两个通知域，跟随手机 / 耳机端操作；保存的通透等级不会误判成已开启通透。
 
-证据为 Smart Control 4.9.3 的 TW4 型号配置、官方应用控制逻辑和第三方 TW4 真机协议记录，已覆盖模拟设备读写与异常回包测试、WinUI 页面截图检查。**尚未在本机 TW4 真机验证**（截图中的 5.19.1 为用户提供的信息），不宣称 EQ、双设备管理、贴合度检测、查找耳机或固件更新已适配。其他真无线型号不继承 TW4 的控制命令。
+依据 TW4 型号配置和第三方 TW4 真机协议记录实现，已覆盖模拟设备读写与异常回包测试、WinUI 页面截图检查。**尚未在本机 TW4 真机验证**（截图中的 5.19.1 为用户提供的信息），不宣称 EQ、双设备管理、贴合度检测、查找耳机或固件更新已适配。其他真无线型号不继承 TW4 的控制命令。
 
 HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。
 
-## 迈从 / 雷蛇 USB 与水月雨动画研究
+## 迈从 / 雷蛇 USB
 
 X9 和 BlackShark V2 Pro 2020/2023 有精确 PID 的专用电量读取，其他新增 USB 型号只提供识别和条件性标准电量。尚无本机真机验证。
 
-Barracuda X 2022 的 `1532:0552` 接收器新增专用无线连接、电量及充电线状态查询，依据官方配对工具静态分析与公开协议记录实现，尚待本项目实机验证。`0550` 等其他接收器版本仍仅识别，详见 [Barracuda X 适配说明](BARRACUDA_X.md)。
+### Razer Barracuda X
+
+Barracuda X 2022 接收器 `1532:0552` 与替换接收器 `1532:0550` 支持无线连接、电量及充电线状态查询，依据[公开协议记录](https://github.com/leag/razer-barracuda/blob/main/docs/PROTOCOL.md)实现，尚未真机验证。其他年份的 Barracuda X、Chroma、Pro 仅识别。
+
+- 只向精确 VID/PID、usage page `ff00`、usage `1` 的 HID 集合发送查询；两种接收器查询流程相同，报文封装不同。
+- 流程：握手 → `E3` 查询无线连接 → `E0` 确认本地路由（不接管其他程序正在使用的路由）→ `E1` 暂选耳机路由 → 查询电量 `21` 与充电线 `2A`；结束后无论成败都恢复本地路由。
+- USB 枚举不算无线连接；电量只显示设备直接报告的 0–100，不估算；充电线已连接不代表充电完成。无有效回答时清除旧数据。
+- 不启用 EQ、游戏模式、配对或固件写入。
+
+查询失败时，日志会记录卡在哪一步（握手、`E3`、`E0`、`E1`、`21`、`2A`）以及 HID 集合信息，不记录个人数据。连接接收器后可运行：
+
+```powershell
+dotnet run --project tools/EncoDeck.Probe -- usb-devices
+```
 
 ## 荣耀耳机
 
-7 个官方插件型号档案，均未真机验证。Earbuds 2 SE/2 Lite、3 Pro、3i、3i 尊享版按配置提供电量、降噪与佩戴检测；3 Pro 另有降噪档位与双设备。X3i 提供电量和设备返回预设后的 EQ；3i、3i 尊享版也在设备返回预设后提供 EQ；X5 提供电量、佩戴检测、双设备与设备返回预设后的 EQ。X3 仅识别和素材，Milan BLE 控制未移植；新型号不继承旧型号的控制能力。
+7 个型号档案，均未真机验证。Earbuds 2 SE/2 Lite、3 Pro、3i、3i 尊享版按配置提供电量、降噪与佩戴检测；3 Pro 另有降噪档位与双设备。X3i 提供电量和设备返回预设后的 EQ；3i、3i 尊享版也在设备返回预设后提供 EQ；X5 提供电量、佩戴检测、双设备与设备返回预设后的 EQ。X3 仅识别和素材，Milan BLE 控制未移植；新型号不继承旧型号的控制能力。

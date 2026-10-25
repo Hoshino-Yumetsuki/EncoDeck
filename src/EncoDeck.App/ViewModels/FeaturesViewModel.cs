@@ -254,6 +254,9 @@ public sealed class FeaturesViewModel
     public IReadOnlyList<SourceDevice> SourceDevices =>
         State.SourceDevices?.Value.OrderByDescending(d => d.IsThisDevice).ThenByDescending(d => d.IsConnected).ToArray() ?? [];
 
+    /// <summary>The list is last session's (restored without addresses): shown, but not actionable until the earbuds report it.</summary>
+    public bool AreSourceDevicesCached => State.SourceDevices?.Source == StateSource.Cache;
+
     public byte[]? PreferredAddress => State.PreferredDevice?.Value.Address;
 
     public bool IsPreferredKnown => State.PreferredDevice is not null;

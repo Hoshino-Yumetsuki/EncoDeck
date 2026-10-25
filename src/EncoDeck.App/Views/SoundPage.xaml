@@ -89,8 +89,6 @@
             </Border>
             </StackPanel>
             </Grid>
-            <controls:LeAudioSettings />
-            <controls:LhdcSettings />
         </StackPanel>
         </Grid>
     </ScrollViewer>

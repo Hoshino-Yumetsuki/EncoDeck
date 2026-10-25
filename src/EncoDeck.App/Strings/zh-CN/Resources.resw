@@ -122,6 +122,8 @@
   <data name="Nav_Controls.Content" xml:space="preserve"><value>控制</value></data>
   <data name="Nav_Devices.Content" xml:space="preserve"><value>设备</value></data>
   <data name="Nav_Settings.Content" xml:space="preserve"><value>设置</value></data>
+  <data name="Nav_Labs.Content" xml:space="preserve"><value>实验室</value></data>
+  <data name="Labs_Summary.Text" xml:space="preserve"><value>实验性音频功能。这些功能会更改 Windows 蓝牙或音频设置，不保证适用于所有设备。</value></data>
   <data name="Home_GenericModel.Title" xml:space="preserve"><value>未识别的型号</value></data>
   <data name="Home_NoDevice_Title.Text" xml:space="preserve"><value>没有找到支持的耳机</value></data>
   <data name="Home_NoDevice_Body.Text" xml:space="preserve"><value>请先在 Windows 蓝牙设置中配对耳机。配对后 EncoDeck 会自动发现它。</value></data>
@@ -337,7 +339,7 @@
   <data name="Home_Spatial.Text" xml:space="preserve"><value>空间音频</value></data>
   <data name="Home_GameMode.Header" xml:space="preserve"><value>游戏模式</value></data>
   <data name="Home_Model_Name" xml:space="preserve"><value>耳机 3D 模型，左右拖动或按方向键旋转</value></data>
-  <data name="Home_GenericModel_Message" xml:space="preserve"><value>欢律的型号列表中也没有这款耳机（产品 ID {0}），无法得知它的设置方式，因此只显示电量与固件信息。</value></data>
+  <data name="Home_GenericModel_Message" xml:space="preserve"><value>型号列表中没有这款耳机（产品 ID {0}），无法得知它的设置方式，因此只显示电量与固件信息。</value></data>
   <data name="Error_CycleAtLeastOne" xml:space="preserve"><value>最少选择 1 项</value></data>
   <data name="Gesture_CycleTitle" xml:space="preserve"><value>{0}切换的噪声控制模式</value></data>
   <data name="Gesture_CycleNote" xml:space="preserve"><value>最少选择 {0} 项以进行切换</value></data>
@@ -415,6 +417,8 @@
   <data name="Home_DeviceBusy" xml:space="preserve"><value>正在处理…</value></data>
   <data name="Home_DeviceConnected" xml:space="preserve"><value>已连接 · 点按断开</value></data>
   <data name="Home_DeviceTapToConnect" xml:space="preserve"><value>点按连接</value></data>
+  <data name="Home_DeviceLastConnected" xml:space="preserve"><value>上次已连接</value></data>
+  <data name="Home_DeviceNotConnected" xml:space="preserve"><value>未连接</value></data>
   <data name="Home_DeviceThisPc_Hint" xml:space="preserve"><value>在 Windows 蓝牙设置中断开本机</value></data>
   <data name="Home_DeviceThisPc_Title" xml:space="preserve"><value>这是本机</value></data>
   <data name="Home_DeviceThisPc_Message" xml:space="preserve"><value>耳机正通过蓝牙连接这台电脑。要断开本机，请在 Windows 蓝牙设置中断开耳机。</value></data>

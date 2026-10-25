@@ -7,15 +7,27 @@ namespace EncoDeck.Tests.Protocol;
 public sealed class BarracudaXTests
 {
     [Fact]
-    public void OnlyDocumentedMacronixCollectionReceivesQueries()
+    public void OnlyDocumentedReceiverCollectionsReceiveQueries()
     {
         Assert.True(BarracudaXProtocol.IsCollection(0x1532, 0x0552, 0xFF00, 1));
-        Assert.False(BarracudaXProtocol.IsCollection(0x1532, 0x0550, 0xFF00, 1));
+        Assert.True(BarracudaXProtocol.IsCollection(0x1532, 0x0550, 0xFF00, 1));
+        Assert.False(BarracudaXProtocol.IsCollection(0x1532, 0x0551, 0xFF00, 1));
+        Assert.False(BarracudaXProtocol.IsCollection(0x1532, 0x0550, 0xFF00, 2));
         Assert.False(BarracudaXProtocol.IsCollection(0x1532, 0x0552, 0x000C, 1));
         Assert.False(BarracudaXProtocol.IsCollection(0x1532, 0x0552, 0xFF00, 2));
         Assert.False(BarracudaXProtocol.IsCollection(0x1533, 0x0552, 0xFF00, 1));
         Assert.Equal("razer-usb-barracuda-x", UsbHeadsetProfiles.MatchHardware([@"USB\VID_1532&PID_0552&MI_03"])?.ModelId);
+        Assert.Equal("razer-usb-barracuda-x", UsbHeadsetProfiles.MatchHardware([@"USB\VID_1532&PID_0550&MI_03"])?.ModelId);
         Assert.Null(UsbHeadsetProfiles.MatchHardware([@"USB\VID_1532&PID_05520"]));
+    }
+
+    [Fact]
+    public void ReplacementEnvelopeMatchesOfficialSdkCrcAndReportId()
+    {
+        Assert.Equal(Convert.FromHexString("028401DE520100000000000000000000"), BarracudaXProtocol.ReplacementHandshake()[..16]);
+        Assert.Equal(Convert.FromHexString("0280064B3450410E2101E30000000000"), BarracudaXProtocol.ReplacementQuery(0x21, 0xE3)[..16]);
+        Assert.Equal(Convert.FromHexString("02800856175041082103210000000000"), BarracudaXProtocol.ReplacementQuery(0x21, 0x21)[..16]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => BarracudaXProtocol.ReplacementQuery(1, 0xF0));
     }
 
     [Theory]

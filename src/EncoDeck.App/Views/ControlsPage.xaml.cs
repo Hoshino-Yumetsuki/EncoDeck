@@ -319,12 +319,12 @@ public sealed partial class ControlsPage : Page
 
         var devices = f.SourceDevices;
         string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsThisDevice}/{d.IsAudioActive}/{d.Name}"))
-            + $"#{ready}#{f.CanManageSourceDevices}#{f.IsPending("multi-connect")}#{f.IsPending("preferred-device")}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
+            + $"#{ready}#{f.AreSourceDevicesCached}#{f.CanManageSourceDevices}#{f.IsPending("multi-connect")}#{f.IsPending("preferred-device")}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
         if (signature == _sourceSignature) return;
         _sourceSignature = signature;
 
         SourceHost.Children.Clear();
-        foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready && !f.IsPending("multi-connect")));
+        foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready && !f.IsPending("multi-connect") && !f.AreSourceDevicesCached));
         if (!f.CanManageSourceDevices)
             SourceHost.Children.Add(new TextBlock { Text = Loc.Get("Dual_ManagementUnavailable"), TextWrapping = TextWrapping.Wrap,
                 Style = (Style)Application.Current.Resources["SecondaryTextStyle"] });
@@ -360,7 +360,8 @@ public sealed partial class ControlsPage : Page
         text.Children.Add(new TextBlock { Text = DisplayName(device), TextTrimming = TextTrimming.CharacterEllipsis });
         text.Children.Add(new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(device.Name) ? DescribeSource(device) : $"{DescribeSource(device)} · {device.AddressText}",
+            // A list restored from last session carries no addresses.
+            Text = string.IsNullOrWhiteSpace(device.Name) || device.Address.Length == 0 ? DescribeSource(device) : $"{DescribeSource(device)} · {device.AddressText}",
             Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
             IsTextSelectionEnabled = true,
         });

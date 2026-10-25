@@ -42,6 +42,11 @@ internal static class ProbeApp
             Console.Error.WriteLine("Cancelled.");
             return 130;
         }
+        catch (Exception ex) when (ex is TimeoutException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            Console.Error.WriteLine($"Stopped: {ex.GetType().Name}; {ex.Message}; HRESULT=0x{ex.HResult:X8}");
+            return 5;
+        }
     }
 
     private static int Unknown(string command)
@@ -86,6 +91,7 @@ internal static class ProbeApp
               le-audio --device <name>    Reconnect existing LE bonds and log per-ear links/control.
                        [--seconds N]     Default 60 seconds. Audio streaming remains unverified.
                        [--pair --confirm-write]  Confirm multipoint off, then wait for pairing mode and replace this PC's bonds.
+                       [--legacy-pairing]  With --pair, use explicit addresses without Windows set discovery for comparison.
               monitor [--seconds N]       Run the app's device runtime headlessly, print state changes
                                           and finally every feature value the session start read.
                       [--set-anc a,b --confirm-write]  Also run commands (off|anc|transparency|adaptive|smart|deep|medium|light|less|standard|more).
