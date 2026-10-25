@@ -79,6 +79,22 @@ public class PopupPlacementTests
         Assert.Equal(new PixelRect(2002, 616, 540, 300), rect);
     }
 
+    [Theory]
+    [InlineData(320)]
+    [InlineData(384)]
+    [InlineData(424)]
+    [InlineData(496)]
+    public void AboveQuickSettings_WidthFollowsTheCards(int regionWidth)
+    {
+        // The panel is the cards' column, not a fixed width: a wider Quick Settings makes a wider
+        // panel, whatever the display, scaling factor or Windows build.
+        var cards = new PixelRect(2560 - regionWidth, 916, regionWidth, 612);
+        var rect = PopupPlacement.PlaceAboveQuickSettings(cards, WorkArea150, 300, 12);
+        Assert.NotNull(rect);
+        Assert.Equal(regionWidth - 24, rect!.Value.Width);
+        Assert.Equal(cards.X + 12, rect.Value.X);
+    }
+
     [Fact]
     public void AboveQuickSettings_GoesBesideTheCardsWhenTheTopIsTooLow()
     {

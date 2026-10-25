@@ -114,6 +114,13 @@ internal static partial class WindowInterop
         _ = SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
 
+    /// <summary>Window rectangle in screen pixels.</summary>
+    public static PixelRect GetWindowBounds(Window window)
+    {
+        _ = GetWindowRect(GetHandle(window), out var w);
+        return PixelRect.FromLtrb(w.Left, w.Top, w.Right, w.Bottom);
+    }
+
     /// <summary>Window and client rectangles in screen pixels (diagnostics: a frame shows as a difference).</summary>
     public static (PixelRect Window, PixelRect Client) GetBounds(Window window)
     {
@@ -254,9 +261,13 @@ internal static partial class WindowInterop
     /// <summary>True while the window is in the topmost band.</summary>
     public static bool IsTopmost(Window window) => (GetWindowLongPtr(GetHandle(window), GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
 
-    /// <summary>Moves and sizes the window in physical pixels.</summary>
+    /// <summary>
+    /// Moves and sizes the window in physical pixels. SetWindowPos directly: the flyouts are not
+    /// resizable by the user, and this is the API that still applies a programmatic size (Quick
+    /// Settings can be wider or narrower than when the hidden panel was last shown).
+    /// </summary>
     public static void MoveAndResize(Window window, PixelRect rect) =>
-        GetAppWindow(window).MoveAndResize(new Windows.Graphics.RectInt32(rect.X, rect.Y, rect.Width, rect.Height));
+        _ = SetWindowPos(GetHandle(window), 0, rect.X, rect.Y, rect.Width, rect.Height, SWP_NOZORDER | SWP_NOACTIVATE);
 
     /// <summary>The tray icon's rectangle (physical pixels), or null. Returns the overflow chevron when the icon is hidden there.</summary>
     public static PixelRect? GetTrayIconRect(Guid iconId)

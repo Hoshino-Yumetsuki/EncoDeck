@@ -13,6 +13,8 @@
    <StackPanel Orientation="Horizontal" Spacing="8">
     <Button x:Name="Switch" Click="OnSwitch" />
     <Button x:Name="Restore" Click="OnRestore" />
+    <Button x:Name="DisableClassic" Click="OnDisableClassic" Visibility="Collapsed" />
+    <Button x:Name="EnableClassic" Click="OnEnableClassic" Visibility="Collapsed" />
     <Button x:Name="Cancel" Click="OnCancel" Visibility="Collapsed" />
     <HyperlinkButton x:Name="OpenBluetooth" x:Uid="LeAudio_OpenBluetooth" NavigateUri="ms-settings:bluetooth" />
    </StackPanel>

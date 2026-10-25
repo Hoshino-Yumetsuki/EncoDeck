@@ -44,6 +44,13 @@ public interface IAdvancedDeviceCommands
 
     Task<CommandResult> MultiConnectAsync(MultiConnectOperation operation, byte[] address, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sets the earbuds' LE/BR mode switch (<c>0x0433</c>). The official client sets it on when
+    /// switching to LE Audio and off when restoring Classic; the firmware syncs it to both earbuds
+    /// and persists it in NV.
+    /// </summary>
+    Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default);
+
     /// <summary>Sets the preferred source device; null means automatic selection.</summary>
     Task<CommandResult> SetPreferredDeviceAsync(byte[]? address, CancellationToken cancellationToken = default);
 

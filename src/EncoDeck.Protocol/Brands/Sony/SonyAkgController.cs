@@ -3,6 +3,7 @@ using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands.Akg;
 using EncoDeck.Protocol.Transport;
+using Microsoft.Extensions.Logging;
 
 namespace EncoDeck.Protocol.Brands.Sony;
 
@@ -31,9 +32,11 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
     {
         if (Sony)
         {
+            Logger.LogInformation("Starting Sony MDR protocol handshake");
             var protocol = await Query(0, 1, 0, cancellationToken).ConfigureAwait(false);
             if (protocol is null) return false;
             _v2 = protocol.Length == 8;
+            Logger.LogInformation("Sony MDR protocol {Protocol} confirmed", _v2 ? "v2" : "v1");
             if (!_v2) _eqType = 1; // MDR v1 PRESET_EQ; v2 assigns the same feature type 0.
             if (_v2)
             {
@@ -61,8 +64,16 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
         try
         {
             if (!await Send(command, payload ?? (command == 0x11 && !Sony ? [] : [subtype]), ct).ConfigureAwait(false)) return null;
-            try { return await completion.Task.WaitAsync(TimeSpan.FromSeconds(3), ct).ConfigureAwait(false); }
-            catch (TimeoutException) { return null; }
+            try
+            {
+                await Task.WhenAny(completion.Task, Closed).WaitAsync(TimeSpan.FromSeconds(3), ct).ConfigureAwait(false);
+                return completion.Task.IsCompletedSuccessfully ? await completion.Task.ConfigureAwait(false) : null;
+            }
+            catch (TimeoutException)
+            {
+                Logger.LogInformation("Control response timed out: command {Command:X2}, subtype {Subtype:X2}", command, subtype);
+                return null;
+            }
         }
         finally { lock (_gate) { if (_pending == completion) _pending = null; } }
     }
@@ -74,11 +85,33 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
         lock (_gate) { _ack = ack; _ackSequence = (byte)(_sequence ^ 1); }
         try
         {
-            if (!await WriteAsync(SonyFrameCodec.Encode(0x0c, _sequence, [command, .. payload]), ct).ConfigureAwait(false)) return false;
-            try { await ack.Task.WaitAsync(TimeSpan.FromSeconds(3), ct).ConfigureAwait(false); }
-            catch (TimeoutException) { return false; }
-            _sequence ^= 1;
-            return true;
+            // Sound Connect Bl.e / yl.c: 750 ms ACK timeout, at most ten retransmissions.
+            // Retransmit the same frame and sequence; changing the bit could apply a SET twice.
+            byte[] frame = SonyFrameCodec.Encode(0x0c, _sequence, [command, .. payload]);
+            for (int attempt = 0; attempt <= 10; attempt++)
+            {
+                if (Closed.IsCompleted || !await WriteAsync(frame, ct).ConfigureAwait(false)) return false;
+                try
+                {
+                    await Task.WhenAny(ack.Task, Closed).WaitAsync(TimeSpan.FromMilliseconds(750), ct).ConfigureAwait(false);
+                    if (!ack.Task.IsCompletedSuccessfully || Closed.IsCompleted) return false;
+                    _sequence ^= 1;
+                    return true;
+                }
+                catch (TimeoutException)
+                {
+                    Logger.LogInformation("Sony ACK timeout: command {Command:X2}, sequence {Sequence}, attempt {Attempt}/11", command, _sequence, attempt + 1);
+                }
+            }
+            // Like the official client, reconnect when ACK retries are exhausted.
+            // The peer may have processed the request, so do not reuse its sequence bit.
+            EndSession();
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            EndSession();
+            throw;
         }
         finally { lock (_gate) { if (_ack == ack) _ack = null; } }
     }
@@ -166,12 +199,16 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
             {
                 if (frame.Type == 1 && frame.Payload.Length == 0)
                 { lock (_gate) { if (frame.Sequence == _ackSequence) _ack?.TrySetResult(); } continue; }
-                if (frame.Type != 0x0c || frame.Payload.Length < 2) continue;
-                // ACK carries the next sequence number (the receiver's expected bit).
-                WriteAsync(SonyFrameCodec.Encode(1, (byte)(frame.Sequence ^ 1), []), CancellationToken.None).GetAwaiter().GetResult();
+                // Official DataType.ackRequired / Bl.f also ACK common, table-2 and
+                // unimplemented DATA messages. Ignoring them stalls the peer's send queue.
+                bool ackRequired = frame.Type is 0 or 2 or 7 or 9 or 10 or 12 or 13 or 14 or 39 or 45;
+                bool shot = frame.Type is 16 or 18 or 25 or 26 or 28 or 29 or 30;
+                if (!ackRequired && !shot) continue;
+                if (ackRequired && !WriteAsync(SonyFrameCodec.Encode(1, (byte)(frame.Sequence ^ 1), []), CancellationToken.None).GetAwaiter().GetResult()) continue;
                 if (_receivedSequence == frame.Sequence) continue;
                 _receivedSequence = frame.Sequence;
-                Handle(frame.Payload);
+                // Only table-1 payloads are parsed; other tables can reuse opcode numbers.
+                if (frame.Type is 12 or 28 && frame.Payload.Length >= 2) Handle(frame.Payload);
             }
         }
         else foreach (var frame in _akg.Feed(data)) Handle([frame[1], .. frame.AsSpan(3)]);

@@ -31,6 +31,8 @@ internal static class ProbeApp
                 "set-eq" => await WriteCommands.SetEqualizerAsync(options, ct),
                 "le-br-switch" => await WriteCommands.SetLeBrSwitchAsync(options, ct),
                 "monitor" => await MonitorCommand.RunAsync(options, ct),
+                "le-audio" => await LeAudioCommand.RunAsync(options, ct),
+                "multipoint-off" => await LeAudioCommand.DisableMultipointCommandAsync(options, ct),
                 "render-model" => await RenderModelCommand.RunAsync(options, ct),
                 _ => Unknown(options.Command),
             };
@@ -72,6 +74,7 @@ internal static class ProbeApp
                   [--payload HEX]         Commands outside 0x01xx are refused.
 
             Write commands (change device settings; require --confirm-write):
+              multipoint-off              Disable device multipoint and confirm by fresh read-back.
               set-anc --index N[,N..]     Select noise-control protocol index(es), read back after
                       [--dwell-ms 6000]   each write, then restore the original mode
                       [--no-restore]      (only indices documented for the model are accepted).
@@ -80,6 +83,9 @@ internal static class ProbeApp
                            [--dwell-ms 3000]   also set it (0x0433) and read it back. Not restored.
 
             Runtime:
+              le-audio --device <name>    Reconnect existing LE bonds and log per-ear links/control.
+                       [--seconds N]     Default 60 seconds. Audio streaming remains unverified.
+                       [--pair --confirm-write]  Confirm multipoint off, then wait for pairing mode and replace this PC's bonds.
               monitor [--seconds N]       Run the app's device runtime headlessly, print state changes
                                           and finally every feature value the session start read.
                       [--set-anc a,b --confirm-write]  Also run commands (off|anc|transparency|adaptive|smart|deep|medium|light|less|standard|more).

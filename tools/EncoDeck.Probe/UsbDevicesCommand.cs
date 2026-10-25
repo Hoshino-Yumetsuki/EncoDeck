@@ -19,8 +19,8 @@ internal static class UsbDevicesCommand
         }
         foreach (var device in devices)
         {
-            int? battery = watcher.Container(device.Identity.DeviceId) is { } container ? await UsbHidBattery.ReadAsync(container, ct).ConfigureAwait(false) : null;
-            Console.WriteLine($"{device.Identity.Name}: receiver present; documented/standard HID battery = {battery?.ToString() ?? "unavailable"}; headset radio link unconfirmed");
+            var status = watcher.Container(device.Identity.DeviceId) is { } container ? await UsbHidBattery.ReadStatusAsync(container, ct).ConfigureAwait(false) : new UsbHeadsetStatus();
+            Console.WriteLine($"{device.Identity.Name}: receiver present; documented/standard HID battery = {status.Level?.ToString() ?? "unavailable"}; cable connected = {status.IsCharging?.ToString() ?? "unknown"}; headset radio link = {status.IsConnected?.ToString() ?? "unconfirmed"}");
         }
         return 0;
     }

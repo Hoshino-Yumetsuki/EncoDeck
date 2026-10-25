@@ -39,6 +39,9 @@ public abstract class BrandControllerBase : IDeviceController
 
     public Task Closed => _closed.Task;
 
+    /// <summary>Ends a session whose protocol sequence can no longer be safely reused.</summary>
+    protected void EndSession() => _closed.TrySetResult();
+
     public event EventHandler? CaseLidOpened;
 
     protected void RaiseCaseLidOpened() => CaseLidOpened?.Invoke(this, EventArgs.Empty);
@@ -125,6 +128,8 @@ public abstract class BrandControllerBase : IDeviceController
     public abstract Task<CommandResult> RefreshAsync(CancellationToken cancellationToken);
 
     public virtual Task<CommandResult> SetSpatialAudioAsync(SpatialAudioMode mode, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Spatial audio"));
+
+    public virtual Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("LE/BR switch"));
 
     public virtual Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Game sound"));
 

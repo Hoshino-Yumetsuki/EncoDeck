@@ -170,6 +170,8 @@ public sealed class SonyAkgTests
         var channel = new FakeByteChannel();
         await using var controller = profile.CreateController(channel, new(identity, store, () => false, NullLoggerFactory.Instance, TimeProvider.System));
         Assert.False(await controller.InitializeAsync(TestContext.Current.CancellationToken));
+        Assert.True(controller.Closed.IsCompleted);
+        Assert.Equal(11, channel.Written.Count);
         Assert.Null(store.Current.NoiseControl);
         Assert.Null(store.Current.Battery.Left);
     }

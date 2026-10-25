@@ -17,7 +17,8 @@ public static class UsbHeadsetProfiles
             var match = Regex.Match(id, @"^USB\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4})(?:&|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (!match.Success) continue;
             ushort vendor = Convert.ToUInt16(match.Groups[1].Value, 16), product = Convert.ToUInt16(match.Groups[2].Value, 16);
-            string? model = vendor == 0x24AE && product == 0x7205 ? "rapoo-usb-vh800-pro" : UsbVendorBatteryProtocol.Model(vendor, product);
+            string? model = vendor == 0x24AE && product == 0x7205 ? "rapoo-usb-vh800-pro" :
+                BarracudaXProtocol.IsReceiver(vendor, product) ? "razer-usb-barracuda-x" : UsbVendorBatteryProtocol.Model(vendor, product);
             if (model is not null) return Create().OfType<UsbHeadsetProfile>().Single(p => p.ModelId == model);
         }
         return null;

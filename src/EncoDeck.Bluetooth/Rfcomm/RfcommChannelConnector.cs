@@ -6,6 +6,7 @@ using EncoDeck.Core.Privacy;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Protocol.Brands.Moondrop;
 using EncoDeck.Protocol.Brands.Sennheiser;
+using EncoDeck.Protocol.Brands.Sony;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,10 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                         if (LeAudioLink.IsPairingChanging(device.BluetoothAddress))
                             throw new InvalidOperationException("The earbuds' pairing is being changed.");
                         bool bonded = await LeAudioLink.IsBondedAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                        if (!bonded && LeAudioLink.IsPreferred(device.BluetoothAddress))
+                            throw new InvalidOperationException("LE Audio 配对未完成，请重新进入配对模式后再试一次。");
+                        if (!bonded && await LeAudioLink.HasSecondaryBondAsync(device.BluetoothAddress, cancellationToken, device.Name).ConfigureAwait(false))
+                            throw new InvalidOperationException("LE Audio 配对不完整：主耳 LE 绑定缺失，请重新切换到 LE Audio。");
                         if (LeAudioLink.IsPairingChanging(device.BluetoothAddress))
                             throw new InvalidOperationException("The earbuds' pairing is being changed.");
                         return bonded;
@@ -101,9 +106,11 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             RfcommDeviceServicesResult services;
             try
             {
-                // Cached first: avoids a radio round-trip when Windows already has the SDP record.
-                services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Cached).AsTask(cancellationToken);
-                if (services.Services.Count == 0)
+                // Sony's control service can change after reconnecting / changing Bluetooth mode.
+                // Resolve its current SDP endpoint rather than repeatedly reopening a stale channel.
+                var cacheMode = SonyAkgProfiles.IsControlService(uuid) ? BluetoothCacheMode.Uncached : BluetoothCacheMode.Cached;
+                services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), cacheMode).AsTask(cancellationToken);
+                if (services.Services.Count == 0 && cacheMode == BluetoothCacheMode.Cached)
                 {
                     services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
                 }
@@ -139,7 +146,12 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         return connectFailure ?? gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
     }
 
-    private static async Task<ChannelOpenResult> TryConnectAsync(RfcommDeviceService service, Guid uuid, CancellationToken cancellationToken)
+    internal static SocketProtectionLevel ProtectionLevelFor(Guid uuid) => SonyAkgProfiles.IsControlService(uuid)
+        // Sound Connect Rm.b uses createRfcommSocketToServiceRecord (secure RFCOMM).
+        ? SocketProtectionLevel.BluetoothEncryptionWithAuthentication
+        : SocketProtectionLevel.BluetoothEncryptionAllowNullAuthentication;
+
+    private async Task<ChannelOpenResult> TryConnectAsync(RfcommDeviceService service, Guid uuid, CancellationToken cancellationToken)
     {
         var socket = new StreamSocket();
         socket.Control.KeepAlive = false;
@@ -147,10 +159,12 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ConnectTimeout);
+            var protection = ProtectionLevelFor(uuid);
+            _logger.LogInformation("RFCOMM connecting: {Service}, channel {Channel}, protection {Protection}", uuid, service.ConnectionServiceName, protection);
             await socket.ConnectAsync(
                     service.ConnectionHostName,
                     service.ConnectionServiceName,
-                    SocketProtectionLevel.BluetoothEncryptionAllowNullAuthentication)
+                    protection)
                 .AsTask(timeout.Token);
             var channel = new RfcommByteChannel(socket, $"RFCOMM {uuid:D}");
             return new ChannelOpenResult(ChannelOpenStatus.Opened, channel, uuid, null);

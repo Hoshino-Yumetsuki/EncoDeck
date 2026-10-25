@@ -386,6 +386,7 @@ internal sealed class BrandDemo
         public Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken = default) => Apply(s => s with { Toggles = s.Toggles.SetItem(toggle, O(enabled)) });
         public Task<CommandResult> RefreshAsync(CancellationToken cancellationToken = default) => Ok;
         public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default) => Ok;
+        public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) => Ok;
 
         public Task<CommandResult> SetSpatialAudioAsync(SpatialAudioMode mode, CancellationToken cancellationToken = default) => Apply(s => s with { Spatial = O(mode) });
         public Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default) =>

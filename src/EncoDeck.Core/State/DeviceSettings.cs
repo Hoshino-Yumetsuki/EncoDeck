@@ -32,6 +32,8 @@ public enum DeviceToggle
     Lc3,
     /// <summary>Swap the left and right output channels on the device.</summary>
     ChannelSwap,
+    /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
+    AutoVolume,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

@@ -296,6 +296,60 @@ public class OppoDeviceControllerTests
     }
 
     [Fact]
+    public async Task LeAudioBond_RejectsEnablingMultipointWithoutSendingIt()
+    {
+        await using var h = new Harness();
+        Assert.True(await h.Controller.InitializeAsync(Ct));
+        h.Store.TryUpdate(X4.DeviceId, s => s with { IsLeAudioBonded = true });
+        int writes = h.Device.Received.Count(f => f.Command == OppoCommand.SetFeature);
+        var result = await h.Controller.SetToggleAsync(DeviceToggle.DualDeviceConnection, true, Ct);
+        Assert.Equal(CommandStatus.Rejected, result.Status);
+        Assert.Equal(writes, h.Device.Received.Count(f => f.Command == OppoCommand.SetFeature));
+    }
+
+    [Fact]
+    public async Task DisableMultipoint_ConfirmsActualDeviceEvenWhenCachedStateSaysOff()
+    {
+        await using var h = new Harness();
+        Assert.True(await h.Controller.InitializeAsync(Ct));
+        h.Device.Features[0x11] = 1;
+        h.Store.TryUpdate(X4.DeviceId, s => s with
+        {
+            IsLeAudioBonded = true,
+            Toggles = s.Toggles.SetItem(DeviceToggle.DualDeviceConnection, Observed.From(false, DateTimeOffset.UtcNow, StateSource.CommandConfirmation)),
+        });
+        var result = await h.Controller.SetToggleAsync(DeviceToggle.DualDeviceConnection, false, Ct);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, h.Device.Features[0x11]);
+        Assert.Equal(new byte[] { 0x11, 0x00 }, h.Device.Received.Last(f => f.Command == OppoCommand.SetFeature).Payload);
+        Assert.False(h.Store.Current.Toggles[DeviceToggle.DualDeviceConnection].Value);
+        Assert.Equal(StateSource.CommandConfirmation, h.Store.Current.Toggles[DeviceToggle.DualDeviceConnection].Source);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("00")]
+    [InlineData("0100")]
+    public async Task LeBrSwitch_InvalidReadBackCannotConfirmOff(string hex)
+    {
+        await using var h = new Harness();
+        Assert.True(await h.Controller.InitializeAsync(Ct));
+        h.Device.LeBrSwitchResponse = Convert.FromHexString(hex);
+        var result = await h.Controller.SetLeBrSwitchAsync(false, Ct);
+        Assert.Equal(CommandStatus.Rejected, result.Status);
+    }
+
+    [Fact]
+    public async Task LeBrSwitch_UpdatesStateOnlyFromValidReadBack()
+    {
+        await using var h = new Harness();
+        Assert.True(await h.Controller.InitializeAsync(Ct));
+        Assert.True((await h.Controller.SetLeBrSwitchAsync(true, Ct)).IsSuccess);
+        Assert.True(h.Store.Current.LeAudioSwitch!.Value.Enabled);
+        Assert.Equal(StateSource.CommandConfirmation, h.Store.Current.LeAudioSwitch.Source);
+    }
+
+    [Fact]
     public async Task SetToggle_WriteAndReadBack()
     {
         await using var h = new Harness();
