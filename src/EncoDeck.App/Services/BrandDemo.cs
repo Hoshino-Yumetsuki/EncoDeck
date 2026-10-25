@@ -383,6 +383,8 @@ internal sealed class BrandDemo
         private static Task<CommandResult> Ok => Task.FromResult(CommandResult.Ok);
         public Task<CommandResult> SetNoiseControlAsync(NoiseControlState target, CancellationToken cancellationToken = default) => Apply(s => s with { NoiseControl = O(target) });
         public Task<CommandResult> SetEqualizerPresetAsync(string presetId, CancellationToken cancellationToken = default) => Apply(s => s with { Equalizer = O(new EqualizerState(presetId, 0)) });
+        public Task<CommandResult> SetEqualizerBandsAsync(IReadOnlyList<int> bands, CancellationToken cancellationToken = default) =>
+            Apply(s => s.Equalizer?.Value is { } eq ? s with { Equalizer = O(eq with { Bands = bands }) } : s);
         public Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken = default) => Apply(s => s with { Toggles = s.Toggles.SetItem(toggle, O(enabled)) });
         public Task<CommandResult> RefreshAsync(CancellationToken cancellationToken = default) => Ok;
         public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default) => Ok;

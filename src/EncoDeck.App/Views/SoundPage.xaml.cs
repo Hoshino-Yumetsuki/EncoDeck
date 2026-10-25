@@ -25,8 +25,10 @@ public sealed partial class SoundPage : Page
     private readonly List<(int Id, RadioButton Button)> _customButtons = [];
     private readonly List<(Slider Slider, TextBlock Value)> _bands = [];
     private readonly List<(SpatialAudioMode Mode, RadioButton Button)> _spatialButtons = [];
+    private readonly List<(Slider Slider, TextBlock Value)> _sonyBands = [];
     private DispatcherQueueTimer? _bandTimer;
     private DispatcherQueueTimer? _bassTimer;
+    private DispatcherQueueTimer? _sonyTimer;
     private string _customSignature = string.Empty;
     private int? _editorPresetId;
     private int _bandCount = -1;
@@ -52,6 +54,7 @@ public sealed partial class SoundPage : Page
             foreach (var (preset, _) in _buttons) preset.PropertyChanged -= OnPresetChanged;
             _bandTimer?.Stop();
             _bassTimer?.Stop();
+            _sonyTimer?.Stop();
         };
     }
 
@@ -67,6 +70,296 @@ public sealed partial class SoundPage : Page
 
     private void OnFeaturesChanged(object? sender, EventArgs e) => Sync();
 
+    /// <summary>
+    /// The headset reports preset ids without names, and the only band data it carries is the 0x57/0x59
+    /// frame, so each known preset's curve is drawn from the bands the headset itself reported: 10 bands
+    /// from 31 Hz to 16 kHz, 1 dB per step, 6 = 0 dB. Keys are the preset ids EncoDeck uses.
+    /// </summary>
+    private static readonly System.Collections.Generic.Dictionary<string, byte[]> CurveBands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["sony-0"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+        ["sony-32"] = [0, 4, 8, 9, 7, 5, 7, 9, 6, 4],
+        ["sony-48"] = [10, 10, 5, 5, 6, 6, 6, 6, 6, 6],
+        ["sony-49"] = [6, 6, 6, 6, 6, 6, 6, 8, 8, 9],
+        ["sony-50"] = [10, 10, 5, 5, 6, 6, 6, 8, 8, 9],
+        ["sony-51"] = [3, 4, 5, 7, 7, 7, 6, 6, 4, 3],
+        ["sony-160"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+        ["sony-161"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+        ["sony-162"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+    };
+
+    private static readonly string[] CurveFrequencies = ["31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
+
+    private string? _curveKey;
+    private byte[]? _curveBands;
+
+    /// <summary>Re-draws the curve when the card resizes, so the plot keeps matching the fader row.</summary>
+    private void OnCurveSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_curveBands is null || CurveChart.Visibility != Visibility.Visible) return;
+        DrawCurve(_curveBands);
+    }
+
+    private void SyncCurve()
+    {
+        var deviceBands = ViewModel.EqualizerBands;
+        string? id = null;
+        foreach (var preset in ViewModel.EqualizerPresets)
+        {
+            if (preset.IsSelected) { id = preset.Id; break; }
+        }
+        // Manual and the two custom slots report their real band values, so those curves follow the
+        // device; the fixed presets have no band report and fall back to the built-in reference table.
+        byte[]? bands = deviceBands.Count > 0 ? ToRawBands(deviceBands) : null;
+        string key = bands is not null ? "device:" + string.Join(',', deviceBands) : id ?? string.Empty;
+        if (bands is null && (id is null || !CurveBands.TryGetValue(id, out bands)))
+        {
+            _curveKey = null;
+            _curveBands = null;
+            CurveChart.Children.Clear();
+            CurveChart.Visibility = Visibility.Collapsed;
+            return;
+        }
+        CurveChart.Visibility = Visibility.Visible;
+        if (key == _curveKey) return;
+        _curveKey = key;
+        DrawCurve(bands!);
+    }
+
+    private static byte[] ToRawBands(IReadOnlyList<int> decibels)
+    {
+        var raw = new byte[decibels.Count];
+        for (int i = 0; i < raw.Length; i++) raw[i] = (byte)Math.Clamp(decibels[i] + 6, 0, 12);
+        return raw;
+    }
+
+    /// <summary>
+    /// A compact vector response chart: +6 dB … -6 dB grid, the frequency ticks the official app shows
+    /// and a smoothed curve with a soft fill. Drawn rather than shipped as a bitmap so it stays crisp at
+    /// any scaling and follows the theme colours.
+    /// </summary>
+    private void DrawCurve(byte[] bands)
+    {
+        CurveChart.Children.Clear();
+        _curveBands = bands;
+        // The plot area is laid out from the live canvas size and spans exactly the ten fader columns
+        // below (each column is 1/10 of the width), so tick i lands on the centre of fader i.
+        double totalWidth = CurveChart.ActualWidth > 1 ? CurveChart.ActualWidth : 600;
+        double totalHeight = CurveChart.ActualHeight > 1 ? CurveChart.ActualHeight : 318;
+        int count = bands.Length;
+        double column = count > 0 ? totalWidth / count : totalWidth;
+        double left = column / 2, right = totalWidth - column / 2;
+        const double top = 16;
+        double bottom = totalHeight - 30;
+        double width = right - left, height = bottom - top;
+        double perDb = height / 12.0;
+        double step = count > 1 ? width / (count - 1) : 0;
+
+        var gridBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF));
+        var zeroBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x3D, 0xFF, 0xFF, 0xFF));
+        var labelBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF));
+
+        var plot = new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            Width = width + 26,
+            Height = height + 12,
+            RadiusX = 12,
+            RadiusY = 12,
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF)),
+        };
+        Canvas.SetLeft(plot, left - 13);
+        Canvas.SetTop(plot, top - 6);
+        CurveChart.Children.Add(plot);
+
+        foreach (var (db, brush) in new[] { (6.0, gridBrush), (3.0, gridBrush), (0.0, zeroBrush), (-3.0, gridBrush), (-6.0, gridBrush) })
+        {
+            double y = top + (6 - db) * perDb;
+            CurveChart.Children.Add(new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = left, X2 = right, Y1 = y, Y2 = y, Stroke = brush, StrokeThickness = 1,
+            });
+            var lbl = new TextBlock
+            {
+                Text = db > 0 ? $"+{db:0}" : $"{db:0}",
+                FontSize = 11,
+                Foreground = labelBrush,
+                Width = 28,
+                TextAlignment = TextAlignment.Right,
+            };
+            Canvas.SetLeft(lbl, left - 34);
+            Canvas.SetTop(lbl, y - 8);
+            CurveChart.Children.Add(lbl);
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            double x = left + i * step;
+            var freq = new TextBlock
+            {
+                Text = i < CurveFrequencies.Length ? CurveFrequencies[i] : string.Empty,
+                FontSize = 10,
+                Foreground = labelBrush,
+                Width = 30,
+                TextAlignment = TextAlignment.Center,
+            };
+            Canvas.SetLeft(freq, x - 15);
+            Canvas.SetTop(freq, bottom + 5);
+            CurveChart.Children.Add(freq);
+            CurveChart.Children.Add(new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = x, X2 = x, Y1 = bottom, Y2 = bottom + 5, Stroke = gridBrush, StrokeThickness = 1,
+            });
+        }
+
+        var points = new Windows.Foundation.Point[count];
+        for (int i = 0; i < count; i++)
+        {
+            int db = bands[i] - 6;
+            points[i] = new Windows.Foundation.Point(left + i * step, top + (6 - db) * perDb);
+        }
+
+        var line = SmoothedCurve(points);
+        var fill = new Microsoft.UI.Xaml.Shapes.Path
+        {
+            Fill = new Microsoft.UI.Xaml.Media.LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(0, 1),
+                GradientStops =
+                {
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Windows.UI.Color.FromArgb(0x4D, 0xA7, 0x8B, 0xFA), Offset = 0 },
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Windows.UI.Color.FromArgb(0x00, 0xA7, 0x8B, 0xFA), Offset = 1 },
+                },
+            },
+        };
+        var fillFigure = line.Figures[0];
+        fillFigure.IsClosed = true;
+        fillFigure.Segments.Add(new Microsoft.UI.Xaml.Media.LineSegment { Point = new Windows.Foundation.Point(right, bottom) });
+        fillFigure.Segments.Add(new Microsoft.UI.Xaml.Media.LineSegment { Point = new Windows.Foundation.Point(left, bottom) });
+        fill.Data = line;
+        CurveChart.Children.Add(fill);
+
+        var stroke = new Microsoft.UI.Xaml.Shapes.Path
+        {
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xA7, 0x8B, 0xFA)),
+            StrokeThickness = 3,
+            StrokeLineJoin = Microsoft.UI.Xaml.Media.PenLineJoin.Round,
+            Data = SmoothedCurve(points),
+        };
+        CurveChart.Children.Add(stroke);
+
+        foreach (var p in points)
+        {
+            var dot = new Microsoft.UI.Xaml.Shapes.Ellipse
+            {
+                Width = 6,
+                Height = 6,
+                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xC4, 0xB5, 0xFD)),
+            };
+            Canvas.SetLeft(dot, p.X - 3);
+            Canvas.SetTop(dot, p.Y - 3);
+            CurveChart.Children.Add(dot);
+        }
+    }
+
+    private static Microsoft.UI.Xaml.Media.PathGeometry SmoothedCurve(Windows.Foundation.Point[] points)
+    {
+        var figure = new Microsoft.UI.Xaml.Media.PathFigure { StartPoint = points[0] };
+        for (int i = 0; i < points.Length - 1; i++)
+        {
+            var p0 = points[Math.Max(i - 1, 0)];
+            var p1 = points[i];
+            var p2 = points[i + 1];
+            var p3 = points[Math.Min(i + 2, points.Length - 1)];
+            figure.Segments.Add(new Microsoft.UI.Xaml.Media.BezierSegment
+            {
+                Point1 = new Windows.Foundation.Point(p1.X + (p2.X - p0.X) / 6, p1.Y + (p2.Y - p0.Y) / 6),
+                Point2 = new Windows.Foundation.Point(p2.X - (p3.X - p1.X) / 6, p2.Y - (p3.Y - p1.Y) / 6),
+                Point3 = p2,
+            });
+        }
+        var geometry = new Microsoft.UI.Xaml.Media.PathGeometry();
+        geometry.Figures.Add(figure);
+        return geometry;
+    }
+    /// <summary>
+    /// Band faders for the presets whose values the headset lets us overwrite: manual and the two custom
+    /// slots. Values are dB offsets (-6..+6) read back from the device, written after a short debounce so
+    /// dragging a fader sends one command instead of one per step.
+    /// </summary>
+    private void SyncBandEditor()
+    {
+        bool editable = ViewModel.CanEditEqualizerBands;
+        SonyBandEditor.Visibility = Show(editable);
+        if (!editable) return;
+        if (_sonyBands.Count == 0) BuildBandFaders();
+        if (_sonyTimer is { IsRunning: true }) return; // the user is still dragging
+        var bands = ViewModel.EqualizerBands;
+        _syncing = true;
+        try
+        {
+            for (int i = 0; i < _sonyBands.Count; i++)
+            {
+                int value = Math.Clamp(i < bands.Count ? bands[i] : 0, -6, 6);
+                _sonyBands[i].Slider.Value = value;
+                _sonyBands[i].Value.Text = FormatGain(value);
+            }
+        }
+        finally { _syncing = false; }
+    }
+
+    private void BuildBandFaders()
+    {
+        SonyBandHost.Children.Clear();
+        SonyBandHost.ColumnDefinitions.Clear();
+        _sonyBands.Clear();
+        for (int i = 0; i < CurveFrequencies.Length; i++)
+        {
+            SonyBandHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        }
+        for (int i = 0; i < CurveFrequencies.Length; i++)
+        {
+            var value = new TextBlock { Text = "0", FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center, Opacity = 0.7 };
+            var slider = new Slider
+            {
+                Orientation = Orientation.Vertical,
+                Minimum = -6,
+                Maximum = 6,
+                StepFrequency = 1,
+                TickFrequency = 1,
+                Height = 132,
+                MinWidth = 0,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Tag = i,
+            };
+            slider.ValueChanged += OnSonyBandChanged;
+            var freq = new TextBlock { Text = CurveFrequencies[i], FontSize = 10, HorizontalAlignment = HorizontalAlignment.Center, Opacity = 0.55 };
+            var column = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center };
+            column.Children.Add(value);
+            column.Children.Add(slider);
+            column.Children.Add(freq);
+            Grid.SetColumn(column, i);
+            SonyBandHost.Children.Add(column);
+            _sonyBands.Add((slider, value));
+        }
+    }
+
+    private void OnSonyBandChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (_syncing || !IsLoaded || sender is not Slider { Tag: int index } || index >= _sonyBands.Count) return;
+        _sonyBands[index].Value.Text = FormatGain((int)Math.Round(e.NewValue));
+        _sonyTimer ??= CreateTimer(BandDebounce, SaveSonyBandsAsync);
+        _sonyTimer.Stop();
+        _sonyTimer.Start();
+    }
+
+    private async Task SaveSonyBandsAsync()
+    {
+        if (!ViewModel.CanEditEqualizerBands || _sonyBands.Count == 0) return;
+        var bands = _sonyBands.Select(b => (int)Math.Round(b.Slider.Value)).ToArray();
+        await ViewModel.SetEqualizerBandsAsync(bands);
+    }
+
     private void Rebuild()
     {
         foreach (var (preset, _) in _buttons) preset.PropertyChanged -= OnPresetChanged;
@@ -74,9 +367,11 @@ public sealed partial class SoundPage : Page
         PresetHost.Children.Clear();
         foreach (var preset in ViewModel.EqualizerPresets)
         {
-            var button = new RadioButton { Content = preset.Label, Tag = preset.Id, GroupName = "DeviceEq" };
+            var button = new RadioButton { Content = preset.Label, Tag = preset.Id, GroupName = "DeviceEq", MinWidth = 0 };
             button.Click += OnPresetClick;
             preset.PropertyChanged += OnPresetChanged;
+            Grid.SetColumn(button, _buttons.Count % 5);
+            Grid.SetRow(button, _buttons.Count / 5);
             _buttons.Add((preset, button));
             PresetHost.Children.Add(button);
         }
@@ -101,6 +396,8 @@ public sealed partial class SoundPage : Page
                 button.IsEnabled = ready && !eqBusy;
             }
             SyncCustom(f, ready, eqBusy, selectedCustom);
+            SyncCurve();
+            SyncBandEditor();
             SyncBass(f, ready);
             SyncSpatial(f, ready);
             LayoutColumns();
@@ -251,14 +548,17 @@ public sealed partial class SoundPage : Page
     {
         bool sideVisible = BassCard.Visibility == Visibility.Visible || SpatialCard.Visibility == Visibility.Visible;
         bool eqVisible = EqCard.Visibility == Visibility.Visible;
-        bool twoColumns = SoundColumns.ActualWidth >= 720 && sideVisible && eqVisible;
-        RightColumn.Width = twoColumns ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        Grid.SetColumn(SideCards, twoColumns ? 1 : 0);
-        Grid.SetRow(SideCards, twoColumns || !eqVisible ? 0 : 1);
-        Grid.SetColumnSpan(EqCard, twoColumns ? 1 : 2);
-        Grid.SetColumnSpan(SideCards, twoColumns ? 1 : 2);
-        // Side by side the EQ card keeps its own height instead of stretching to the side column.
+        // The EQ card owns a full-width row: the response curve and its faders need the space, so the
+        // side cards always sit underneath instead of taking the other column.
+        RightColumn.Width = new GridLength(0);
+        Grid.SetColumn(EqCard, 0);
+        Grid.SetColumnSpan(EqCard, 2);
+        Grid.SetRow(EqCard, 0);
+        Grid.SetColumn(SideCards, 0);
+        Grid.SetColumnSpan(SideCards, 2);
+        Grid.SetRow(SideCards, eqVisible ? 1 : 0);
         EqCard.VerticalAlignment = VerticalAlignment.Top;
+        SideCards.Visibility = sideVisible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---- handlers ------------------------------------------------------------------------------

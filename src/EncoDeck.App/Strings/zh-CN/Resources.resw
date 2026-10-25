@@ -137,6 +137,7 @@
   <data name="NoiseSelector_Transparency.Text" xml:space="preserve"><value>通透</value></data>
   <data name="Sound_Title.Text" xml:space="preserve"><value>音效</value></data>
   <data name="Sound_DeviceEq.Text" xml:space="preserve"><value>耳机端 EQ</value></data>
+  <data name="Sound_BandEditor.Text" xml:space="preserve"><value>自定义曲线</value></data>
   <data name="Sound_Spatial.Text" xml:space="preserve"><value>空间音频</value></data>
   <data name="Controls_Title.Text" xml:space="preserve"><value>控制</value></data>
   <data name="Controls_Settings.Text" xml:space="preserve"><value>更多设置</value></data>

@@ -37,4 +37,4 @@ public sealed record FirmwareInfo(string? Version, string? ModelCode, IReadOnlyD
 }
 
 /// <summary>Device-side equalizer state. This is the EQ inside the earbuds, never a Windows audio effect.</summary>
-public sealed record EqualizerState(string? ActivePresetId, int? RawPresetValue);
+public sealed record EqualizerState(string? ActivePresetId, int? RawPresetValue, IReadOnlyList<int>? Bands = null);

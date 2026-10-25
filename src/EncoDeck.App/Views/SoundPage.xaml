@@ -4,9 +4,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:controls="using:EncoDeck.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
         <!-- Not the max-width element itself: a ScrollViewer centres its child by the child's desired width, which shifts it off-screen once the viewport is wider than the max width. -->
-        <Grid>
+        <Grid Width="{Binding ViewportWidth, ElementName=PageScroll}">
         <StackPanel MaxWidth="{StaticResource PageMaxWidth}" Padding="32,8,32,32" Spacing="16">
             <InfoBar
                 IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
@@ -28,7 +28,31 @@
             <Border x:Name="EqCard" Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
                 <StackPanel Spacing="10">
                     <TextBlock x:Uid="Sound_DeviceEq" Text="Earbud EQ" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <StackPanel x:Name="PresetHost" Spacing="4" />
+                    <!-- Preset strip above the chart: the card spans the full width so the response curve
+                         gets the room it needs instead of being squeezed next to a vertical list. -->
+                    <Grid x:Name="PresetHost" ColumnSpacing="8" RowSpacing="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                    </Grid>
+                    <!-- The headset reports preset ids only, so the response curve is drawn as vector
+                         graphics instead of a bitmap screenshot. The plot spans exactly the same width
+                         as the band faders below it, so every frequency tick sits above its fader. -->
+                    <Canvas x:Name="CurveChart" Height="318" HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top" SizeChanged="OnCurveSizeChanged" Visibility="Collapsed" />
+                    <!-- Band faders for the headset-side manual and custom presets. -->
+                    <StackPanel x:Name="SonyBandEditor" Spacing="6" Visibility="Collapsed">
+                        <TextBlock x:Uid="Sound_BandEditor" Text="Custom curve" Style="{StaticResource SecondaryTextStyle}" />
+                        <Grid x:Name="SonyBandHost" ColumnSpacing="0" Margin="0,-4,0,0" />
+                    </StackPanel>
                     <StackPanel x:Name="CustomHost" Spacing="4" />
                     <Button x:Name="AddCustomButton" x:Uid="Eq_AddCustom" Content="Add custom EQ" Click="OnAddCustomClick" />
 

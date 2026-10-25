@@ -137,6 +137,7 @@
   <data name="NoiseSelector_Transparency.Text" xml:space="preserve"><value>Transparency</value></data>
   <data name="Sound_Title.Text" xml:space="preserve"><value>Sound</value></data>
   <data name="Sound_DeviceEq.Text" xml:space="preserve"><value>Earbud EQ</value></data>
+  <data name="Sound_BandEditor.Text" xml:space="preserve"><value>Custom curve</value></data>
   <data name="Sound_Spatial.Text" xml:space="preserve"><value>Spatial Audio</value></data>
   <data name="Controls_Title.Text" xml:space="preserve"><value>Controls</value></data>
   <data name="Controls_Settings.Text" xml:space="preserve"><value>More settings</value></data>

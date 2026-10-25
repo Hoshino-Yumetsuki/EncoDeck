@@ -30,10 +30,13 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     private int _searching;
     private bool _disposed;
 
-    private BluetoothLinkMonitor(BluetoothDevice device, ImmutableArray<BluetoothLEDevice> leDevices)
+    private readonly bool _singleUnit;
+
+    private BluetoothLinkMonitor(BluetoothDevice device, ImmutableArray<BluetoothLEDevice> leDevices, bool singleUnit)
     {
         _device = device;
         _leDevices = leDevices;
+        _singleUnit = singleUnit;
         _connected = Evaluate();
         _leAudio = EvaluateLe();
         _leLinks = EvaluateLinks();
@@ -59,7 +62,11 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
 
     public event EventHandler? TransportChanged;
 
-    public static async Task<BluetoothLinkMonitor?> CreateAsync(string deviceId, CancellationToken cancellationToken)
+    /// <param name="singleUnit">
+    /// Headphones expose exactly one LE identity, so the "other earbud" of a true pair never appears.
+    /// Treating that as "only one side is connected" made the UI claim one earbud was missing.
+    /// </param>
+    public static async Task<BluetoothLinkMonitor?> CreateAsync(string deviceId, bool singleUnit, CancellationToken cancellationToken)
     {
         BluetoothDevice? device;
         try
@@ -73,7 +80,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         if (device is null) return null;
         try
         {
-            return new BluetoothLinkMonitor(device, await BondedLeIdentitiesAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false));
+            return new BluetoothLinkMonitor(device, await BondedLeIdentitiesAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false), singleUnit);
         }
         catch
         {
@@ -208,8 +215,14 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     private LeAudioLinkState EvaluateLinks()
     {
         var devices = _leDevices;
+        var primaryConnected = devices.Length > 0 && devices[0].ConnectionStatus == BluetoothConnectionStatus.Connected;
+        if (_singleUnit)
+        {
+            // One identity, one unit: a connected headset is complete, never "only one side connected".
+            return new(devices.Length > 0, primaryConnected, true, primaryConnected);
+        }
         return new(devices.Length > 0,
-            devices.Length > 0 && devices[0].ConnectionStatus == BluetoothConnectionStatus.Connected,
+            primaryConnected,
             devices.Length > 1,
             devices.Skip(1).Any(le => le.ConnectionStatus == BluetoothConnectionStatus.Connected));
     }
