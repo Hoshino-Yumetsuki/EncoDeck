@@ -300,6 +300,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetSpatialAudioAsync(SpatialAudioMode mode, CancellationToken cancellationToken = default) => WithController(c => c.SetSpatialAudioAsync(mode, cancellationToken));
 
+    public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) => WithController(c => c.SetLeBrSwitchAsync(enabled, cancellationToken));
+
     public Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default) => WithController(c => c.SetGameSoundAsync(type, cancellationToken));
 
     public Task<CommandResult> RefreshGameModeAsync(CancellationToken cancellationToken = default) => WithController(c => c.RefreshGameModeAsync(cancellationToken));
@@ -378,6 +380,7 @@ public sealed class DeviceManager : IDeviceManager
         if (identity is null || _usbWatcher.Container(identity.DeviceId) is not { } container) return CommandResult.NotConnected;
         void ClearBattery() => _store.TryUpdate(identity.DeviceId, s => s with
         {
+            Connection = DeviceConnectionState.UsbReceiverConnected,
             Profile = s.Profile is UsbHeadsetProfile profile ? profile.WithBattery(false) : s.Profile,
             Battery = BatteryStatus.Unknown,
             LastResponseAt = null,
@@ -387,12 +390,14 @@ public sealed class DeviceManager : IDeviceManager
         {
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct, _lifetime.Token);
             bounded.CancelAfter(TimeSpan.FromSeconds(8));
-            int? level = await UsbHidBattery.ReadAsync(container, bounded.Token).ConfigureAwait(false);
+            var status = await UsbHidBattery.ReadStatusAsync(container, bounded.Token).ConfigureAwait(false);
+            int? level = status.Level;
             _store.TryUpdate(identity.DeviceId, s => s with
             {
+                Connection = status.IsConnected == true ? DeviceConnectionState.UsbHeadsetConnected : DeviceConnectionState.UsbReceiverConnected,
                 Profile = s.Profile is UsbHeadsetProfile profile ? profile.WithBattery(level.HasValue) : s.Profile,
-                Battery = level.HasValue ? new(Observed.From(new BatteryReading(level, null), DateTimeOffset.UtcNow, StateSource.QueryResponse), null, null) : BatteryStatus.Unknown,
-                LastResponseAt = level.HasValue ? DateTimeOffset.UtcNow : null,
+                Battery = level.HasValue || status.IsCharging.HasValue ? new(Observed.From(new BatteryReading(level, status.IsCharging), DateTimeOffset.UtcNow, StateSource.QueryResponse), null, null) : BatteryStatus.Unknown,
+                LastResponseAt = level.HasValue || status.IsConnected.HasValue ? DateTimeOffset.UtcNow : null,
             });
             return level.HasValue ? CommandResult.Ok : CommandResult.Unsupported("No valid battery reply from a documented receiver query or standard HID percentage report.");
         }

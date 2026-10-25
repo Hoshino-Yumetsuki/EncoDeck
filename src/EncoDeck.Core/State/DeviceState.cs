@@ -20,8 +20,13 @@ public sealed record DeviceState
 
     public DeviceConnectionState Connection { get; init; } = DeviceConnectionState.NotDetected;
 
-    /// <summary>The audio runs over LE Audio (LC3) rather than Classic Bluetooth (A2DP).</summary>
+    /// <summary>At least one bonded LE earbud has an ACL connection; codec/streaming is not verified.</summary>
     public bool IsLeAudio { get; init; }
+
+    public LeAudioLinkState LeAudioLinks { get; init; } = LeAudioLinkState.Empty;
+
+    /// <summary>The earbuds were switched to LE Audio on this PC, whether or not that link is up now.</summary>
+    public bool IsLeAudioBonded { get; init; }
 
     public BatteryStatus Battery { get; init; } = BatteryStatus.Unknown;
 

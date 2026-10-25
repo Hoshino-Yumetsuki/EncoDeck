@@ -44,6 +44,7 @@
   <data name="Connection_PairedNotConnected" xml:space="preserve"><value>Paired, not connected</value></data>
   <data name="Connection_AudioConnected" xml:space="preserve"><value>Connected, preparing controls</value></data>
   <data name="Connection_UsbReceiverConnected" xml:space="preserve"><value>USB receiver connected</value></data>
+  <data name="Connection_UsbHeadsetConnected" xml:space="preserve"><value>Headset connected wirelessly via USB receiver</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>Connecting controls…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>Connected</value></data>
   <data name="Connection_ControlUnavailable" xml:space="preserve"><value>Audio connected · controls unavailable</value></data>
@@ -616,18 +617,37 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Switch device</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0} (not connected)</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>Manage devices</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Connected over LE Audio (LC3)</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Connected over LE Audio (LC3)</value></data>
+  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>LE link connected; Windows manages LC3 streaming, which has not been verified</value></data>
+  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>LE link connected; audio streaming unverified</value></data>
+  <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>Waiting for LC3 · hold the case button to reconnect</value></data>
   <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio (LC3) connection (experimental)</value></data>
   <data name="LeAudio_Summary.Text" xml:space="preserve"><value>Lets Windows connect these earbuds over LE Audio with the LC3 codec instead of Classic Bluetooth A2DP. Your PC's Bluetooth must support LE Audio.</value></data>
   <data name="LeAudio_Switch" xml:space="preserve"><value>Switch to LE Audio</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>Restore Classic Bluetooth</value></data>
-  <data name="LeAudio_StatusLe" xml:space="preserve"><value>Current: LE Audio (LC3), both earbuds paired.</value></data>
+  <data name="LeAudio_StatusLe" xml:space="preserve"><value>Both earbuds have LE bonds; Windows manages the actual audio connection.</value></data>
+  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows still exposes a Classic A2DP endpoint. Selecting "Headphones (OPPO Enco X4)" plays on one earbud only; choose the LE Audio "Speakers" endpoint.</value></data>
+  <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>The Windows audio endpoint state could not be confirmed; ACL/GATT readiness does not prove dual-ear playback.</value></data>
+  <data name="LeAudio_DisableClassic" xml:space="preserve"><value>Disable Classic audio endpoint</value></data>
+  <data name="LeAudio_EnableClassic" xml:space="preserve"><value>Restore Classic audio endpoint</value></data>
+  <data name="LeAudio_Endpoint_Disabled" xml:space="preserve"><value>The Classic A2DP render endpoint was disabled. Choose the LE Audio "Speakers" endpoint in Sound settings.</value></data>
+  <data name="LeAudio_Endpoint_AlreadyLeAudioOnly" xml:space="preserve"><value>The Classic A2DP endpoint is already disabled.</value></data>
+  <data name="LeAudio_Endpoint_NoClassicEndpoint" xml:space="preserve"><value>No Classic A2DP endpoint was found to disable.</value></data>
+  <data name="LeAudio_Endpoint_Enabled" xml:space="preserve"><value>The Classic audio endpoint was re-enabled.</value></data>
+  <data name="LeAudio_Endpoint_NothingToRestore" xml:space="preserve"><value>No Classic audio endpoint needs restoring.</value></data>
+  <data name="LeAudio_Endpoint_BlockedLeLinks" xml:space="preserve"><value>Both LE links are not connected yet; no endpoint was changed.</value></data>
+  <data name="LeAudio_Endpoint_BlockedLeAudioEndpointMissing" xml:space="preserve"><value>The LE Audio render endpoint was not found; the Classic endpoint was left untouched to avoid breaking LE Audio.</value></data>
+  <data name="LeAudio_Endpoint_Ambiguous" xml:space="preserve"><value>More than one possible LE Audio endpoint was found; nothing was changed.</value></data>
+  <data name="LeAudio_Endpoint_Failed" xml:space="preserve"><value>Endpoint operation failed: {0}</value></data>
+  <data name="Connection_LeAudioSingleEar" xml:space="preserve"><value>Only one LE earbud connected</value></data>
+  <data name="LeAudio_Stage_WaitingForLinks" xml:space="preserve"><value>Both earbuds paired. Waiting for both LE links…</value></data>
+  <data name="LeAudio_Result_PairedWaitingForLinks" xml:space="preserve"><value>Both LE bonds are ready, but both connections have not been confirmed. Take out both earbuds and wait for reconnection; there is no need to remove the bonds immediately.</value></data>
   <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>Current: LE Audio, but only one earbud is paired, so sound may play on one side only. Switch again to fix it.</value></data>
   <data name="LeAudio_StatusClassic" xml:space="preserve"><value>Current: Classic Bluetooth (A2DP).</value></data>
   <data name="LeAudio_StatusUnpaired" xml:space="preserve"><value>Current: these earbuds are not paired with this PC.</value></data>
   <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>Change how the earbuds connect?</value></data>
-  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>When asked, put the earbuds in the case, open the lid and hold the case button to enter pairing mode. Once pairing mode is detected, EncoDeck removes this PC's old pairing with the earbuds (your phone and other devices are not affected) and pairs both earbuds over LE Audio automatically; audio stops meanwhile.
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck first turns multipoint off and confirms the setting, so a phone cannot take over the connection. The earbuds will no longer connect to two devices simultaneously. If confirmation fails, the switch stops.
+
+When asked, put the earbuds in the case, open the lid and hold the case button to enter pairing mode. Once pairing mode is detected, EncoDeck removes this PC's old pairing with the earbuds (pairing records on your phone and other devices are kept) and pairs both earbuds over LE Audio automatically; audio stops meanwhile.
 
 Afterwards Windows lists two entries with the same name (one is the other earbud), and audio plays through "Speakers (earbud name)".</value></data>
   <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck will remove this PC's LE Audio and associated Classic Bluetooth pairings; audio will stop. After cleanup, put the earbuds in pairing mode and manually pair them using Add device in Windows Bluetooth settings.</value></data>
@@ -637,7 +657,13 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>Put both earbuds in the case, open the lid and hold the case button until the light flashes (waiting up to 2 minutes)…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>Pairing mode detected. Pairing the first earbud over LE Audio…</value></data>
   <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>Pairing the other earbud…</value></data>
+  <data name="LeAudio_Stage_DisablingMultipoint" xml:space="preserve"><value>Turning multipoint off and confirming the earbud setting…</value></data>
+  <data name="Error_LeAudioMultipoint" xml:space="preserve"><value>Keep multipoint off while using LE Audio to reduce connection takeovers by a phone. Restore Classic Bluetooth before enabling multipoint.</value></data>
+  <data name="LeAudio_Result_MultipointDisableFailed" xml:space="preserve"><value>Multipoint could not be confirmed off. The switch was stopped and existing pairings were kept. Restore this PC's earbud control connection and retry.</value></data>
   <data name="LeAudio_Result_Paired" xml:space="preserve"><value>Switched to LE Audio. Put the earbuds on and choose "Speakers (earbud name)" as the output in Sound settings.</value></data>
+  <data name="LeAudio_Result_PairedWithClassicAudio" xml:space="preserve"><value>LE Audio is paired, but Windows still exposes a Classic A2DP endpoint. Disable it before playback, or select the LE Audio "Speakers" endpoint, otherwise sound may play on one earbud only.</value></data>
+  <data name="LeAudio_Result_PairedButLeAudioEndpointMissing" xml:space="preserve"><value>Both LE links are connected, but the LE Audio render endpoint was not found. The Classic endpoint was left untouched to avoid breaking LE Audio. Retry later or check diagnostics.</value></data>
+  <data name="LeAudio_Result_ClassicAudioEndpointRestoreFailed" xml:space="preserve"><value>The Classic audio endpoint could not be re-enabled, so the pairings were kept. Retry as administrator or enable it in Device Manager.</value></data>
   <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>Only one earbud was paired, so sound may play on one side only. Enter pairing mode again and retry.</value></data>
   <data name="LeAudio_Result_Removed" xml:space="preserve"><value>This PC's earbud pairings have been removed. Put the earbuds in pairing mode, click Open Windows Bluetooth settings, then choose Add device → Bluetooth to manually pair them for Classic Bluetooth audio.</value></data>
   <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>Pairing mode was not detected; the existing pairing is unchanged. Please retry.</value></data>
@@ -674,4 +700,10 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Sennheiser_UnknownAction" xml:space="preserve"><value>Unknown action (0x{0})</value></data>
   <data name="Sennheiser_LowLatency" xml:space="preserve"><value>Low latency mode</value></data>
   <data name="Sennheiser_LowLatencyDescription" xml:space="preserve"><value>Reduce earbud audio delay for games and videos.</value></data>
+  <data name="NoiseLevel_TransparencyStandard" xml:space="preserve"><value>Standard transparency</value></data>
+  <data name="NoiseLevel_EnhancedVoices" xml:space="preserve"><value>Enhance voices</value></data>
+  <data name="NoiseSelector_TransparencyLevel" xml:space="preserve"><value>Transparency mode</value></data>
+  <data name="Toggle_AutoVolume" xml:space="preserve"><value>Smart volume</value></data>
+  <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>Automatically adjust playback volume as ambient noise changes</value></data>
+  <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>This firmware can list devices but cannot remotely connect, disconnect, or remove them. Use Bluetooth settings on the corresponding device.</value></data>
 </root>

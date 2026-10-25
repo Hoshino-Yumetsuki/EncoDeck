@@ -44,6 +44,7 @@
   <data name="Connection_PairedNotConnected" xml:space="preserve"><value>已配对，未连接</value></data>
   <data name="Connection_AudioConnected" xml:space="preserve"><value>已连接，正在准备控制</value></data>
   <data name="Connection_UsbReceiverConnected" xml:space="preserve"><value>USB 接收器已连接</value></data>
+  <data name="Connection_UsbHeadsetConnected" xml:space="preserve"><value>耳机已通过 USB 接收器无线连接</value></data>
   <data name="Connection_ControlConnecting" xml:space="preserve"><value>正在连接控制通道…</value></data>
   <data name="Connection_ControlReady" xml:space="preserve"><value>已连接</value></data>
   <data name="Connection_ControlUnavailable" xml:space="preserve"><value>蓝牙已连接，控制通道不可用</value></data>
@@ -616,18 +617,37 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>切换设备</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未连接）</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>管理设备</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>LE Audio（LC3）连接</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>LE Audio（LC3）连接</value></data>
+  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>已连接 LE 链路；LC3 音频流由 Windows 管理，尚未验证</value></data>
+  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>已连接 LE 链路，音频流尚未验证</value></data>
+  <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>等待 LC3 连接 · 长按充电盒按键可恢复</value></data>
   <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio（LC3）连接（实验性）</value></data>
   <data name="LeAudio_Summary.Text" xml:space="preserve"><value>让 Windows 通过 LE Audio 使用 LC3 编码连接这副耳机，取代传统蓝牙的 A2DP。电脑的蓝牙需支持 LE Audio。</value></data>
   <data name="LeAudio_Switch" xml:space="preserve"><value>切换到 LE Audio</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>恢复传统蓝牙</value></data>
-  <data name="LeAudio_StatusLe" xml:space="preserve"><value>当前：LE Audio（LC3），左右耳均已配对。</value></data>
+  <data name="LeAudio_StatusLe" xml:space="preserve"><value>左右耳均已完成 LE 配对；实际音频连接由 Windows 管理。</value></data>
+  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows 仍暴露经典 A2DP 端点；选中“耳机 (OPPO Enco X4)”会只有单耳有声，请选择 LE Audio 的“扬声器”。</value></data>
+  <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>无法确认 Windows 的音频端点状态；不要把 ACL/GATT 就绪当作双耳播放成功。</value></data>
+  <data name="LeAudio_DisableClassic" xml:space="preserve"><value>禁用经典音频端点</value></data>
+  <data name="LeAudio_EnableClassic" xml:space="preserve"><value>恢复经典音频端点</value></data>
+  <data name="LeAudio_Endpoint_Disabled" xml:space="preserve"><value>已禁用经典 A2DP 渲染端点；请在声音设置中选择 LE Audio 的“扬声器”。</value></data>
+  <data name="LeAudio_Endpoint_AlreadyLeAudioOnly" xml:space="preserve"><value>经典 A2DP 端点已经处于禁用状态。</value></data>
+  <data name="LeAudio_Endpoint_NoClassicEndpoint" xml:space="preserve"><value>没有找到可禁用的经典 A2DP 端点。</value></data>
+  <data name="LeAudio_Endpoint_Enabled" xml:space="preserve"><value>已重新启用经典音频端点。</value></data>
+  <data name="LeAudio_Endpoint_NothingToRestore" xml:space="preserve"><value>没有需要恢复的经典音频端点。</value></data>
+  <data name="LeAudio_Endpoint_BlockedLeLinks" xml:space="preserve"><value>两只耳的 LE 链路尚未都连接；未修改任何端点。</value></data>
+  <data name="LeAudio_Endpoint_BlockedLeAudioEndpointMissing" xml:space="preserve"><value>没有找到 LE Audio 渲染端点；为避免破坏 LE 音频，未禁用经典端点。</value></data>
+  <data name="LeAudio_Endpoint_Ambiguous" xml:space="preserve"><value>检测到多个可能的 LE Audio 端点；未修改任何设置。</value></data>
+  <data name="LeAudio_Endpoint_Failed" xml:space="preserve"><value>端点操作失败：{0}</value></data>
+  <data name="Connection_LeAudioSingleEar" xml:space="preserve"><value>LE 仅连接一只耳机</value></data>
+  <data name="LeAudio_Stage_WaitingForLinks" xml:space="preserve"><value>双耳已配对，正在等待两只耳机建立 LE 连接…</value></data>
+  <data name="LeAudio_Result_PairedWaitingForLinks" xml:space="preserve"><value>双耳已完成 LE 配对，但尚未确认双耳连接。请取出两只耳机等待重连；无需立即删除配对。</value></data>
   <data name="LeAudio_StatusLeSingle" xml:space="preserve"><value>当前：LE Audio，但只有一只耳机已配对，声音可能只在一侧。可以重新切换一次。</value></data>
   <data name="LeAudio_StatusClassic" xml:space="preserve"><value>当前：传统蓝牙（A2DP）。</value></data>
   <data name="LeAudio_StatusUnpaired" xml:space="preserve"><value>当前：本电脑尚未配对这副耳机。</value></data>
   <data name="LeAudio_ConfirmTitle" xml:space="preserve"><value>更改耳机的连接方式？</value></data>
-  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>请按提示把耳机放回充电盒、打开盖子，长按充电盒按键进入配对模式。检测到配对模式后，EncoDeck 会删除这副耳机在本电脑上的旧配对（手机等其他设备不受影响），再通过 LE Audio 自动配对两只耳机，期间声音会中断。
+  <data name="LeAudio_ConfirmSwitch" xml:space="preserve"><value>EncoDeck 会先关闭耳机的“设备双连”并回读确认，以免手机抢回连接；关闭后将不再同时连接两台设备。确认失败会停止切换。
+
+请按提示把耳机放回充电盒、打开盖子，长按充电盒按键进入配对模式。检测到配对模式后，EncoDeck 会删除这副耳机在本电脑上的旧配对（手机等其他设备的配对记录保留），再通过 LE Audio 自动配对两只耳机，期间声音会中断。
 
 切换后，Windows 的蓝牙列表里会出现两个同名条目（其中一个是另一只耳机），声音输出改为“扬声器 (耳机名)”。</value></data>
   <data name="LeAudio_ConfirmRestore" xml:space="preserve"><value>EncoDeck 将删除这副耳机在本电脑上的 LE Audio 和关联的传统蓝牙配对，期间声音会中断。清理完成后，请让耳机进入配对模式，在 Windows“蓝牙和设备”中点击“添加设备”手动重新配对。</value></data>
@@ -637,7 +657,13 @@
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>请把两只耳机放回充电盒，打开盖子，长按充电盒按键直到指示灯闪烁（最多等待 2 分钟）…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>已检测到配对模式，正在通过 LE Audio 配对第一只耳机…</value></data>
   <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>正在配对另一只耳机…</value></data>
+  <data name="LeAudio_Stage_DisablingMultipoint" xml:space="preserve"><value>正在关闭设备双连，并确认耳机已关闭双连…</value></data>
+  <data name="Error_LeAudioMultipoint" xml:space="preserve"><value>使用 LE Audio 时需要保持设备双连关闭，以免手机抢回连接。请先恢复传统蓝牙，再开启双连。</value></data>
+  <data name="LeAudio_Result_MultipointDisableFailed" xml:space="preserve"><value>无法确认设备双连已关闭，已停止切换，原有配对保留。请先恢复本电脑的耳机控制连接后重试。</value></data>
   <data name="LeAudio_Result_Paired" xml:space="preserve"><value>已切换到 LE Audio。戴上耳机，在声音设置中选择“扬声器 (耳机名)”作为输出。</value></data>
+  <data name="LeAudio_Result_PairedWithClassicAudio" xml:space="preserve"><value>LE Audio 已配对，但 Windows 仍暴露经典 A2DP 端点。播放前请禁用经典端点，或手动选择 LE Audio 的“扬声器”，否则可能只有单耳有声。</value></data>
+  <data name="LeAudio_Result_PairedButLeAudioEndpointMissing" xml:space="preserve"><value>双耳 LE 已连接，但没有找到 LE Audio 渲染端点；为避免破坏 LE 音频，未修改经典端点。请稍后重试或查看诊断信息。</value></data>
+  <data name="LeAudio_Result_ClassicAudioEndpointRestoreFailed" xml:space="preserve"><value>无法重新启用经典音频端点，已停止删除配对。请以管理员权限重试，或在设备管理器中手动启用。</value></data>
   <data name="LeAudio_Result_PrimaryOnly" xml:space="preserve"><value>只配对上了一只耳机，声音可能只在一侧。请重新进入配对模式后再试一次。</value></data>
   <data name="LeAudio_Result_Removed" xml:space="preserve"><value>已清理本电脑上的耳机配对。请让耳机进入配对模式，点击“打开 Windows 蓝牙设置”，再选择“添加设备 → 蓝牙”手动配对，以恢复传统蓝牙音频。</value></data>
   <data name="LeAudio_Result_PairingModeNotSeen" xml:space="preserve"><value>没有检测到耳机的配对模式，原有配对没有改动。请重试。</value></data>
@@ -674,4 +700,10 @@
   <data name="Sennheiser_UnknownAction" xml:space="preserve"><value>未知动作 (0x{0})</value></data>
   <data name="Sennheiser_LowLatency" xml:space="preserve"><value>低延迟模式</value></data>
   <data name="Sennheiser_LowLatencyDescription" xml:space="preserve"><value>减少耳机播放声音的延迟，适用于游戏和视频。</value></data>
+  <data name="NoiseLevel_TransparencyStandard" xml:space="preserve"><value>标准通透</value></data>
+  <data name="NoiseLevel_EnhancedVoices" xml:space="preserve"><value>人声增强</value></data>
+  <data name="NoiseSelector_TransparencyLevel" xml:space="preserve"><value>通透模式</value></data>
+  <data name="Toggle_AutoVolume" xml:space="preserve"><value>智能音量调节</value></data>
+  <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>根据环境噪声变化自动调整耳机播放音量</value></data>
+  <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>此耳机固件支持查看设备列表，但不支持远程连接、断开或移除。请在对应设备的蓝牙设置中操作。</value></data>
 </root>

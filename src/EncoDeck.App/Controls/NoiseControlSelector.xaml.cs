@@ -52,6 +52,7 @@ public sealed partial class NoiseControlSelector : UserControl
         vm.PropertyChanged += OnViewModelPropertyChanged;
         vm.NoiseLevels.CollectionChanged += OnLevelsChanged;
         vm.AdaptiveLevels.CollectionChanged += OnLevelsChanged;
+        vm.TransparencyLevels.CollectionChanged += OnLevelsChanged;
         _shownLevels = null;
         Sync();
     }
@@ -62,6 +63,7 @@ public sealed partial class NoiseControlSelector : UserControl
         vm.PropertyChanged -= OnViewModelPropertyChanged;
         vm.NoiseLevels.CollectionChanged -= OnLevelsChanged;
         vm.AdaptiveLevels.CollectionChanged -= OnLevelsChanged;
+        vm.TransparencyLevels.CollectionChanged -= OnLevelsChanged;
         foreach (var (level, _) in _levelButtons) level.PropertyChanged -= OnLevelPropertyChanged;
     }
 
@@ -111,13 +113,15 @@ public sealed partial class NoiseControlSelector : UserControl
         OffButton.IsChecked = vm.IsOffSelected;
         AncButton.IsEnabled = AdaptiveButton.IsEnabled = TransparencyButton.IsEnabled = OffButton.IsEnabled = enabled;
 
-        var levels = vm.ShowNoiseLevels ? vm.NoiseLevels : vm.ShowAdaptiveLevels ? vm.AdaptiveLevels : null;
-        if (!ReferenceEquals(levels, _shownLevels)) RebuildLevels(levels, vm.ShowNoiseLevels);
+        var levels = vm.ShowNoiseLevels ? vm.NoiseLevels : vm.ShowAdaptiveLevels ? vm.AdaptiveLevels
+            : vm.ShowTransparencyLevels ? vm.TransparencyLevels : null;
+        if (!ReferenceEquals(levels, _shownLevels)) RebuildLevels(levels,
+            vm.ShowNoiseLevels ? "NoiseSelector_Level" : vm.ShowAdaptiveLevels ? "NoiseSelector_AdaptiveLevel" : "NoiseSelector_TransparencyLevel");
         LevelsPanel.Visibility = levels is null ? Visibility.Collapsed : Visibility.Visible;
         SyncLevelButtons();
     }
 
-    private void RebuildLevels(ObservableCollection<NoiseLevelViewModel>? levels, bool isNoiseCancelling)
+    private void RebuildLevels(ObservableCollection<NoiseLevelViewModel>? levels, string titleKey)
     {
         foreach (var (level, _) in _levelButtons) level.PropertyChanged -= OnLevelPropertyChanged;
         _levelButtons.Clear();
@@ -125,7 +129,7 @@ public sealed partial class NoiseControlSelector : UserControl
         _shownLevels = levels;
         if (levels is null) return;
 
-        LevelsTitle.Text = Loc.Get(isNoiseCancelling ? "NoiseSelector_Level" : "NoiseSelector_AdaptiveLevel");
+        LevelsTitle.Text = Loc.Get(titleKey);
         LevelsHost.ColumnDefinitions.Clear();
         int column = 0;
         foreach (var level in levels)

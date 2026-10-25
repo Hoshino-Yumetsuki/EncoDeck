@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using EncoDeck.Bluetooth.Control;
 using EncoDeck.Bluetooth.LeAudio;
+using EncoDeck.Core.State;
 using Windows.Devices.Bluetooth;
 
 namespace EncoDeck.Bluetooth.Discovery;
@@ -22,8 +23,10 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     private readonly CancellationTokenSource _lifetime = new();
     private BluetoothDevice? _device;
     private ImmutableArray<BluetoothLEDevice> _leDevices;
+    private ImmutableArray<Windows.Devices.Bluetooth.GenericAttributeProfile.GattSession> _sessions = [];
     private volatile bool _connected;
     private volatile bool _leAudio;
+    private LeAudioLinkState _leLinks = LeAudioLinkState.Empty;
     private int _searching;
     private bool _disposed;
 
@@ -33,8 +36,10 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         _leDevices = leDevices;
         _connected = Evaluate();
         _leAudio = EvaluateLe();
+        _leLinks = EvaluateLinks();
         _device.ConnectionStatusChanged += OnConnectionStatusChanged;
         foreach (var le in leDevices) le.ConnectionStatusChanged += OnConnectionStatusChanged;
+        _ = MaintainAsync(leDevices);
         // Only the primary bonded so far (e.g. the LE Audio switch is still pairing the other earbud).
         if (leDevices.Length == 1) _ = FindSecondaryAsync(SecondaryAttempts);
     }
@@ -44,6 +49,13 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
     public event EventHandler<bool>? ConnectionChanged;
 
     public bool IsLeAudio => _leAudio;
+
+    public LeAudioLinkState LeAudioLinks => Volatile.Read(ref _leLinks);
+
+    public event EventHandler? LinkDetailsChanged;
+
+    /// <summary>The earbuds were switched to LE Audio on this PC (an LE bond is watched).</summary>
+    public bool IsLeAudioBonded => !_leDevices.IsDefaultOrEmpty;
 
     public event EventHandler? TransportChanged;
 
@@ -143,6 +155,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
                     }
                 }
                 foreach (var le in found) le.Dispose();
+                _ = MaintainAsync(_leDevices.Skip(1));
                 OnConnectionStatusChanged(this, EventArgs.Empty);
                 return;
             }
@@ -156,37 +169,91 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         }
     }
 
+    /// <summary>
+    /// Asks Windows to keep (and re-establish) the LE links of the bonded earbuds. After the case
+    /// opens the X4 does not reconnect LE by itself, but once it advertises connectably (holding the
+    /// case button) Windows reconnects the existing bonds without pairing again (verified on the X4).
+    /// </summary>
+    private async Task MaintainAsync(IEnumerable<BluetoothLEDevice> devices)
+    {
+        foreach (var le in devices.ToList())
+        {
+            Windows.Devices.Bluetooth.GenericAttributeProfile.GattSession? session = null;
+            try
+            {
+                session = await Windows.Devices.Bluetooth.GenericAttributeProfile.GattSession.FromDeviceIdAsync(le.BluetoothDeviceId).AsTask(_lifetime.Token).ConfigureAwait(false);
+                if (session is null) continue;
+                session.MaintainConnection = true;
+                lock (_gate)
+                {
+                    if (!_disposed)
+                    {
+                        _sessions = _sessions.Add(session);
+                        session = null;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException or ArgumentException or UnauthorizedAccessException or COMException)
+            {
+                // Best effort: without it the earbuds still reconnect whenever they choose to.
+            }
+            finally { session?.Dispose(); }
+        }
+    }
+
     private bool Evaluate() => _device?.ConnectionStatus == BluetoothConnectionStatus.Connected || EvaluateLe();
 
     private bool EvaluateLe() => _leDevices.Any(le => le.ConnectionStatus == BluetoothConnectionStatus.Connected);
 
+    private LeAudioLinkState EvaluateLinks()
+    {
+        var devices = _leDevices;
+        return new(devices.Length > 0,
+            devices.Length > 0 && devices[0].ConnectionStatus == BluetoothConnectionStatus.Connected,
+            devices.Length > 1,
+            devices.Skip(1).Any(le => le.ConnectionStatus == BluetoothConnectionStatus.Connected));
+    }
+
     private void OnConnectionStatusChanged(object sender, object args)
     {
         bool connected, leAudio;
-        try { connected = Evaluate(); leAudio = EvaluateLe(); }
-        catch (ObjectDisposedException) { return; }
-        if (sender is BluetoothLEDevice && _leDevices.Length == 1) _ = FindSecondaryAsync(1);
-        if (leAudio != _leAudio)
+        LeAudioLinkState links;
+        LeAudioLinkState previousLinks;
+        bool transportChanged, connectionChanged;
+        // Publish one consistent snapshot before invoking listeners: callbacks can synchronously
+        // read IsConnected/IsLeAudio as well as the per-ear details.
+        lock (_gate)
         {
+            if (_disposed) return;
+            try { connected = Evaluate(); leAudio = EvaluateLe(); links = EvaluateLinks(); }
+            catch (ObjectDisposedException) { return; }
+            previousLinks = Interlocked.Exchange(ref _leLinks, links);
+            transportChanged = leAudio != _leAudio;
+            connectionChanged = connected != _connected;
             _leAudio = leAudio;
-            TransportChanged?.Invoke(this, EventArgs.Empty);
+            _connected = connected;
         }
-        if (connected == _connected) return;
-        _connected = connected;
-        ConnectionChanged?.Invoke(this, connected);
+        if (links != previousLinks) LinkDetailsChanged?.Invoke(this, EventArgs.Empty);
+        if (sender is BluetoothLEDevice && _leDevices.Length == 1) _ = FindSecondaryAsync(1);
+        if (transportChanged) TransportChanged?.Invoke(this, EventArgs.Empty);
+        if (connectionChanged) ConnectionChanged?.Invoke(this, connected);
     }
 
     public void Dispose()
     {
         ImmutableArray<BluetoothLEDevice> leDevices;
+        ImmutableArray<Windows.Devices.Bluetooth.GenericAttributeProfile.GattSession> sessions;
         lock (_gate)
         {
             if (_disposed) return;
             _disposed = true;
             leDevices = _leDevices;
             _leDevices = [];
+            sessions = _sessions;
+            _sessions = [];
         }
         _lifetime.Cancel();
+        foreach (var session in sessions) session.Dispose();
         foreach (var le in leDevices)
         {
             le.ConnectionStatusChanged -= OnConnectionStatusChanged;

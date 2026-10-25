@@ -72,7 +72,7 @@ public sealed partial class QuickSettingsPanelWindow : Window
         var monitor = ShellEnvironment.GetMonitorAt(new PixelPoint(cards.X + cards.Width / 2, cards.Bottom - 1));
         double scale = monitor.Scale;
         int margin = (int)Math.Round(CardMargin * scale);
-        int width = cards.Width - 2 * margin;
+        int width = PopupPlacement.QuickSettingsPanelWidth(cards, margin);
         if (width <= 0)
         {
             Leave();
@@ -95,7 +95,14 @@ public sealed partial class QuickSettingsPanelWindow : Window
         // Other topmost windows (and the shell, when the Start menu was open) can end up above
         // the panel: keep it at the top of the topmost band while Quick Settings is open.
         _ = WindowInterop.EnsureTopmost(this);
-        if (target == _target && !_leaving) return;
+        if (target == _target && !_leaving)
+        {
+            // Quick Settings keeps its width while it is open, but the window can still be at the
+            // width of a previous opening (a hidden window shown again) or one Windows adjusted.
+            // Put the computed size back so the panel always spans the cards.
+            MatchWindow(target);
+            return;
+        }
 
         // Sub-page, media card or content change: glide to the new place (and come back if leaving).
         bool resized = target.X != _target.X || target.Width != _target.Width || target.Height != _target.Height;
@@ -164,7 +171,23 @@ public sealed partial class QuickSettingsPanelWindow : Window
         WindowInterop.SetWindowAlpha(this, (byte)Math.Round(255 * _alpha));
         WindowInterop.GetAppWindow(this).Show(activateWindow: false);
         _ = WindowInterop.EnsureTopmost(this);
+        // A window that was hidden can come back at the size it had before the resize above; the
+        // first visible frame should already be as wide as Quick Settings.
+        MatchWindow(target);
         if (animate) Animate(target.Y, 1, EnterMilliseconds, EaseOutCubic, completed: null);
+    }
+
+    /// <summary>
+    /// Re-applies the horizontal position and the size (never Y, which the slide animation owns)
+    /// when the window does not really have them, so the panel follows the cards' width even when a
+    /// resize made while it was hidden was dropped or the system adjusted the window.
+    /// </summary>
+    private void MatchWindow(PixelRect target)
+    {
+        if (_closed) return;
+        var actual = WindowInterop.GetWindowBounds(this);
+        if (Math.Abs(actual.X - target.X) <= 1 && Math.Abs(actual.Width - target.Width) <= 1 && Math.Abs(actual.Height - target.Height) <= 1) return;
+        WindowInterop.MoveAndResize(this, target with { Y = (int)Math.Round(_y) });
     }
 
     private void HideNow()

@@ -59,6 +59,14 @@ public sealed class FeaturesViewModel
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
 
+    /// <summary>Sets the earbuds' LE/BR mode switch (0x0433) through the active controller.</summary>
+    public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        _commands.SetLeBrSwitchAsync(enabled, cancellationToken);
+
+    /// <summary>Always writes and reads back multipoint off before attempting LE Audio.</summary>
+    public Task<CommandResult> DisableMultipointForLeAudioAsync(CancellationToken cancellationToken) =>
+        _basic.SetToggleAsync(DeviceToggle.DualDeviceConnection, false, cancellationToken);
+
     public bool Has(DeviceCapability capability) => State.Profile switch
     {
         OppoDeviceProfile { Definition: { IsGeneric: false } model } => model.Capabilities.Get(capability).Support == CapabilitySupport.Supported,
@@ -249,6 +257,8 @@ public sealed class FeaturesViewModel
     public byte[]? PreferredAddress => State.PreferredDevice?.Value.Address;
 
     public bool IsPreferredKnown => State.PreferredDevice is not null;
+
+    public bool CanManageSourceDevices => Model?.SupportsMultiConnectOperations == true;
 
     public Task<CommandResult> MultiConnectAsync(MultiConnectOperation operation, SourceDevice device) =>
         Run(() => _commands.MultiConnectAsync(operation, device.Address));

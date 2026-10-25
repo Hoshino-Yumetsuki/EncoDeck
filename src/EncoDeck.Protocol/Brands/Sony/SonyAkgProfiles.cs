@@ -10,6 +10,10 @@ namespace EncoDeck.Protocol.Brands.Sony;
 
 public static class SonyAkgProfiles
 {
+    public static readonly Guid PrimaryServiceUuid = new("956c7b26-d49a-4ba8-b03f-b17d393cb6e2");
+    public static readonly Guid LegacyServiceUuid = new("96cc203e-5068-46ad-b32d-e316f5e069ba");
+    public static bool IsControlService(Guid uuid) => uuid == PrimaryServiceUuid || uuid == LegacyServiceUuid;
+
     public static IReadOnlyList<IDeviceProfile> CreateBuiltIn() =>
     [
         .. SonyModelNames.All.Select(n => new SonyAkgProfile("sony", n,
@@ -69,7 +73,7 @@ public sealed class SonyAkgProfile : IControllableProfile
     ];
     public IReadOnlyList<EqualizerPreset> EqualizerPresets => _presets;
     public IReadOnlyList<Guid> ControlServiceUuids => Brand == "sony"
-        ? [new("956c7b26-d49a-4ba8-b03f-b17d393cb6e2"), new("96cc203e-5068-46ad-b32d-e316f5e069ba")]
+        ? [SonyAkgProfiles.PrimaryServiceUuid, SonyAkgProfiles.LegacyServiceUuid]
         : [new("00001101-0000-1000-8000-00805f9b34fb")];
     public int MatchScore(DeviceIdentity identity)
     {

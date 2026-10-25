@@ -4,6 +4,8 @@
 
 ## OPPO / 一加 / realme / DIZO
 
+Enco Free4 标准版与丹拿版已按欢律配置专项核对，补充智能音量调节开关（耳机返回状态后可操作）；EQ 固件门槛、六段自定义 EQ、共享长按循环及无头部跟踪等差异见 [Free4 适配说明](ENCO_FREE4.md)。目前为配置和模拟协议验证，尚未完成 Free4 真机验证。
+
 | 兼容设备 | 对应功能 |
 | --- | --- |
 | OPPO Enco X4、OPPO Enco Bohr、OnePlus Buds Pro 4、OnePlus Buds Bohr | 电量、充电状态、降噪、通透、自适应降噪、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、动态低音、固件信息 |
@@ -35,7 +37,7 @@
 | OnePlus Buds Ace 3、OnePlus Nord Buds Einstein 1、OnePlus Nord Buds 4 Pro、OnePlus Nord Buds Einstein 2、OnePlus Nord Buds 4、OnePlus Nord Buds ohm EX、OPPO Enco Air5 Pro、OPPO Enco Einstein 1、OPPO Enco Einstein 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、动态低音、固件信息 |
 | OPPO Enco X3i | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、动态低音、固件信息 |
 | OPPO Enco Air2（新声版）、OPPO Enco Air3i、OPPO Enco R3 | 电量、充电状态、预设 EQ、空间音频、游戏模式、手势设置、固件信息 |
-| OPPO Enco X3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息 |
+| OPPO Enco X3 | 电量、充电状态、降噪、标准通透 / 人声增强、降噪档位、预设 EQ、自定义 EQ、空间音频、头部跟踪、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、固件信息；实验性 LE 配对入口，尚未真机验证 |
 | OnePlus Flow Buds、OnePlus Nord Buds Laplace 4、OPPO Enco Air5s、OPPO Enco Laplace 1、OPPO Enco Laplace 2、OPPO Enco Air5s（星光版）、OPPO Enco Laplace 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、提示音量、动态低音、固件信息 |
 | OPPO Enco Buds2 Pro | 电量、充电状态、预设 EQ、游戏模式、手势设置、查找耳机、固件信息 |
 | OPPO Enco Free4、OPPO Enco X3s、OPPO Enco Free4（丹拿版） | 电量、充电状态、降噪、通透、自适应降噪、降噪档位、预设 EQ、自定义 EQ、空间音频、游戏模式、佩戴检测开关、手势设置、双设备连接、查找耳机、贴合度检测、提示音量、固件信息 |
@@ -156,6 +158,8 @@ HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标
 ## 迈从 / 雷蛇 USB 与水月雨动画研究
 
 X9 和 BlackShark V2 Pro 2020/2023 有精确 PID 的专用电量读取，其他新增 USB 型号只提供识别和条件性标准电量。尚无本机真机验证。
+
+Barracuda X 2022 的 `1532:0552` 接收器新增专用无线连接、电量及充电线状态查询，依据官方配对工具静态分析与公开协议记录实现，尚待本项目实机验证。`0550` 等其他接收器版本仍仅识别，详见 [Barracuda X 适配说明](BARRACUDA_X.md)。
 
 ## 荣耀耳机
 

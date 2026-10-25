@@ -26,6 +26,8 @@ public enum DeviceToggle
     HiRes,
     IndicatorLight,
     PromptTone,
+    /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
+    AutoVolume,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

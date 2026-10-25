@@ -182,8 +182,8 @@ public sealed partial class OppoDeviceController : IDeviceController
             if (Model.GameSoundTypes.Count > 0) requests.Add(new OppoRequest(OppoCommand.QueryGameSound, []));
             // The official request has an empty payload.
             if (Model.CustomEqualizer is not null) requests.Add(new OppoRequest(OppoCommand.QueryEqualizerList, []));
-            requests.Add(new OppoRequest(OppoCommand.QueryPromptVolume, []));
-            requests.Add(new OppoRequest(OppoCommand.QueryBassEngine, []));
+            if (IsAvailable(DeviceCapability.PromptVolume)) requests.Add(new OppoRequest(OppoCommand.QueryPromptVolume, []));
+            if (IsAvailable(DeviceCapability.BassEngine)) requests.Add(new OppoRequest(OppoCommand.QueryBassEngine, []));
             if (Model.FeatureSwitches.Any(f => f.Toggle == DeviceToggle.DualDeviceConnection))
             {
                 requests.Add(new OppoRequest(OppoCommand.QueryConnectedDevices, []));
@@ -329,8 +329,14 @@ public sealed partial class OppoDeviceController : IDeviceController
 
     public async Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken)
     {
+        if (toggle == DeviceToggle.DualDeviceConnection && enabled && _store.Current.IsLeAudioBonded)
+            return new(CommandStatus.Rejected, "le-audio-multipoint");
         var feature = Model.FeatureSwitches.FirstOrDefault(f => f.Toggle == toggle);
         if (feature is null || !IsAllowed(feature.Support)) return CommandResult.Unsupported($"{toggle} is not available on this model.");
+        // The model flag alone does not prove that this firmware implements smart volume.
+        // Require a device-reported status before offering a write, as the UI does.
+        if (toggle == DeviceToggle.AutoVolume && !_store.Current.Toggles.ContainsKey(toggle))
+            return CommandResult.Unsupported("Smart volume has not been reported by the earbuds.");
 
         var request = new OppoRequest(OppoCommand.SetFeature, [feature.FeatureId, enabled ? (byte)1 : (byte)0], SequenceMode.FixedSet);
         return await ExecuteConfirmedAsync(

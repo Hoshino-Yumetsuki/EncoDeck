@@ -87,6 +87,7 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     public ObservableCollection<NoiseLevelViewModel> NoiseLevels { get; } = [];
     public ObservableCollection<NoiseLevelViewModel> AdaptiveLevels { get; } = [];
+    public ObservableCollection<NoiseLevelViewModel> TransparencyLevels { get; } = [];
     public ObservableCollection<EqualizerPresetViewModel> EqualizerPresets { get; } = [];
     public ObservableCollection<DeviceToggleViewModel> Toggles { get; } = [];
 
@@ -145,6 +146,7 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial bool HasAncMode { get; set; }
     [ObservableProperty] public partial bool HasTransparencyMode { get; set; }
     [ObservableProperty] public partial bool ShowNoiseLevels { get; set; }
+    [ObservableProperty] public partial bool ShowTransparencyLevels { get; set; }
     [ObservableProperty] public partial string NoiseText { get; set; } = string.Empty;
 
     [ObservableProperty] public partial bool IsEqualizerAvailable { get; set; }
@@ -233,6 +235,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         (CommandStatus.Rejected, "at-least-two") => Loc.Get("Error_CycleAtLeastTwo"),
         (CommandStatus.Rejected, "at-least-one") => Loc.Get("Error_CycleAtLeastOne"),
         (CommandStatus.Rejected, "remove-connected") => Loc.Get("Error_RemoveConnected"),
+        (CommandStatus.Rejected, "le-audio-multipoint") => Loc.Get("Error_LeAudioMultipoint"),
         (CommandStatus.Rejected, "max-presets") => Loc.Get("Error_MaxPresets"),
         (CommandStatus.Rejected, "invalid-name") => Loc.Get("Error_InvalidName"),
         (CommandStatus.Timeout, _) => Loc.Get("Error_Timeout"),
@@ -284,6 +287,12 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsControlUnavailable = state.Connection == DeviceConnectionState.ControlUnavailable;
         IsLinkDown = state.Connection is DeviceConnectionState.PairedNotConnected or DeviceConnectionState.Disconnected;
         IsLeAudio = state.IsLeAudio && !IsLinkDown;
+        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1)
+            ConnectionText = Loc.Get("Connection_LeAudioSingleEar");
+        // Switched to LE Audio but LC3 is not up (e.g. after the case reopened): the earbuds only come
+        // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect.
+        if (state.IsLeAudioBonded && !state.IsLeAudio && state.Connection != DeviceConnectionState.ControlReady)
+            ConnectionText = Loc.Get("Connection_WaitingForLeAudio");
         // Until the earbuds connect and report their ids, use the ones remembered from last time
         // (restored by the device cache) or the model's own product id, so the art shows at once.
         uint? productId = state.ProductId;
@@ -320,7 +329,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         }
 
         foreach (var item in new[] { Left, Right, Case }) item.SetSingleBattery(IsHeadphones);
-        bool batteryReady = IsReady || (state.Connection == DeviceConnectionState.UsbReceiverConnected && state.LastResponseAt is not null);
+        bool batteryReady = IsReady || (state.Connection is DeviceConnectionState.UsbReceiverConnected or DeviceConnectionState.UsbHeadsetConnected && state.LastResponseAt is not null);
         Left.Apply(state.Battery.Left, batteryReady, now);
         Right.Apply(state.Battery.Right, batteryReady, now);
         Case.Apply(state.Battery.Case, batteryReady, now);
@@ -363,6 +372,7 @@ public sealed partial class DeviceViewModel : ObservableObject
 
         NoiseLevels.Clear();
         AdaptiveLevels.Clear();
+        TransparencyLevels.Clear();
         EqualizerPresets.Clear();
         Toggles.Clear();
         if (profile is null) return;
@@ -375,6 +385,8 @@ public sealed partial class DeviceViewModel : ObservableObject
         {
             AdaptiveLevels.Add(new NoiseLevelViewModel(option.LevelId!, Text(option.ResourceKey, option.DisplayName)));
         }
+        foreach (var option in profile.NoiseControlOptions.Where(o => o.Mode == NoiseControlMode.Transparency && o.LevelId is not null && IsAllowed(o.Support)))
+            TransparencyLevels.Add(new NoiseLevelViewModel(option.LevelId!, Text(option.ResourceKey, option.DisplayName)));
         if (profile.Capabilities.IsAvailable(DeviceCapability.Equalizer, allowExperimental: false))
         {
             foreach (var preset in profile.EqualizerPresets.Where(p => IsAllowed(p.Support)))
@@ -385,6 +397,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         // "More settings" switches; game mode, dual connection, head gestures and the bass engine
         // have their own sections, as in the official client.
         AddToggle(profile, DeviceToggle.InEarDetection);
+        AddToggle(profile, DeviceToggle.AutoVolume);
         AddToggle(profile, DeviceToggle.SleepDetection);
         AddToggle(profile, DeviceToggle.SwiftPair);
         AddToggle(profile, DeviceToggle.VoiceCommands);
@@ -422,8 +435,10 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsTransparencySelected = noise?.Mode == NoiseControlMode.Transparency;
         ShowNoiseLevels = IsAncSelected && NoiseLevels.Count > 0 && IsNoiseAvailable;
         ShowAdaptiveLevels = IsAdaptiveSelected && AdaptiveLevels.Count > 1 && IsNoiseAvailable;
+        ShowTransparencyLevels = IsTransparencySelected && TransparencyLevels.Count > 1 && IsNoiseAvailable;
         foreach (var level in NoiseLevels) level.IsSelected = IsAncSelected && level.Id == noise?.LevelId;
         foreach (var level in AdaptiveLevels) level.IsSelected = IsAdaptiveSelected && level.Id == noise?.LevelId;
+        foreach (var level in TransparencyLevels) level.IsSelected = IsTransparencySelected && level.Id == noise?.LevelId;
 
         if (noise is null)
         {

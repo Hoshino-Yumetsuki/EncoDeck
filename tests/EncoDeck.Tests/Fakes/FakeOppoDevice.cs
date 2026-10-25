@@ -56,6 +56,8 @@ internal sealed class FakeOppoDevice
     public sbyte BassCurrent { get; set; }
 
     public byte HeadMotionType { get; set; }
+    public bool LeBrSwitchEnabled { get; set; }
+    public byte[]? LeBrSwitchResponse { get; set; }
 
     public uint CycleLeft { get; set; } = 0x0006;
 
@@ -191,6 +193,11 @@ internal sealed class FakeOppoDevice
                 return [new OppoFrame(rsp, seq, [0x00, 0xFD, 0x03, unchecked((byte)BassCurrent)])];
             case OppoCommand.QueryHeadMotionType:
                 return [new OppoFrame(rsp, seq, [0x00, HeadMotionType])];
+            case OppoCommand.QueryLeBrSwitch:
+                return [new OppoFrame(rsp, seq, LeBrSwitchResponse ?? [0, (byte)(2 | (LeBrSwitchEnabled ? 1 : 0))])];
+            case OppoCommand.SetLeBrSwitch:
+                if (CanApply && p.Length == 1) LeBrSwitchEnabled = p[0] != 0;
+                return [Ack(request)];
             case OppoCommand.QueryTouchControls:
                 return [new OppoFrame(rsp, seq, [0x00, (byte)Keys.Count, .. Keys.SelectMany(k => new[] { k.Side, k.Button, k.Action, k.Function })])];
             case OppoCommand.QueryEqualizerList:

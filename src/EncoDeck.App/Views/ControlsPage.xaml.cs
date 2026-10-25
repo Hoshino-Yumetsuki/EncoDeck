@@ -287,8 +287,8 @@ public sealed partial class ControlsPage : Page
         bool available = f.Has(DeviceCapability.GamingMode) && f.HasSwitch(DeviceToggle.GamingMode);
         GameCard.Visibility = Show(available);
         GameOptions.Visibility = Show(!f.IsSennheiserTw4);
-        GameTitle.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatency" : "Game_Title.Text");
-        GameSummary.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatencyDescription" : "Game_Summary.Text");
+        GameTitle.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatency" : "Game_Title/Text");
+        GameSummary.Text = Loc.Get(f.IsSennheiserTw4 ? "Sennheiser_LowLatencyDescription" : "Game_Summary/Text");
         if (!available) return;
         bool? master = f.Toggle(DeviceToggle.GamingMode);
         bool busy = f.IsPending("toggle:") || f.IsPending("game-sound");
@@ -319,12 +319,15 @@ public sealed partial class ControlsPage : Page
 
         var devices = f.SourceDevices;
         string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsThisDevice}/{d.IsAudioActive}/{d.Name}"))
-            + $"#{ready}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
+            + $"#{ready}#{f.CanManageSourceDevices}#{f.IsPending("multi-connect")}#{f.IsPending("preferred-device")}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
         if (signature == _sourceSignature) return;
         _sourceSignature = signature;
 
         SourceHost.Children.Clear();
-        foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready));
+        foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready && !f.IsPending("multi-connect")));
+        if (!f.CanManageSourceDevices)
+            SourceHost.Children.Add(new TextBlock { Text = Loc.Get("Dual_ManagementUnavailable"), TextWrapping = TextWrapping.Wrap,
+                Style = (Style)Application.Current.Resources["SecondaryTextStyle"] });
 
         // Official options: auto select, the connected devices, and the current preferred device.
         _preferredItems.Clear();
@@ -340,8 +343,8 @@ public sealed partial class ControlsPage : Page
             ? _preferredItems.FindIndex(a => a is not null && a.AsSpan().SequenceEqual(preferred))
             : 0;
         PreferredBox.SelectedIndex = f.IsPreferredKnown ? selected : -1;
-        PreferredSection.Visibility = Show(f.IsPreferredKnown || devices.Count > 0);
-        PreferredBox.IsEnabled = ready && f.IsPreferredKnown && !f.IsPending("preferred-device");
+        PreferredSection.Visibility = Show(f.CanManageSourceDevices && (f.IsPreferredKnown || devices.Count > 0));
+        PreferredBox.IsEnabled = ready && f.CanManageSourceDevices && f.IsPreferredKnown && !f.IsPending("preferred-device");
     }
 
     private Grid SourceRow(SourceDevice device, bool ready)
@@ -366,12 +369,12 @@ public sealed partial class ControlsPage : Page
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         bool busy = device.State is 1 or 4;
-        if (!device.IsConnected && !busy)
+        if (Features.CanManageSourceDevices && !device.IsConnected && !busy)
         {
             actions.Children.Add(ActionButton("Dual_Connect", device, ready, OnConnectSourceClick));
             actions.Children.Add(ActionButton("Dual_Remove", device, ready, OnRemoveSourceClick));
         }
-        else if (device.IsConnected && !device.IsThisDevice)
+        else if (Features.CanManageSourceDevices && device.IsConnected && !device.IsThisDevice)
         {
             // This PC disconnects through Windows, as the official client does for the phone.
             actions.Children.Add(ActionButton("Dual_Disconnect", device, ready, OnDisconnectSourceClick));
