@@ -219,7 +219,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         if (_singleUnit)
         {
             // One identity, one unit: a connected headset is complete, never "only one side connected".
-            return new(devices.Length > 0, primaryConnected, true, primaryConnected);
+            return new(devices.Length > 0, primaryConnected, false, false);
         }
         return new(devices.Length > 0,
             primaryConnected,

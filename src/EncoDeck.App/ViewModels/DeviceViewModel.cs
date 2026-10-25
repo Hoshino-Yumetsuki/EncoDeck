@@ -299,7 +299,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsControlUnavailable = state.Connection == DeviceConnectionState.ControlUnavailable;
         IsLinkDown = state.Connection is DeviceConnectionState.PairedNotConnected or DeviceConnectionState.Disconnected;
         IsLeAudio = state.IsLeAudio && !IsLinkDown;
-        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1)
+        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1 && profile?.Form == DeviceForm.Earbuds)
             ConnectionText = Loc.Get("Connection_LeAudioSingleEar");
         // Switched to LE Audio but LC3 is not up (e.g. after the case reopened): the earbuds only come
         // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect.
