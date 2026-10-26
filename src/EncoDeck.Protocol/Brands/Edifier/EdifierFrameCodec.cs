@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Ported from OppoPodsManager (https://github.com/Zhaoyi-ya/OppoPodsManager), GPL-3.0-or-later.
+// BES v2 payload XOR from HyperEars (https://github.com/silverpoetry/HyperEars, 361d279, GPL-3.0-only).
 namespace EncoDeck.Protocol.Brands.Edifier;
 
 /// <summary>One decoded EDIFIER frame: command byte and data bytes.</summary>
@@ -21,19 +22,30 @@ public static class EdifierFrameCodec
     /// </summary>
     public static byte[] Encode(byte command, ReadOnlySpan<byte> payload) => Encode(EdifierConstants.RequestHead, command, payload);
 
-    /// <summary>Connect v2: AA app command lengthHi lengthLo payload sum8 (unencrypted).</summary>
-    public static byte[] EncodeV2(byte command, ReadOnlySpan<byte> payload, byte head = EdifierConstants.RequestHead)
+    /// <summary>
+    /// Connect v2: AA app command lengthHi lengthLo payload sum8. With <paramref name="xor"/> every
+    /// payload byte is XORed with 0xA5 (HyperEars: W860NB PRO / 花再 Evo Pro captures); the sum covers
+    /// the bytes as sent.
+    /// </summary>
+    public static byte[] EncodeV2(byte command, ReadOnlySpan<byte> payload, byte head = EdifierConstants.RequestHead, bool xor = false)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(payload.Length, 4096);
         byte[] frame = new byte[payload.Length + 6];
         frame[0] = head;
-        frame[1] = 0xEC;
+        frame[1] = EdifierConstants.AppCode;
         frame[2] = command;
         frame[3] = (byte)(payload.Length >> 8);
         frame[4] = (byte)payload.Length;
         payload.CopyTo(frame.AsSpan(5));
+        if (xor) Xor(frame.AsSpan(5, payload.Length));
         foreach (byte value in frame.AsSpan(0, frame.Length - 1)) frame[^1] = unchecked((byte)(frame[^1] + value));
         return frame;
+    }
+
+    /// <summary>XORs BES v2 payload bytes with 0xA5 in place (the same operation decodes and encodes).</summary>
+    public static void Xor(Span<byte> payload)
+    {
+        for (int i = 0; i < payload.Length; i++) payload[i] ^= EdifierConstants.PayloadXor;
     }
 
     /// <summary>Encodes a frame with an explicit head byte (tests use it to build responses).</summary>

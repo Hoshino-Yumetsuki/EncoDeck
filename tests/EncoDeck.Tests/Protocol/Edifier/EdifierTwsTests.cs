@@ -51,7 +51,9 @@ public sealed class EdifierTwsTests
     [Fact]
     public void AllTwsModels_HaveArtworkAndModelSpecificGattServices()
     {
-        var profiles = EdifierProfiles.CreateBuiltIn().OfType<EdifierProfile>().Where(p => p.IsTws).ToArray();
+        // Catalog models carry their numeric product id; community-recorded models are tested separately.
+        var profiles = EdifierProfiles.CreateBuiltIn().OfType<EdifierProfile>()
+            .Where(p => p.IsTws && p.ModelId["edifier-".Length..].All(char.IsDigit)).ToArray();
         Assert.Equal(28, profiles.Length);
         foreach (var profile in profiles)
         {

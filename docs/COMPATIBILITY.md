@@ -92,6 +92,19 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 | vivo TWS Air3、iQOO TWS Air3、vivo TWS A4、vivo TWS 5i、vivo TWS A5、iQOO TWS 5i | 电量、充电状态、预设 EQ、游戏模式、佩戴状态（只读）、查找耳机、固件信息 |
 | vivo Headphones、iQOO Headphones | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、查找耳机、固件信息 |
 
+以下设置均在耳机回报当前值后才显示，写入后以耳机回报的新值确认；未知取值只显示，不会被改写：
+
+| 功能 | 适用型号 | 证据 |
+| --- | --- | --- |
+| 双击（左右耳分别设置）、长按功能、长按切换的降噪模式；佩戴检测开关 | vivo TWS 3e | 社区真机抓包重放（TWS-Pods-PC，固件 2.5.9） |
+| 同上 | 其他 vivo / iQOO 真无线型号 | 按协议实现，未真机验证；需开启实验功能 |
+| 双设备列表：显示已配对设备，连接、断开其他设备，移除未连接的设备 | vivo TWS 5 | 社区真机验证（vivopods-mac，固件 2.11.1） |
+| 同上 | vivo TWS 5 Hi-Fi、vivo TWS 5 Pro、iQOO TWS 5、vivo TWS 5e、iQOO TWS 5e、vivo TWS 5i、vivo TWS A5、iQOO TWS 5i、vivo / iQOO Headphones | 按协议实现，未真机验证；需开启实验功能 |
+
+- vivo TWS 3e 始终可连两台设备，但不回报设备列表，因此不显示双设备卡片。双设备总开关无法回读当前状态，暂不提供。
+- 本机（这台电脑）不能从列表中断开，请在 Windows 蓝牙设置中断开；正在连接的设备需先断开才能移除。
+- 控制通道优先使用经典蓝牙 RFCOMM；耳机没有该服务时改用 BLE GATT（消息不带 `FF` 帧头）。GATT 方式按社区 TWS 5 抓包实现，未在 Windows 真机验证。
+
 ## 华为
 
 | 兼容设备 | 对应功能 |
@@ -166,10 +179,25 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
-| EDIFIER W820NB、EDIFIER W200BT | 电量、降噪、通透 |
+| EDIFIER W820NB | 电量、降噪、通透；环境声音量 −3～+3、游戏模式、定时关机（耳机回读后显示） |
+| EDIFIER W820NB 双金标版 | 同 W820NB，另有按键循环模式和预设音效（经典 / 流行 / 古典 / 摇滚） |
+| EDIFIER W200BT Plus | 电量；预设音效、定时关机（耳机回读后显示）；无降噪 |
+| EDIFIER W200BT | 电量、降噪、通透 |
+| EDIFIER W860NB PRO | 电量；深度 / 舒适 / 防风降噪、环境声、关闭 |
+| 漫步者・花再 Evo Pro | 左右耳电量；降噪、防风降噪、环境声、关闭 |
+| EDIFIER FitBuds Turbo | 左右耳电量；降噪、防风降噪、环境声、关闭；游戏模式 |
+| EDIFIER FitClip Ultra | 左右耳电量、游戏模式；无降噪 |
+| EDIFIER X5 Pro | 左右耳与充电盒电量；降噪、环境声、关闭；游戏模式和佩戴检测开关为实验功能 |
 | EDIFIER Lolli 3、EDIFIER Lolli3 ANC、EDIFIER LolliPods 2022、EDIFIER Lolli Pro 2、EDIFIER Lolli Pods Pro、EDIFIER LolliClip、EDIFIER ATOMBUDS at03、EDIFIER Atombuds AS02、EDIFIER AtomBuds、EDIFIER ATOMBUDS A1、EDIFIER Lolli Pro 3、EDIFIER Lolli Pro 2S、EDIFIER Atom Max、EDIFIER AtomBuds Plus、EDIFIER Lolli Pro 3i、EDIFIER Lolli ANC、EDIFIER Lolli Pro 5、EDIFIER Atom Lace、EDIFIER Atom Dot、EDIFIER LolliClip AI、EDIFIER Lolli Air、EDIFIER Lolli Pro SE、EDIFIER Atom CC、EDIFIER Atom ANC、EDIFIER Atom Evo、EDIFIER Lolli5 ANC、EDIFIER LolliClip SE、EDIFIER Atom Max 2.0 | 左右耳与充电盒电量；降噪 / 通透仅在耳机回读确认后显示 |
 
-真无线型号按型号使用 SPP 或 GATT 控制通道（Lolli Pods Pro 仅 GATT），连接后先用只读状态查询协商帧版本，不发送控制命令试探。电量来自 TWS 状态查询，离线（0）和不可用（255）不显示为 0%；只有单耳在线时不保留另一耳的旧读数。真无线型号均未真机验证，暂不支持充电状态、降噪档位和 EQ。
+真无线型号按型号使用 SPP 或 GATT 控制通道（Lolli Pods Pro 仅 GATT），连接后先用只读状态查询协商帧版本，不发送控制命令试探。电量来自 TWS 状态查询，离线（0）和不可用（255）不显示为 0%；只有单耳在线时不保留另一耳的旧读数。Lolli / Atom 等 28 款目录真无线型号均未真机验证，暂不支持充电状态、降噪档位和 EQ。
+
+头戴与社区记录型号的证据：W820NB、W820NB 双金标版、W200BT Plus 有社区真机测试或完整抓包（mEDIFIER、Macifier）；W860NB PRO、花再 Evo Pro、FitBuds Turbo、FitClip Ultra 有社区真机记录（HyperEars）；X5 Pro 有社区贡献者的电量与降噪测试（BudsLink），游戏模式和佩戴检测没有应答样本，因此只在开启实验功能后提供。EncoDeck 未在这些型号上真机验证。
+
+- 每项设置都先查询，耳机给出有效应答后才显示；写入后再次查询确认，耳机未采用时提示失败并保留原值。
+- 定时关机只提供 5 / 15 / 30 分钟、1 / 3 小时与关闭；关闭使用单独的取消命令，不会发送 0 分钟（会立即关机）。
+- BES 新协议型号的数据按型号使用明文或异或编码；W860NB PRO 切换降噪后约 2 秒播报提示音，期间的回读会延后重试。
+- 漫步者全系列不显示充电状态（没有可靠的充电标志证据）；真无线耳机的 EQ 和手势写入没有应答样本，暂不提供。
 
 ## 未列出的型号
 

@@ -55,7 +55,12 @@ public sealed class FeaturesViewModel
 
     public bool IsSennheiserTw4 => State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { IsTw4: true };
 
-    public bool AllowExperimental => IsMoondrop && _settings.Current.EnableExperimentalFeatures;
+    public bool IsVivo => State.Profile is EncoDeck.Protocol.Brands.Vivo.VivoDeviceProfile;
+
+    public bool IsEdifier => State.Profile is EncoDeck.Protocol.Brands.Edifier.EdifierProfile;
+
+    /// <summary>Brands whose controllers gate read-back-only settings behind the experimental switch.</summary>
+    public bool AllowExperimental => (IsMoondrop || IsVivo || IsEdifier) && _settings.Current.EnableExperimentalFeatures;
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
 
@@ -216,6 +221,20 @@ public sealed class FeaturesViewModel
     public int? SennheiserFunction(EarSide side, GestureAction action) => State.KeyFunctions?.Value
         .FirstOrDefault(k => k.Side == side && k.Button == 0 && k.Action == action)?.Function;
 
+    /// <summary>Gesture-like rows a brand profile describes itself (vivo gestures, EDIFIER button control).</summary>
+    public IReadOnlyList<BrandGestureSlot> BrandGestureSlots => (State.Profile as IBrandGestureProfile)?.GestureSlots ?? [];
+
+    /// <summary>The value the device reported for a slot, or null before it reported one.</summary>
+    public int? BrandFunction(BrandGestureSlot slot) => State.KeyFunctions?.Value.FirstOrDefault(slot.Matches)?.Function;
+
+    /// <summary>A slot applies when it has a reported value and, if it depends on another slot, that one has the required value.</summary>
+    public bool BrandSlotApplies(BrandGestureSlot slot) =>
+        BrandFunction(slot) is not null
+        && (slot.ShownWhen is not { } when || State.KeyFunctions?.Value.Any(k => k == when) == true);
+
+    public Task<CommandResult> SetBrandGestureAsync(BrandGestureSlot slot, int function) =>
+        Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(slot.Side, slot.Button, slot.Action, function)));
+
     public Task<CommandResult> SetSennheiserGestureAsync(EarSide side, GestureAction action, int function) =>
         Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
 
@@ -261,7 +280,23 @@ public sealed class FeaturesViewModel
 
     public bool IsPreferredKnown => State.PreferredDevice is not null;
 
-    public bool CanManageSourceDevices => Model?.SupportsMultiConnectOperations == true;
+    public bool CanManageSourceDevices => Model?.SupportsMultiConnectOperations == true || (IsVivo && Has(DeviceCapability.DualDeviceConnection));
+
+    /// <summary>Only the OPPO protocol has a preferred-device setting.</summary>
+    public bool HasPreferredDevice => Model?.SupportsMultiConnectOperations == true;
+
+    /// <summary>The dual connection card: a device switch (OPPO family) or a vivo list without one.</summary>
+    public bool HasDualConnectionCard => Has(DeviceCapability.DualDeviceConnection)
+        && (HasSwitch(DeviceToggle.DualDeviceConnection) || (IsVivo && State.SourceDevices is not null));
+
+    // ---- power-off timer -------------------------------------------------------------------------
+
+    /// <summary>Timer choices in minutes (0 = off); empty unless the device reported a timer.</summary>
+    public IReadOnlyList<int> PowerOffTimerChoices => State.PowerOffTimer is null || !IsEdifier
+        ? Array.Empty<int>()
+        : (int[])[0, .. EncoDeck.Protocol.Brands.Edifier.EdifierConstants.PowerOffTimerMinutes];
+
+    public Task<CommandResult> SetPowerOffTimerAsync(int minutes) => Run(() => _commands.SetPowerOffTimerAsync(minutes));
 
     public Task<CommandResult> MultiConnectAsync(MultiConnectOperation operation, SourceDevice device) =>
         Run(() => _commands.MultiConnectAsync(operation, device.Address));

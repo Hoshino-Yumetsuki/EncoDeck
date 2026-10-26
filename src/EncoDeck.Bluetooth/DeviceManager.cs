@@ -327,6 +327,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetPreferredDeviceAsync(byte[]? address, CancellationToken cancellationToken = default) => WithController(c => c.SetPreferredDeviceAsync(address, cancellationToken));
 
+    public Task<CommandResult> SetPowerOffTimerAsync(int minutes, CancellationToken cancellationToken = default) => WithController(c => c.SetPowerOffTimerAsync(minutes, cancellationToken));
+
     public Task<CommandResult> SelectCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => WithController(c => c.SelectCustomEqualizerAsync(id, cancellationToken));
 
     public Task<CommandResult> SaveCustomEqualizerAsync(CustomEqualizer preset, CancellationToken cancellationToken = default) => WithController(c => c.SaveCustomEqualizerAsync(preset, cancellationToken));

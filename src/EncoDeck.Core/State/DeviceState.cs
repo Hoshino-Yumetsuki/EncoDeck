@@ -86,6 +86,9 @@ public sealed record DeviceState
     /// <summary>Present when the earbuds answer the LE/BR switch query, i.e. their firmware can run LE Audio.</summary>
     public Observed<LeAudioSwitchState>? LeAudioSwitch { get; init; }
 
+    /// <summary>Auto power-off timer in minutes (0 = off); present only after the headset reported it.</summary>
+    public Observed<int>? PowerOffTimer { get; init; }
+
     public FitTestResult? FitTest { get; init; }
 
     public bool IsFitTestRunning { get; init; }

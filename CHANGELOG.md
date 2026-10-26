@@ -2,6 +2,20 @@
 
 本文件记录 EncoDeck 每个版本的用户可见变化，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本按“新增 / 改进 / 修复 / 移除”分类。
 
+## [Unreleased]
+
+### 新增
+
+- vivo / iQOO 新增手势设置（左右耳双击、长按功能、长按切换的降噪模式）和佩戴检测开关，耳机回报当前设置后才显示。vivo TWS 3e 依据社区真机记录开放，其他型号需开启实验功能；均未在 EncoDeck 真机验证，详见 [vivo 适配说明](docs/COMPATIBILITY.md#vivo--iqoo)。
+- vivo TWS 5 新增双设备列表：显示已配对设备，可连接、断开其他设备或移除未连接的设备，每次操作以耳机回报的列表确认；同系列其他声明双连的型号需开启实验功能。
+- 漫步者 W820NB 新增环境声音量（−3～+3）、游戏模式和定时关机；W820NB 双金标版另有按键循环模式和预设音效；新增 W200BT Plus（音效、定时关机）。各项均在耳机回读后显示。
+- 新增漫步者 W860NB PRO、花再 Evo Pro、FitBuds Turbo、FitClip Ultra、X5 Pro：电量，按型号的降噪 / 防风降噪 / 环境声，FitBuds Turbo、FitClip Ultra 的游戏模式；X5 Pro 的游戏模式和佩戴检测为实验功能。依据社区真机记录，尚未在 EncoDeck 真机验证，详见 [漫步者适配说明](docs/COMPATIBILITY.md#漫步者)。
+
+### 改进
+
+- vivo / iQOO 耳机没有经典蓝牙控制服务时，改用 BLE GATT 控制通道。
+- 漫步者真无线耳机的充电盒离线时不再显示旧的盒电量。
+
 ## [1.9.0] - 2026-10-26
 
 ### 新增

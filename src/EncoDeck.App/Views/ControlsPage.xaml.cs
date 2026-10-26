@@ -6,6 +6,7 @@ using EncoDeck.App.ViewModels;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
+using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Protocol.Brands.Sennheiser;
 using Microsoft.UI.Dispatching;
@@ -29,6 +30,10 @@ public sealed partial class ControlsPage : Page
     private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _moondropGestures = [];
     private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _sennheiserGestures = [];
     private bool _sennheiserGestureWrite;
+    private readonly List<(BrandGestureSlot Slot, ComboBox Box, SettingRow Row)> _brandGestures = [];
+    private bool _brandGestureWrite;
+    private readonly List<int> _powerOffItems = [];
+    private string _powerOffSignature = string.Empty;
     private readonly HashSet<string> _moondropWrites = [];
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
@@ -131,6 +136,7 @@ public sealed partial class ControlsPage : Page
         _gestureBoxes.Clear();
         _moondropGestures.Clear();
         _sennheiserGestures.Clear();
+        _brandGestures.Clear();
         GestureHost.Children.Clear();
         CallGestureHost.Children.Clear();
         foreach (var row in Features.GestureRows(callControls: false)) GestureHost.Children.Add(GestureRow(row));
@@ -187,6 +193,18 @@ public sealed partial class ControlsPage : Page
                 _moondropGestures.Add((side, action, box, row));
                 GestureHost.Children.Add(row);
             }
+        }
+        foreach (var slot in Features.BrandGestureSlots)
+        {
+            var box = new ComboBox { MinWidth = 200, Tag = slot };
+            foreach (var choice in slot.Choices)
+                box.Items.Add(new ComboBoxItem { Content = string.Join(" / ", choice.LabelKeys.Select(Loc.Get)), Tag = choice.Function });
+            box.Items.Add(new ComboBoxItem { IsEnabled = false }); // Shows a reported value outside the known choices.
+            box.SelectionChanged += OnBrandGestureChanged;
+            string side = slot.Side switch { EarSide.Left => $"{Loc.Get("Gesture_Left")} · ", EarSide.Right => $"{Loc.Get("Gesture_Right")} · ", _ => string.Empty };
+            var row = new SettingRow { Header = side + Loc.Get(slot.LabelKey), Action = box };
+            _brandGestures.Add((slot, box, row));
+            GestureHost.Children.Add(row);
         }
 
         _cycleBoxes.Clear();
@@ -275,6 +293,7 @@ public sealed partial class ControlsPage : Page
             PromptVolumeValue.Text = ((int)Math.Round(PromptVolumeSlider.Value)).ToString(System.Globalization.CultureInfo.CurrentCulture);
             PromptVolumeSlider.IsEnabled = ready && !f.IsPending("prompt-volume")
                 && (!f.IsMoondrop || (!f.IsPending("prompt-tone") && !f.IsPending("toggle:PromptTone") && !_moondropWrites.Contains("toggle:PromptTone")));
+            SyncPowerOff(f, ready);
         }
         finally
         {
@@ -308,14 +327,46 @@ public sealed partial class ControlsPage : Page
         }
     }
 
+    /// <summary>Auto power-off choices, shown once the headset reported its timer; an unlisted value is shown as reported.</summary>
+    private void SyncPowerOff(FeaturesViewModel f, bool ready)
+    {
+        var choices = f.PowerOffTimerChoices;
+        int? current = f.State.PowerOffTimer?.Value;
+        PowerOffSection.Visibility = Show(choices.Count > 0);
+        if (choices.Count == 0) return;
+        List<int> items = current is int value && !choices.Contains(value) ? [.. choices, value] : [.. choices];
+        string signature = string.Join(',', items);
+        if (signature != _powerOffSignature)
+        {
+            _powerOffSignature = signature;
+            _powerOffItems.Clear();
+            _powerOffItems.AddRange(items);
+            PowerOffBox.Items.Clear();
+            foreach (int minutes in items)
+            {
+                PowerOffBox.Items.Add(new ComboBoxItem
+                {
+                    Content = minutes == 0 ? Loc.Get("PowerOff_Off")
+                        : minutes % 60 == 0 ? Loc.Format("PowerOff_Hours", minutes / 60) : Loc.Format("PowerOff_Minutes", minutes),
+                    IsEnabled = choices.Contains(minutes),
+                });
+            }
+        }
+        PowerOffBox.SelectedIndex = current is int selected ? _powerOffItems.IndexOf(selected) : -1;
+        PowerOffBox.IsEnabled = ready && !f.IsPending("power-off-timer");
+    }
+
     private void SyncDual(FeaturesViewModel f, bool ready)
     {
-        bool available = f.Has(DeviceCapability.DualDeviceConnection) && f.HasSwitch(DeviceToggle.DualDeviceConnection);
+        bool available = f.HasDualConnectionCard;
         DualCard.Visibility = Show(available);
         if (!available) return;
+        // vivo has no device-side switch; only the list is shown.
+        bool hasSwitch = f.HasSwitch(DeviceToggle.DualDeviceConnection);
+        DualSwitch.Visibility = Show(hasSwitch);
         bool? enabled = f.Toggle(DeviceToggle.DualDeviceConnection);
         DualSwitch.IsOn = enabled == true;
-        DualSwitch.IsEnabled = ready && enabled is not null && !f.IsPending("toggle:DualDeviceConnection");
+        DualSwitch.IsEnabled = hasSwitch && ready && enabled is not null && !f.IsPending("toggle:DualDeviceConnection");
 
         var devices = f.SourceDevices;
         string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsThisDevice}/{d.IsAudioActive}/{d.Name}"))
@@ -343,8 +394,8 @@ public sealed partial class ControlsPage : Page
             ? _preferredItems.FindIndex(a => a is not null && a.AsSpan().SequenceEqual(preferred))
             : 0;
         PreferredBox.SelectedIndex = f.IsPreferredKnown ? selected : -1;
-        PreferredSection.Visibility = Show(f.CanManageSourceDevices && (f.IsPreferredKnown || devices.Count > 0));
-        PreferredBox.IsEnabled = ready && f.CanManageSourceDevices && f.IsPreferredKnown && !f.IsPending("preferred-device");
+        PreferredSection.Visibility = Show(f.HasPreferredDevice && (f.IsPreferredKnown || devices.Count > 0));
+        PreferredBox.IsEnabled = ready && f.HasPreferredDevice && f.IsPreferredKnown && !f.IsPending("preferred-device");
     }
 
     private Grid SourceRow(SourceDevice device, bool ready)
@@ -394,6 +445,29 @@ public sealed partial class ControlsPage : Page
 
     private void SyncGestures(FeaturesViewModel f, bool ready)
     {
+        if (_brandGestures.Count > 0)
+        {
+            // Rows appear once the device reported them; unknown values are shown, never written.
+            bool brandAvailable = f.Has(DeviceCapability.TouchCustomization) && _brandGestures.Any(g => f.BrandSlotApplies(g.Slot));
+            GestureCard.Visibility = Show(brandAvailable);
+            EarSelector.Visibility = CycleSection.Visibility = CallGestureTitle.Visibility = Visibility.Collapsed;
+            foreach (var (slot, box, row) in _brandGestures)
+            {
+                int? function = f.BrandFunction(slot);
+                bool applies = brandAvailable && f.BrandSlotApplies(slot);
+                row.Visibility = Show(applies);
+                var items = box.Items.Cast<ComboBoxItem>().ToList();
+                int selected = items.FindIndex(item => item.Tag is int code && code == function);
+                if (function is int unknown && selected < 0)
+                {
+                    items[^1].Content = Loc.Format("Brand_UnknownValue", (unknown & 0xFF).ToString("X2"));
+                    selected = items.Count - 1;
+                }
+                box.SelectedIndex = selected;
+                box.IsEnabled = ready && applies && !f.IsPending("key-function") && !_brandGestureWrite;
+            }
+            return;
+        }
         if (f.IsSennheiserTw4)
         {
             bool tw4Available = f.Has(DeviceCapability.TouchCustomization)
@@ -617,6 +691,31 @@ public sealed partial class ControlsPage : Page
         Sync();
         try { await f.SetSennheiserGestureAsync(target.Item1, target.Item2, function); }
         finally { _sennheiserGestureWrite = false; Sync(); }
+    }
+
+    private async void OnBrandGestureChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        if (_syncing || !IsLoaded || sender is not ComboBox { IsEnabled: true, Tag: BrandGestureSlot slot,
+                SelectedItem: ComboBoxItem { IsEnabled: true, Tag: int function } }
+            || !f.IsReady || !f.Has(DeviceCapability.TouchCustomization) || !f.BrandSlotApplies(slot)
+            || f.BrandFunction(slot) == function || _brandGestureWrite) return;
+        _brandGestureWrite = true;
+        Sync();
+        try { await f.SetBrandGestureAsync(slot, function); }
+        finally { _brandGestureWrite = false; Sync(); }
+    }
+
+    private async void OnPowerOffChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        int index = PowerOffBox.SelectedIndex;
+        if (_syncing || !IsLoaded || !PowerOffBox.IsEnabled || !f.IsReady || index < 0 || index >= _powerOffItems.Count
+            || f.State.PowerOffTimer?.Value == _powerOffItems[index] || f.IsPending("power-off-timer")) return;
+        int minutes = _powerOffItems[index];
+        Sync();
+        await f.SetPowerOffTimerAsync(minutes);
+        Sync();
     }
 
     private async void OnMoondropGestureChanged(object sender, SelectionChangedEventArgs e)

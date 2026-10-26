@@ -158,6 +158,9 @@
                             <TextBlock x:Name="PromptVolumeValue" MinWidth="20" VerticalAlignment="Center" />
                         </StackPanel>
                     </controls:SettingRow>
+                    <controls:SettingRow x:Name="PowerOffSection" x:Uid="PowerOff_Timer" Header="Auto power-off">
+                        <ComboBox x:Name="PowerOffBox" MinWidth="200" SelectionChanged="OnPowerOffChanged" />
+                    </controls:SettingRow>
                 </StackPanel>
             </Border>
         </StackPanel>

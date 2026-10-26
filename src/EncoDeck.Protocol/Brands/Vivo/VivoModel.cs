@@ -29,6 +29,10 @@ public enum VivoGaiaProfile
 /// <param name="Find">Declares find-my-earbuds.</param>
 /// <param name="LowLatency">Declares low-latency game mode.</param>
 /// <param name="Headphones">Over-ear headphones rather than earbuds.</param>
+/// <param name="DualConnection">
+/// Declares a manageable dual connection list (official feature 17, per TWS-Pods-PC's feature table).
+/// The TWS 3e always connects two devices but answers no list query, so it is not marked.
+/// </param>
 public sealed record VivoModel(
     string ModelId,
     string Name,
@@ -40,7 +44,8 @@ public sealed record VivoModel(
     int AudioEffect,
     bool Find,
     bool LowLatency,
-    bool Headphones)
+    bool Headphones,
+    bool DualConnection = false)
 {
     public int GaiaVersion => Gaia == VivoGaiaProfile.FamilyV4 ? 4 : 3;
 
