@@ -19,7 +19,6 @@ public sealed partial class LhdcSettings : UserControl
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            Download.Content = Loc.Get("Lhdc_Download");
             Cancel.Content = Loc.Get("Lhdc_Cancel");
             Devices.Header = Loc.Get("Lhdc_Device");
             Rate.Header = Loc.Get("Lhdc_Rate");
@@ -35,15 +34,27 @@ public sealed partial class LhdcSettings : UserControl
             Depth.SelectedIndex = 1;
             Bitrate.ItemsSource = new[] { 64, 160, 192, 256, 320, 400, 500, 900, 1000 }.Select(k => new Choice(k, $"{k} kbps")).ToArray();
             Bitrate.SelectedIndex = 5;
-            Status.Text = Loc.Get(LhdcCompanion.StatusKey);
+            Status.Text = StatusText();
             Sync();
             if (LhdcCompanion.IsReady) await Operate(RefreshDevices);
         };
         Unloaded += (_, _) => _download?.Cancel();
     }
 
+    /// <summary>The state, and which component build is installed (an app update keeps using it until a newer pin is downloaded).</summary>
+    private static string StatusText()
+    {
+        string text = Loc.Get(LhdcCompanion.StatusKey);
+        if (LhdcCompanion.Component.Installed is { } installed)
+            text += Environment.NewLine + Loc.Format("Lhdc_Version", installed.Version);
+        if (LhdcCompanion.UpdateAvailable) text += Environment.NewLine + Loc.Format("Lhdc_UpdateAvailable", LhdcCompanion.Component.Release.Version);
+        return text;
+    }
+
     private void Sync()
     {
+        Download.Content = LhdcCompanion.UpdateAvailable ? Loc.Format("Lhdc_Update", LhdcCompanion.PackageMegabytes)
+            : Loc.Format("Lhdc_DownloadSize", LhdcCompanion.PackageMegabytes);
         Editor.Visibility = LhdcCompanion.IsReady ? Visibility.Visible : Visibility.Collapsed;
         Download.Visibility = LhdcCompanion.CanDownload || PackageIdentity.IsPackaged ? Visibility.Visible : Visibility.Collapsed;
         Download.IsEnabled = !_busy && LhdcCompanion.CanDownload;
@@ -140,7 +151,7 @@ public sealed partial class LhdcSettings : UserControl
                 Status.Text = Loc.Format("Lhdc_DownloadProgress", p.Received / 1048576.0, p.Total / 1048576.0);
             });
             await LhdcCompanion.DownloadAsync(progress, cancellation.Token);
-            Status.Text = Loc.Get(LhdcCompanion.StatusKey);
+            Status.Text = StatusText();
             await RefreshDevices();
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { Status.Text = Loc.Get("Lhdc_Cancelled"); }

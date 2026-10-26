@@ -10,6 +10,7 @@ using EncoDeck.Protocol.Brands;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Protocol.Brands.Moondrop;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -32,7 +33,7 @@ internal static class UiSnapshot
 
     private static readonly string[] Pages = ["Home", "Sound", "Controls", "Devices", "Labs", "Settings", "About"];
 
-    public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null, string? artworkDirectory = null, string? profileId = null)
+    public static async Task<int> RunAsync(App app, string outDir, DispatcherQueue dispatcher, string? modelFile = null, string? artworkDirectory = null, string? profileId = null, string? bridgeInstance = null)
     {
         Directory.CreateDirectory(outDir);
         var host = AppHost.Create(Path.Combine(outDir, "logs"), Path.Combine(outDir, "state"));
@@ -108,6 +109,40 @@ internal static class UiSnapshot
             {
                 errors.Add($"{page}: {ex}");
             }
+        }
+        if (bridgeInstance is not null)
+        {
+            // A real A2DPWB core started as a side-by-side test instance: the Labs card while connected, and
+            // the home page of earbuds that the bridge streams to (only through it, and also over Windows).
+            await host.Bridge.DisposeAsync();
+            host.Bridge = new A2dpBridgeCompanion(Path.Combine(outDir, "state", "Components"), host.Store, host.Settings,
+                host.Loggers.CreateLogger<A2dpBridgeCompanion>(), bridgeInstance);
+            host.Bridge.Start();
+            if (!await host.Bridge.Monitor.WaitForConnectionAsync(TimeSpan.FromSeconds(15))) errors.Add($"bridge: not connected ({host.Bridge.Status.Link})");
+            main.Navigate("Labs");
+            await Task.Delay(1200);
+            if (FindScrollViewer(main.Content) is { } labs) labs.ChangeView(null, labs.ScrollableHeight, null, disableAnimation: true);
+            await Task.Delay(400);
+            await CaptureAsync(main, Path.Combine(outDir, "Bridge-Labs.png"));
+            foreach (var expander in Descendants(main.Content).OfType<Expander>().Where(e => e.Name == "AdaptersPanel")) expander.IsExpanded = true;
+            await Task.Delay(600);
+            if (FindScrollViewer(main.Content) is { } expanded) expanded.ChangeView(null, expanded.ScrollableHeight, null, disableAnimation: true);
+            await Task.Delay(400);
+            await CaptureAsync(main, Path.Combine(outDir, "Bridge-Labs-Adapters.png"));
+            await host.Bridge.DisposeAsync();
+            var link = new BridgeAudioLink(true, "LDAC", 990, 96000, "X4");
+            foreach (var (name, state) in new[]
+            {
+                ("Bridge-Home-Only", sample with { Connection = DeviceConnectionState.PairedNotConnected, Bridge = link }),
+                ("Bridge-Home-Both", sample with { Bridge = link }),
+            })
+            {
+                host.Store.Reset(state);
+                main.Navigate("Home");
+                await Task.Delay(900);
+                await CaptureAsync(main, Path.Combine(outDir, name + ".png"));
+            }
+            host.Store.Reset(sample);
         }
         if (sample.Profile is MoondropProfile snapshotProfile)
         {

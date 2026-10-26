@@ -1,35 +1,45 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using EncoDeck.Platform.Packaging;
+using EncoDeck.Platform.Components;
 using EncoDeck.Platform.Lhdc;
+using EncoDeck.Platform.Packaging;
 using EncoDeck.Platform.Paths;
 using EncoDeck.Platform.Updates;
 namespace EncoDeck.App.Services;
 internal static class LhdcCompanion
 {
     private static readonly AppPaths Paths = new();
-    private static readonly LhdcDownloadService Downloads = new(new HttpClient(), Path.Combine(Paths.Root, "Components", "LHDC"));
-    public static string? RuntimeDirectory => Downloads.InstalledDirectory
-        ?? BundledRuntimeDirectory();
+
+    /// <summary>The LHDC component release pinned by this app; independent of the app version.</summary>
+    public static ComponentInstaller Component { get; } = LhdcComponent.CreateInstaller(new HttpClient(), Path.Combine(Paths.Root, "Components", "LHDC"));
+
+    public static string? RuntimeDirectory => Component.Installed?.Directory ?? BundledRuntimeDirectory();
+
+    /// <summary>An offline installer (build-installer.ps1 -WithLhdc) puts the runtime next to the app.</summary>
     private static string? BundledRuntimeDirectory()
     {
-        try
-        {
-            string directory = Path.Combine(AppContext.BaseDirectory, "LHDC");
-            using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, "runtime.json")));
-            return manifest.RootElement.GetProperty("EncoDeckVersion").GetString() == LhdcDownloadService.ApplicationVersion ? directory : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or KeyNotFoundException) { return null; }
+        string directory = Path.Combine(AppContext.BaseDirectory, "LHDC");
+        return LhdcComponent.IsRuntime(directory) ? directory : null;
     }
+
     public static string StatusKey => PackageIdentity.IsPackaged ? "Lhdc_Store"
         : RuntimeInformation.OSArchitecture != Architecture.X64 || RuntimeInformation.ProcessArchitecture != Architecture.X64 ? "Lhdc_Architecture"
         : !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22621) ? "Lhdc_Windows"
-        : RuntimeDirectory is null ? "Lhdc_Missing" : "Lhdc_Ready";
+        : RuntimeDirectory is not null ? "Lhdc_Ready"
+        : Component.CanInstall ? "Lhdc_Missing" : "Lhdc_Unpublished";
     public static bool IsReady => StatusKey == "Lhdc_Ready";
-    public static bool CanDownload => StatusKey == "Lhdc_Missing";
-    public static Task DownloadAsync(IProgress<UpdateDownloadProgress> progress, CancellationToken ct) => Downloads.DownloadAsync(progress, ct);
+
+    /// <summary>Installed, but this app pins a newer build (the installed one keeps working meanwhile).</summary>
+    public static bool UpdateAvailable => IsReady && Component.CanInstall && Component.Installed is not null && !Component.IsCurrent;
+
+    public static bool CanDownload => StatusKey == "Lhdc_Missing" || UpdateAvailable;
+
+    /// <summary>Download size of the pinned package in MB.</summary>
+    public static double PackageMegabytes => (Component.Package?.Size ?? 0) / 1048576.0;
+
+    public static Task DownloadAsync(IProgress<UpdateDownloadProgress> progress, CancellationToken ct) => Component.InstallAsync(progress, ct);
+
     public static LhdcBackend Backend => IsReady
-        ? new(RuntimeDirectory!, Path.Combine(Paths.Root, "Components", "LHDC", "results"))
+        ? new(RuntimeDirectory!, Path.Combine(Component.Root, LhdcComponent.ResultsFolder))
         : throw new InvalidOperationException(Loc.Get(StatusKey));
 }

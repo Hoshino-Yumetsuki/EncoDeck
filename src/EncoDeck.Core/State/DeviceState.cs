@@ -28,6 +28,9 @@ public sealed record DeviceState
     /// <summary>The earbuds were switched to LE Audio on this PC, whether or not that link is up now.</summary>
     public bool IsLeAudioBonded { get; init; }
 
+    /// <summary>A2DP Windows Bridge is connecting or streaming to this device over its own adapter; null otherwise.</summary>
+    public BridgeAudioLink? Bridge { get; init; }
+
     public BatteryStatus Battery { get; init; } = BatteryStatus.Unknown;
 
     public Observed<WearStatus>? Wear { get; init; }
