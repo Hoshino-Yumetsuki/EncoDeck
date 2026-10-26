@@ -36,10 +36,14 @@ public sealed partial class DevicesPage : Page
 
     private void OnMoondropExperimentalToggled(object sender, RoutedEventArgs e)
     {
-        if (_syncingSwitch || ViewModel.Profile is not EncoDeck.Protocol.Brands.Moondrop.MoondropProfile) return;
+        if (_syncingSwitch || !HasExperimentalSwitch(ViewModel.Profile)) return;
         bool on = MoondropExperimentalSwitch.IsOn;
         App.Instance.Host.Settings.Update(s => s with { EnableExperimentalFeatures = on });
     }
+
+    /// <summary>Brands whose unverified commands are gated by the shared experimental preference.</summary>
+    private static bool HasExperimentalSwitch(EncoDeck.Core.Profiles.IDeviceProfile? profile) =>
+        profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile or EncoDeck.Protocol.Brands.Akg.AkgHybridProfile;
 
     private void OnDevicesChanged(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(Build);
 
@@ -52,10 +56,13 @@ public sealed partial class DevicesPage : Page
 
     private void BuildCapabilities()
     {
-        bool moondrop = ViewModel.Profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile;
-        bool experimental = moondrop && App.Instance.Host.Settings.Current.EnableExperimentalFeatures;
-        MoondropCard.Visibility = moondrop ? Visibility.Visible : Visibility.Collapsed;
-        if (MoondropExperimentalSwitch.IsOn != experimental && moondrop)
+        bool optIn = HasExperimentalSwitch(ViewModel.Profile);
+        bool experimental = optIn && App.Instance.Host.Settings.Current.EnableExperimentalFeatures;
+        MoondropCard.Visibility = optIn ? Visibility.Visible : Visibility.Collapsed;
+        bool akg = ViewModel.Profile is EncoDeck.Protocol.Brands.Akg.AkgHybridProfile;
+        ExperimentalRow.Header = Loc.Get(akg ? "Settings_AkgExperimental/Header" : "Settings_MoondropExperimental/Header");
+        ExperimentalRow.Description = Loc.Get(akg ? "Settings_AkgExperimental/Description" : "Settings_MoondropExperimental/Description");
+        if (MoondropExperimentalSwitch.IsOn != experimental && optIn)
         {
             _syncingSwitch = true;
             try { MoondropExperimentalSwitch.IsOn = experimental; }

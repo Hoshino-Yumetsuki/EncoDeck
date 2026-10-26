@@ -335,6 +335,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => WithController(c => c.DeleteCustomEqualizerAsync(id, cancellationToken));
 
+    public Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) => WithController(c => c.SetOptionAsync(id, value, cancellationToken));
+
     public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default)
     {
         if (_usbIdentity is not null) return RefreshUsbAsync(cancellationToken);

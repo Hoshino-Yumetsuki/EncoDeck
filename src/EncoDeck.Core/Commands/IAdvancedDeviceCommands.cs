@@ -61,4 +61,11 @@ public interface IAdvancedDeviceCommands
     Task<CommandResult> AddCustomEqualizerAsync(CancellationToken cancellationToken = default);
 
     Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes a device-reported <see cref="DeviceOption"/> and confirms it by readback. Brands without
+    /// such options keep this default.
+    /// </summary>
+    Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) =>
+        Task.FromResult(CommandResult.Unsupported($"Option {id} is not supported on this device."));
 }

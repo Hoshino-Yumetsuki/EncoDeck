@@ -23,7 +23,9 @@ internal static class SonyEqualizer
             try { name = new UTF8Encoding(false, true).GetString(p.Slice(offset + 2, length)); }
             catch (DecoderFallbackException) { return false; }
             if (name.Any(char.IsControl)) return false;
-            result.Add(new($"sony-{id}", string.IsNullOrWhiteSpace(name) ? $"EQ {id}" : name, "", CapabilitySupport.Supported));
+            // Some firmware (WF-LC900 2.0.3) sends every preset with an empty name.
+            var label = string.IsNullOrWhiteSpace(name) ? SonySettings.PresetLabel(id) : null;
+            result.Add(new($"sony-{id}", label?.Name ?? (string.IsNullOrWhiteSpace(name) ? $"EQ {id}" : name), label?.Key ?? "", CapabilitySupport.Supported));
             offset += length + 2;
         }
         if (offset != p.Length || result.Count == 0) return false;

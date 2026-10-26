@@ -142,9 +142,22 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 | --- | --- |
 | INZONE H9 II、LinkBuds、LinkBuds Clip、LinkBuds Fit、LinkBuds Open、LinkBuds S、MDR-XB950B1、MDR-XB950N1、ULT WEAR、WF-1000X、WF-1000XM3、WF-1000XM4、WF-1000XM5、WF-1000XM6、WF-C500、WF-C510、WF-C700N、WF-C710N、WF-H800、WF-SP700N、WF-SP800N、WF-SP900、WH-1000XM2、WH-1000XM3、WH-1000XM4、WH-1000XM4C、WH-1000XM5、WH-1000XM6、WH-CH520、WH-CH530 series、WH-CH700N、WH-CH720N、WH-CH730N series、WH-H800、WH-H810、WH-H900N、WH-H910N、WH-XB700、WH-XB900N、WH-XB910N、WI-1000X、WI-1000XM2、WI-C100、WI-C600N、WI-H700、WI-SP600N | 电量 / 充电状态（按设备上报）；降噪 / 环境声、预设 EQ（需设备确认） |
 
-索尼控制通道使用需认证的加密 RFCOMM 连接，按设备提供的顺序尝试两个控制服务；握手失败后，下次重试优先换用另一服务，成功后优先复用已验证的服务。未收到应答时每 750 ms 重发原帧，最多 10 次后结束会话。
+索尼控制通道使用需认证的加密 RFCOMM 连接，按设备提供的顺序尝试两个控制服务；握手失败后，下次重试优先换用另一服务，成功后优先复用已验证的服务。两个 RFCOMM 服务都不可用时，最后尝试 MDR 的 BLE GATT 服务（`5b833e20-…`，仅绑定已选耳机的地址）。未收到应答时每 750 ms 重发原帧，最多 10 次后结束会话；兼容先回包、后 ACK 的固件（如 WH-1000XM3 4.5.2）。
 
-尚未覆盖：ULT 组合 EQ、自定义 EQ、环境声档位、手势、双设备连接。
+以下设置均按 [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient/tree/4061cf353fd0044e559e9a1f1b7f2faa334d09c6) 的协议定义实现，**按协议实现，未在本项目 Windows 真机验证**；只在耳机的功能表列出且读回有效值后显示，写入后重新读取确认：
+
+| 功能 | 说明与证据 |
+| --- | --- |
+| 环境声档位：标准 / 聚焦人声，环境声级别 1–20 | 保留设备回包中的其他字段；级别仅在环境声开启时显示。v1 写入帧与 WH-1000XM3 4.5.2 社区抓包一致 |
+| 说话即对话（Speak-to-Chat） | v1 / v2 各自布局；WF-1000XM5 6.1.0 社区抓包可解析 |
+| 多点连接开关、触控面板开关 | 由耳机上报的通用设置名称（`MULTIPOINT_SETTING`、`TOUCH_PANEL_SETTING`）识别；其他通用设置不作为开关显示 |
+| 按键 / 触控功能分配（v2） | 只提供耳机上报的每个按键可选功能；未知功能值显示为“未知”并保留 |
+| 自动关机 | 只提供耳机上报的选项；v1 无 15 分钟档 |
+| DSEE、摘下暂停（佩戴检测） | 与功能表对应；v2 开关值 0 为开启 |
+| 预设 EQ | 名称为空的固件（WF-LC900 2.0.3、WH-1000XM3）按预设编号显示名称；WH-1000XM6 只显示 Heavy / Clear / Hard / Soft、Custom 与用户设置 |
+
+- WF-C700N 固件 2.0.5 会确认但不执行降噪 / 环境声写入，EncoDeck 在该版本上不发送写入并提示升级到 2.0.7 或更新版本。
+- 选择当前播放设备、多点连接设备列表管理、自定义 EQ 频段编辑尚未提供；ULT 组合 EQ 不支持。
 
 **连接失败时的复测方法**：先在 Windows 中连接耳机，观察是否出现电量和 `ControlReady`；排查时可暂时断开手机等其他控制客户端。仍失败时导出诊断包，查看 `RFCOMM connecting` 的服务与保护级别、`Sony handshake failed` 是否切换了备用服务，以及 `Sony MDR protocol ... confirmed` 是否出现。能播放音频不代表控制通道可用。
 
@@ -152,9 +165,13 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
-| AKG N400NC、AKG N700NCM2、AKG N200NC、AKG Y600 | 电量、降噪 / 环境声、入耳自动播放 / 暂停（需设备确认） |
+| AKG N400NC、AKG N700NCM2、AKG N200NC、AKG Y600 | 电量 / 充电状态、固件版本，关闭 / 降噪 / 环境感知 / 对话模式，9 个预设 EQ，自动播放 / 暂停（仅耳机回报该状态时）；均需设备回包确认 |
 | AKG N700NC | 仅型号识别和素材，暂不提供耳机控制 |
-| AKG N5 Hybrid、AKG N9 Hybrid | Airoha RACE 蓝牙控制、电量、按返回布局开放 ANC；模拟设备回归通过，真机待验证 |
+| AKG N5 Hybrid、AKG N9 Hybrid | Airoha RACE 控制，左右耳 / 充电盒电量与充电状态；降噪仅在开启“AKG Hybrid 实验性功能”且读回有效时显示 |
+
+- N400NC 系列使用 `AA` 帧控制层，优先通过 BLE GATT 服务 `65786365-6c70-6f69-6e74-2e636f6d0000` 连接，经典蓝牙 SPP 作为备用。命令与电量位置有 N400NC 社区真机记录（[akg_earbud_control](https://github.com/tthayer/akg_earbud_control/tree/184d2e21542d0f419e4d5789cc555e5c41c9863e)），N200NC / N700NCM2 / Y600 按同一协议实现；**本项目尚未真机验证**。部分耳机的 BLE 外设地址与经典蓝牙地址不同：经典地址最多尝试约 4 秒，找不到控制服务时，EncoDeck 会短暂扫描（约 4 秒）名称与已配对耳机相同或为“名称-LE”的 BLE 设备，且其广播的服务不冲突；**只有恰好一台匹配时才连接**，零台或多台则按控制不可用处理。找到的地址只在本次运行期间记住，不写入设置；该地址连接失败或名称改变时会重新查找。
+- 原版 N700NC 使用另一套控制协议，没有足够公开资料，暂不提供控制。
+- N5 / N9 Hybrid 先尝试经典蓝牙 RACE / SPP，再尝试 RACE BLE GATT（同样支持上述按名称匹配的 BLE 回退）。电量、充电与盒电量命令有 N9 Hybrid 社区真机记录（[Raito](https://github.com/kalicyh/Raito/tree/5804b657e7d6aa5fcd17d33a3c6f13ce4602086a)）；降噪命令来自同芯片 JBL 耳机的社区记录，未在 AKG 上验证，因此仅为实验性功能。**本项目尚未真机验证。**
 
 ## 小米 / Redmi
 

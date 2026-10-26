@@ -163,6 +163,8 @@ public abstract class BrandControllerBase : IDeviceController
 
     public virtual Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Custom EQ"));
 
+    public virtual Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported($"Option {id}"));
+
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;

@@ -710,4 +710,75 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>Smart volume</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>Automatically adjust playback volume as ambient noise changes</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>This firmware can list devices but cannot remotely connect, disconnect, or remove them. Use Bluetooth settings on the corresponding device.</value></data>
+  <data name="Toggle_SpeakToChat" xml:space="preserve"><value>Speak-to-Chat</value></data>
+  <data name="Toggle_SpeakToChat_Description" xml:space="preserve"><value>Pause playback and let ambient sound in when you start talking.</value></data>
+  <data name="Toggle_Upscaling" xml:space="preserve"><value>DSEE</value></data>
+  <data name="Toggle_Upscaling_Description" xml:space="preserve"><value>Device-side upscaling of compressed music. May increase power consumption.</value></data>
+  <data name="Toggle_TouchControls" xml:space="preserve"><value>Touch controls</value></data>
+  <data name="Toggle_TouchControls_Description" xml:space="preserve"><value>Turn the touch panel or touch sensors on or off.</value></data>
+  <data name="NoiseLevel_SonyAmbient" xml:space="preserve"><value>Standard</value></data>
+  <data name="NoiseLevel_SonyVoice" xml:space="preserve"><value>Focus on voice</value></data>
+  <data name="NoiseLevel_AkgAmbientAware" xml:space="preserve"><value>Ambient Aware</value></data>
+  <data name="NoiseLevel_AkgTalkThrough" xml:space="preserve"><value>TalkThru</value></data>
+  <data name="SonyOption_AmbientLevel" xml:space="preserve"><value>Ambient sound level</value></data>
+  <data name="SonyOption_Unknown" xml:space="preserve"><value>Unknown (0x{0})</value></data>
+  <data name="AutoOff_Title" xml:space="preserve"><value>Automatic power off</value></data>
+  <data name="AutoOff_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="AutoOff_WhenRemoved" xml:space="preserve"><value>When taken off</value></data>
+  <data name="AutoOff_Minutes" xml:space="preserve"><value>After {0} minutes</value></data>
+  <data name="SonyKey_Left" xml:space="preserve"><value>Left touch sensor</value></data>
+  <data name="SonyKey_Right" xml:space="preserve"><value>Right touch sensor</value></data>
+  <data name="SonyKey_Custom" xml:space="preserve"><value>Custom button</value></data>
+  <data name="SonyKey_NcAmbient" xml:space="preserve"><value>NC/Ambient button</value></data>
+  <data name="SonyKey_Other" xml:space="preserve"><value>Assignable control</value></data>
+  <data name="SonyPreset_00" xml:space="preserve"><value>Ambient sound control</value></data>
+  <data name="SonyPreset_10" xml:space="preserve"><value>Volume control</value></data>
+  <data name="SonyPreset_20" xml:space="preserve"><value>Playback control</value></data>
+  <data name="SonyPreset_21" xml:space="preserve"><value>Track control</value></data>
+  <data name="SonyPreset_30" xml:space="preserve"><value>Voice assistant</value></data>
+  <data name="SonyPreset_31" xml:space="preserve"><value>Google Assistant</value></data>
+  <data name="SonyPreset_32" xml:space="preserve"><value>Amazon Alexa</value></data>
+  <data name="SonyPreset_35" xml:space="preserve"><value>Ambient sound control / Quick Access</value></data>
+  <data name="SonyPreset_36" xml:space="preserve"><value>Quick Access</value></data>
+  <data name="SonyPreset_45" xml:space="preserve"><value>Ambient sound control (mic)</value></data>
+  <data name="SonyPreset_46" xml:space="preserve"><value>Listening mode / Quick Access</value></data>
+  <data name="SonyPreset_47" xml:space="preserve"><value>Ambient sound control / Listening mode</value></data>
+  <data name="SonyPreset_FF" xml:space="preserve"><value>No function</value></data>
+  <data name="SonyEq_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="SonyEq_Rock" xml:space="preserve"><value>Rock</value></data>
+  <data name="SonyEq_Pop" xml:space="preserve"><value>Pop</value></data>
+  <data name="SonyEq_Jazz" xml:space="preserve"><value>Jazz</value></data>
+  <data name="SonyEq_Dance" xml:space="preserve"><value>Dance</value></data>
+  <data name="SonyEq_Edm" xml:space="preserve"><value>EDM</value></data>
+  <data name="SonyEq_RnbHipHop" xml:space="preserve"><value>R&amp;B/Hip-Hop</value></data>
+  <data name="SonyEq_Acoustic" xml:space="preserve"><value>Acoustic</value></data>
+  <data name="SonyEq_Bright" xml:space="preserve"><value>Bright</value></data>
+  <data name="SonyEq_Excited" xml:space="preserve"><value>Excited</value></data>
+  <data name="SonyEq_Mellow" xml:space="preserve"><value>Mellow</value></data>
+  <data name="SonyEq_Relaxed" xml:space="preserve"><value>Relaxed</value></data>
+  <data name="SonyEq_Vocal" xml:space="preserve"><value>Vocal</value></data>
+  <data name="SonyEq_TrebleBoost" xml:space="preserve"><value>Treble Boost</value></data>
+  <data name="SonyEq_BassBoost" xml:space="preserve"><value>Bass Boost</value></data>
+  <data name="SonyEq_Speech" xml:space="preserve"><value>Speech</value></data>
+  <data name="SonyEq_Heavy" xml:space="preserve"><value>Heavy</value></data>
+  <data name="SonyEq_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="SonyEq_Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="SonyEq_Soft" xml:space="preserve"><value>Soft</value></data>
+  <data name="SonyEq_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="SonyEq_User1" xml:space="preserve"><value>User setting 1</value></data>
+  <data name="SonyEq_User2" xml:space="preserve"><value>User setting 2</value></data>
+  <data name="SonyEq_User3" xml:space="preserve"><value>User setting 3</value></data>
+  <data name="SonyEq_User4" xml:space="preserve"><value>User setting 4</value></data>
+  <data name="SonyEq_User5" xml:space="preserve"><value>User setting 5</value></data>
+  <data name="AkgEq_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="AkgEq_Jazz" xml:space="preserve"><value>Jazz</value></data>
+  <data name="AkgEq_Vocal" xml:space="preserve"><value>Vocal</value></data>
+  <data name="AkgEq_Bass" xml:space="preserve"><value>Bass</value></data>
+  <data name="AkgEq_User" xml:space="preserve"><value>User</value></data>
+  <data name="AkgEq_Rock" xml:space="preserve"><value>Rock</value></data>
+  <data name="AkgEq_Piano" xml:space="preserve"><value>Piano</value></data>
+  <data name="AkgEq_Club" xml:space="preserve"><value>Club</value></data>
+  <data name="AkgEq_Studio" xml:space="preserve"><value>Studio</value></data>
+  <data name="Settings_AkgExperimental.Header" xml:space="preserve"><value>Experimental AKG Hybrid features</value></data>
+  <data name="Settings_AkgExperimental.Description" xml:space="preserve"><value>Enable unverified noise-control commands for AKG N5 / N9 Hybrid. Off by default; use at your own risk. Reconnect to query newly enabled features.</value></data>
 </root>

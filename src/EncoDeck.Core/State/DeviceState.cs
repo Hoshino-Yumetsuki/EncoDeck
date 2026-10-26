@@ -38,6 +38,9 @@ public sealed record DeviceState
 
     public ImmutableDictionary<DeviceToggle, Observed<bool>> Toggles { get; init; } = ImmutableDictionary<DeviceToggle, Observed<bool>>.Empty;
 
+    /// <summary>Multi-value settings reported by the device, keyed by <see cref="DeviceOption.Id"/>.</summary>
+    public ImmutableDictionary<string, Observed<DeviceOption>> Options { get; init; } = ImmutableDictionary<string, Observed<DeviceOption>>.Empty;
+
     public Observed<FirmwareInfo>? Firmware { get; init; }
 
     /// <summary>24-bit product id reported by the device (e.g. 0x06EC10 for Enco X4).</summary>

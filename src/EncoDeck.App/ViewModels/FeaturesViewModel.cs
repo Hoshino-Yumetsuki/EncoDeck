@@ -179,6 +179,13 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetBassEngineLevelAsync(int level) => Run(() => _commands.SetBassEngineLevelAsync(level));
 
+    // ---- device-reported options (auto power off, button assignment, levels) -----------------------
+
+    /// <summary>Options the earbuds reported, in display order. Only present after a device readback.</summary>
+    public IReadOnlyList<DeviceOption> Options => State.Options.Values.Select(o => o.Value).OrderBy(o => o.Order).ThenBy(o => o.Id, StringComparer.Ordinal).ToArray();
+
+    public Task<CommandResult> SetOptionAsync(string id, int value) => Run(() => _commands.SetOptionAsync(id, value));
+
     // ---- gestures --------------------------------------------------------------------------------
 
     /// <summary>Gesture rows with a function choice (rows that only open the noise cycle are left out).</summary>
