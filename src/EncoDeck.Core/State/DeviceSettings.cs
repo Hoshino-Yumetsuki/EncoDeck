@@ -36,6 +36,8 @@ public enum DeviceToggle
     AutoVolume,
     /// <summary>Lock the earbuds' touch controls (on = touch disabled).</summary>
     TouchLock,
+    /// <summary>Earbud-side automatic answering of incoming calls (Xiaomi config 3).</summary>
+    AutoAnswerCalls,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

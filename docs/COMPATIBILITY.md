@@ -184,7 +184,24 @@ EQ：LE Audio 下设备只上报预设 id，已知预设显示为 Off / Game / H
 
 | 兼容设备 | 对应功能 |
 | --- | --- |
-| REDMI Buds 6 Pro 电竞版、REDMI Buds 7S、REDMI Buds 8、REDMI Buds 8 Active、REDMI Buds 8 Lite、REDMI Buds 8 Pro、REDMI Buds 8 活力版、REDMI Buds 8 青春版、REDMI Buds 8S、REDMI Headphones Neo、REDMI 头戴降噪耳机、REDMI Buds 6 Pro、REDMI Buds SE、Redmi Buds 4、Redmi Buds 4 Active、Redmi Buds 4 Pro、Redmi Buds 4 哈利·波特版、Redmi Buds 4活力版、Redmi Buds 5、Redmi Buds 5 AAPE、Redmi Buds 5 Pro、Redmi Buds 5 Pro Gaming、Redmi Buds 6 Active、Redmi Buds 6 Lite、Redmi Buds 6 Play、Redmi Buds 6 活力版、Redmi Buds 6 青春版、Redmi Buds 6S、Redmi Buds 6、Xiaomi Air 5、Xiaomi Buds 3、Xiaomi Buds 3 Pro、Xiaomi Buds 3 Star Wars、Xiaomi Buds 3T Pro、Xiaomi Buds 4、Xiaomi Buds 4 Pro、Xiaomi Buds 5、Xiaomi Buds 6、Xiaomi OpenWear Stereo、Xiaomi OpenWear Stereo Pro、Xiaomi 开放式耳机、Xiaomi 开放式耳机 Pro、Xiaomi 真无线降噪耳机 3 迪士尼100周年限定版、Xiaomi 耳夹式耳机、Xiaomi 骨传导耳机2、Xiaomi Buds 5 Pro、Xiaomi Buds 5 Pro Wi-Fi、小米 Air4 SE | 电量；降噪 / 通透及档位、预设 EQ、游戏低延迟、双设备开关、空间音频 / 头部跟踪、提示音量（按型号配置与设备回读开放） |
+| REDMI Buds 6 Pro 电竞版、REDMI Buds 7S、REDMI Buds 8、REDMI Buds 8 Active、REDMI Buds 8 Lite、REDMI Buds 8 Pro、REDMI Buds 8 活力版、REDMI Buds 8 青春版、REDMI Buds 8S、REDMI Headphones Neo、REDMI 头戴降噪耳机、REDMI Buds 6 Pro、REDMI Buds SE、Redmi Buds 4、Redmi Buds 4 Active、Redmi Buds 4 Pro、Redmi Buds 4 哈利·波特版、Redmi Buds 4活力版、Redmi Buds 5、Redmi Buds 5 AAPE、Redmi Buds 5 Pro、Redmi Buds 5 Pro Gaming、Redmi Buds 6 Active、Redmi Buds 6 Lite、Redmi Buds 6 Play、Redmi Buds 6 活力版、Redmi Buds 6 青春版、Redmi Buds 6S、Redmi Buds 6、Xiaomi Air 5、Xiaomi Buds 3、Xiaomi Buds 3 Pro、Xiaomi Buds 3 Star Wars、Xiaomi Buds 3T Pro、Xiaomi Buds 4、Xiaomi Buds 4 Pro、Xiaomi Buds 5、Xiaomi Buds 6、Xiaomi OpenWear Stereo、Xiaomi OpenWear Stereo Pro、Xiaomi 开放式耳机、Xiaomi 开放式耳机 Pro、Xiaomi 真无线降噪耳机 3 迪士尼100周年限定版、Xiaomi 耳夹式耳机、Xiaomi 骨传导耳机2、Xiaomi Buds 5 Pro、Xiaomi Buds 5 Pro Wi-Fi、小米 Air4 SE；另按社区记录的 VID/PID 识别 Redmi Buds 3 / 3 Pro、Redmi AirDots 3 Pro、FlipBuds Pro | 电量与充电状态、固件版本；降噪 / 通透及档位、自适应降噪、预设 EQ、自定义 EQ 曲线、左右耳手势、佩戴状态与佩戴检测开关、查找耳机、自动接听、游戏低延迟、双设备开关、空间音频 / 头部跟踪、提示音量（按型号配置与设备回读开放） |
+
+各项功能只在耳机对该设置给出有效回读后才显示，写入一律以回读确认；未识别的手势功能值只显示、不改写。降噪还要求型号已知具备 ANC：Redmi Buds 6 Play、REDMI Buds 8 Active 的固件会应答降噪设置但没有降噪硬件，因此不显示。三档降噪按“轻度 / 均衡 / 深度”、三档通透按“标准 / 人声增强 / 环境声增强”命名，20 档机型显示档位 1–20。查找耳机播放前会重新读取佩戴状态，任一耳机在耳中即拒绝播放；Redmi Buds 6 Lite 社区记录显示没有查找命令，不提供。
+
+**社区真机证据**（来自下列开源项目作者或测试者的设备，不代表本项目 Windows 真机验证）：
+
+| 型号 | 社区真机记录 | 来源 |
+| --- | --- | --- |
+| Redmi Buds 6 Play | 鉴权、设备信息 / 电量、预设 EQ、低延迟、查找、手势读写；无降噪 | OpenXia、BudsLink、MiBudsClient（手势回读与同值写入） |
+| REDMI Buds 6 Pro | 鉴权、设备信息、手势、降噪档位、空间音频 / 头部跟踪写入、自定义 EQ 读取 | BudsLink（PR #110 会话记录） |
+| Redmi Buds 5 Pro | 电量、降噪 / 强度 / 通透模式、EQ、手势、查找、双设备等 | BudsLink（固件 4.3.8.8 降噪往返）、Gadgetbridge、WinMi-Buds |
+| REDMI Buds 8 Lite | 电量、降噪、EQ、手势、查找、双设备等 | BudsLink |
+| REDMI Buds 8 Pro（2717/50E3，固件 1.2.3.6 / 1.2.3.7） | 设置读取、降噪模式与强度写入回读；其他写入未验证 | redmi-buds-bar（robin-liquidium） |
+| REDMI Buds 8 Active（M2537E1） | EQ / 自定义 EQ、手势、佩戴状态、双设备、查找；降噪设置会应答但无效 | mebuds |
+| REDMI Buds 8 | 降噪 | redmi-buds-bar（ChristianVeneko） |
+| Redmi Buds 6、REDMI Buds 7S、小米 Air4 SE | 电量、EQ、左右耳手势、查找、佩戴状态 | android_packages_apps_XiaomiTWS |
+
+其余型号的上述功能为**按协议实现**：协议格式与社区记录一致并有模拟设备测试，尚未有真机记录。本项目尚未在 Windows 上用小米 / Redmi 耳机实测，暂不支持降噪循环编辑、贴合度检测、空间音频场景与固件升级。
 
 ## 漫步者
 
@@ -242,7 +259,7 @@ EQ：LE Audio 下设备只上报预设 id，已知预设显示为 Off / Game / H
 | --- | --- |
 | OPPO / 一加 / realme / DIZO | 尝试通用协议；按返回的产品 ID 识别，未知产品仅提供基础状态 |
 | vivo / iQOO、华为、漫步者 | 尝试各品牌通用协议，基础状态以设备实际应答为准 |
-| Xiaomi / Redmi | 按系列名称尝试鉴权、电量及已实现配置；目录未收录的型号不开放猜测的 EQ 预设或降噪档位 |
+| Xiaomi / Redmi | 按系列名称尝试鉴权、电量及已实现配置；名称不在目录中时按设备报告的 VID/PID 识别；仍无法识别的型号不开放猜测的降噪、EQ 预设或降噪档位 |
 | Sony / AKG、三星、Google、Bose、Nothing / CMF | 无通用型号兜底；仅匹配上表内置名称 |
 
 通用识别不保证兼容。设备素材可用不代表控制可用；小米、华为、索尼、AKG 暂未达到 OPPO 的全部功能覆盖。

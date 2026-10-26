@@ -251,6 +251,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         // Reasons the official client reports with its own message.
         (CommandStatus.Rejected, OppoDeviceController.WearRequiredDetail) => Loc.Get("Error_WearRequired"),
         (CommandStatus.Rejected, "busy-other-device") => Loc.Get("Error_BusyOtherDevice"),
+        (CommandStatus.Rejected, EncoDeck.Protocol.Brands.Xiaomi.XiaomiProtocol.FindWornDetail) => Loc.Get("Error_FindWhileWorn"),
         (CommandStatus.Rejected, "battery-low") => Loc.Get("Error_BatteryLow"),
         (CommandStatus.Rejected, "at-least-two") => Loc.Get("Error_CycleAtLeastTwo"),
         (CommandStatus.Rejected, "at-least-one") => Loc.Get("Error_CycleAtLeastOne"),
@@ -434,6 +435,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         AddToggle(profile, DeviceToggle.InEarDetection);
         if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile) AddToggle(profile, DeviceToggle.ChannelSwap);
         AddToggle(profile, DeviceToggle.AutoVolume);
+        AddToggle(profile, DeviceToggle.AutoAnswerCalls);
         AddToggle(profile, DeviceToggle.SleepDetection);
         AddToggle(profile, DeviceToggle.SwiftPair);
         AddToggle(profile, DeviceToggle.VoiceCommands);
@@ -506,7 +508,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         foreach (var preset in EqualizerPresets) preset.IsSelected = eq?.ActivePresetId == preset.Id;
         if (state.CustomEqualizers?.Value.FirstOrDefault(p => p.IsSelected) is { } custom)
         {
-            EqualizerText = custom.Name;
+            EqualizerText = custom.Name.Length > 0 ? custom.Name : Loc.Get("Xiaomi_Eq_10");
         }
         else if (eq is null)
         {

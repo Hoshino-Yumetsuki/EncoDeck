@@ -8,6 +8,7 @@ using EncoDeck.Core.Commands;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Protocol.Brands.Sennheiser;
+using EncoDeck.Protocol.Brands.Xiaomi;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,6 +30,8 @@ public sealed partial class ControlsPage : Page
     private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _moondropGestures = [];
     private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _sennheiserGestures = [];
     private bool _sennheiserGestureWrite;
+    private readonly List<(EarSide Side, GestureAction Action, ComboBox Box, SettingRow Row)> _xiaomiGestures = [];
+    private bool _xiaomiGestureWrite;
     private readonly HashSet<string> _moondropWrites = [];
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
@@ -131,6 +134,7 @@ public sealed partial class ControlsPage : Page
         _gestureBoxes.Clear();
         _moondropGestures.Clear();
         _sennheiserGestures.Clear();
+        _xiaomiGestures.Clear();
         GestureHost.Children.Clear();
         CallGestureHost.Children.Clear();
         foreach (var row in Features.GestureRows(callControls: false)) GestureHost.Children.Add(GestureRow(row));
@@ -156,6 +160,30 @@ public sealed partial class ControlsPage : Page
                     Action = box,
                 };
                 _sennheiserGestures.Add((side, action, box, row));
+                GestureHost.Children.Add(row);
+            }
+        }
+        if (Features.IsXiaomi)
+        {
+            foreach (var side in new[] { EarSide.Left, EarSide.Right })
+            foreach (var action in XiaomiGestures.Actions)
+            {
+                var box = new ComboBox { Name = $"Xiaomi{side}{action}", MinWidth = 200, Tag = (side, action) };
+                foreach (int function in XiaomiGestures.Functions(action, noiseControl: true))
+                    box.Items.Add(new ComboBoxItem { Content = Loc.Get(XiaomiGestures.LabelKey(function)), Tag = function });
+                box.Items.Add(new ComboBoxItem { IsEnabled = false }); // Shows (and keeps) a function EncoDeck does not offer.
+                box.SelectionChanged += OnXiaomiGestureChanged;
+                string label = action switch
+                {
+                    GestureAction.SingleSqueeze => "Gesture_Tap1", GestureAction.DoubleSqueeze => "Gesture_Tap2",
+                    GestureAction.TripleSqueeze => "Gesture_Tap3", GestureAction.SqueezeAndHold => "Gesture_TapHold", _ => "Gesture_Slide",
+                };
+                var row = new SettingRow
+                {
+                    Header = $"{Loc.Get(side == EarSide.Left ? "Gesture_Left" : "Gesture_Right")} · {Loc.Get(label)}",
+                    Action = box,
+                };
+                _xiaomiGestures.Add((side, action, box, row));
                 GestureHost.Children.Add(row);
             }
         }
@@ -416,6 +444,34 @@ public sealed partial class ControlsPage : Page
             }
             return;
         }
+        if (f.IsXiaomi)
+        {
+            bool xiaomiAvailable = f.Has(DeviceCapability.TouchCustomization)
+                && _xiaomiGestures.Any(row => f.XiaomiFunction(row.Side, row.Action) is not null);
+            GestureCard.Visibility = Show(xiaomiAvailable);
+            EarSelector.Visibility = CycleSection.Visibility = CallGestureTitle.Visibility = Visibility.Collapsed;
+            // Noise control on hold only where the earbuds' noise control is confirmed.
+            bool noise = f.Has(DeviceCapability.NoiseCancellation);
+            foreach (var (side, action, box, row) in _xiaomiGestures)
+            {
+                int? function = f.XiaomiFunction(side, action);
+                row.Visibility = Show(xiaomiAvailable && function is not null);
+                var items = box.Items.Cast<ComboBoxItem>().ToList();
+                foreach (var item in items)
+                {
+                    if (item.Tag is int code) item.IsEnabled = code != XiaomiGestures.NoiseControl || noise;
+                }
+                int selected = items.FindIndex(item => item.Tag is int code && code == function);
+                if (function is int unknown && selected < 0)
+                {
+                    items[^1].Content = Loc.Format("Xiaomi_UnknownAction", unknown.ToString("X2"));
+                    selected = items.Count - 1;
+                }
+                box.SelectedIndex = selected;
+                box.IsEnabled = ready && xiaomiAvailable && function is not null && !f.IsPending("key-function") && !_xiaomiGestureWrite;
+            }
+            return;
+        }
         if (f.IsMoondrop)
         {
             bool moondropAvailable = ready && f.Has(DeviceCapability.TouchCustomization)
@@ -617,6 +673,19 @@ public sealed partial class ControlsPage : Page
         Sync();
         try { await f.SetSennheiserGestureAsync(target.Item1, target.Item2, function); }
         finally { _sennheiserGestureWrite = false; Sync(); }
+    }
+
+    private async void OnXiaomiGestureChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        if (_syncing || !IsLoaded || sender is not ComboBox { IsEnabled: true, Tag: ValueTuple<EarSide, GestureAction> target,
+                SelectedItem: ComboBoxItem { IsEnabled: true, Tag: int function } }
+            || !f.IsXiaomi || !f.IsReady || !f.Has(DeviceCapability.TouchCustomization)
+            || f.XiaomiFunction(target.Item1, target.Item2) is not int current || current == function || _xiaomiGestureWrite) return;
+        _xiaomiGestureWrite = true;
+        Sync();
+        try { await f.SetXiaomiGestureAsync(target.Item1, target.Item2, function); }
+        finally { _xiaomiGestureWrite = false; Sync(); }
     }
 
     private async void OnMoondropGestureChanged(object sender, SelectionChangedEventArgs e)

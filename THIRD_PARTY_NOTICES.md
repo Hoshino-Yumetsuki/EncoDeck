@@ -48,6 +48,53 @@ No artwork from these projects is included; models without product images use En
 | HuaweiPods — https://github.com/Nshpiter/HuaweiPods (Nshpiter and contributors), revision `115f080100c07fb51174b3238473c512a2c6d3b8` | GPL-3.0 (license text without an "or later" grant; used as GPL-3.0-only) | `Brands/Huawei`: FreeBuds 6 / 7 / Pro 5 / FreeClip 2 / Eyewear 3 model data, per-model noise-control level codes (incl. Pro 3 / 7i), transparency sub-modes, built-in EQ ids (FreeBuds 4E / 5 / 6 / 7 / Pro 5 / FreeClip 2 / FreeArc), adaptive volume and head-gesture feature fields; FreeBuds 7 EQ-state capture used as a test fixture. Its CDN artwork fetching is not ported and no artwork is included |
 | EZBuds — https://github.com/CenSher/EZBuds (CenSher), revision `4d1c6aaddb3b089cfb1b464ac86b65e3fa365ce2` | GPL-3.0 (license text without an "or later" grant; used as GPL-3.0-only) | `Brands/Huawei`: FreeClip 2 Windows notes (`PROTOCOL.md`) for the frame length, battery report and known-device list layout; its battery capture is a test fixture |
 | MiuixMoondrop — https://github.com/huime180/MiuixMoondrop (huime180 and contributors), revision `2f78f6740b2f30d1c28d75ba05badb98b2eeb687` | GPL-3.0-or-later (source file headers) | `Brands/Moondrop`: 17 model profiles, GAIA framing, battery / ANC / voice / LHDC / multipoint, model-specific low / medium / high gain mappings, LED GET/SET and five-byte both-ear TOUCHV2 configuration / hold mutual exclusion protocol facts from `MoondropModels.kt`, `Gaia.kt`, `GaiaFramer.kt`, `BatteryCodec.kt` and `MoondropLink.kt`; inferred volume actions remain opt-in and unknown actions display/preserve only; independent Windows GATT transport; no spatial / head-tracking port |
+| BudsLink — https://github.com/maniacx/BudsLink (maniacx and contributors), revision `ba3160dfce72c192ebbdf2697b0341aa1e78fb56`, plus the REDMI Buds 6 Pro session log attached to its PR #110 | GPL-3.0 | `Brands/Xiaomi`: corrected challenge-response block, response status / sequence layout, device-info / run-info / status records, config ids and value layouts (gestures, noise, adaptive ANC, EQ and custom curve, spatial audio, wear state, find, auto-answer, dual connection, prompt volume), model VID/PID table (`XiaomiCommunityModels.cs`); captures used as test fixtures |
+| redmi-buds-bar — https://github.com/robin-liquidium/redmi-buds-bar (robin-liquidium), revision `e4337d2cb9f246c9e57d567524009d0959711825` | GPL-3.0 | `Brands/Xiaomi`: request / response roles, noise mode and strength read / write / readback, REDMI Buds 8 Pro ids; captures used as test fixtures |
+| mebuds — https://github.com/paradox-ng/mebuds (Paradox), revision `7028e23435a449fd28d52fbb9ff2031946744684` | GPL-3.0-or-later | `Brands/Xiaomi`: wear-state bits, find-earbuds value, custom EQ record, REDMI Buds 8 Active ids and its noise-setting behaviour |
+| MiBudsClient — https://github.com/CesurPolat/MiBudsClient (CesurPolat), revision `59e0a4469d80c19022d7da408453adb93b819ad3` | GPL-3.0 | `Brands/Xiaomi`: gesture readback and write behaviour on the Redmi Buds 6 Play |
+
+### 3.1 Permissively licensed sources (Xiaomi / Redmi)
+
+The Xiaomi / Redmi port also uses material from the projects below. EncoDeck's C# code is a modified,
+independent implementation (no source file is copied verbatim); their notices are reproduced here.
+
+| Project | License | Used for |
+|---|---|---|
+| OpenXia — https://github.com/thetriu/OpenXia, revision `f2650cfbc62f8ebbd3c6ded9baac4027053c8f60` | MIT | Redmi Buds 6 Play captures (device info, auth vectors, EQ / find / low-latency / gesture writes) used as test fixtures in `tests/EncoDeck.Tests/Protocol/Xiaomi`; confirmation that the model answers the noise setting without ANC |
+| android_packages_apps_XiaomiTWS — https://github.com/web1n/android_packages_apps_XiaomiTWS (web1n and contributors), revision `0927e57cae772ac1016691b0930fb279fff51229` | Apache-2.0 | Cross-check of the SPP service UUIDs, info-mask requests, config ids, gesture kinds / functions, wear-state bits and the find-earbuds value in `Brands/Xiaomi` |
+
+OpenXia:
+
+```
+MIT License
+
+Copyright (c) 2026 OpenXia contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+android_packages_apps_XiaomiTWS is licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0). The project ships no NOTICE file. EncoDeck's use is a
+modified work: the protocol facts were re-implemented in C# for Windows and combined with other
+sources; the material is distributed as part of EncoDeck under GPL-3.0-only, which is compatible with
+Apache-2.0. Unless required by applicable law or agreed to in writing, that material is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 The HeyBuds-derived Samsung, Google, Bose and Nothing / CMF adapters carry protocol facts that HeyBuds in turn credits to: [Budsy](https://github.com/vedatkilic/budsy) (MIT, Copyright (c) 2026 Vedat Kılıç) and [GalaxyBudsClient](https://github.com/timschneeb/GalaxyBudsClient) (GPL-3.0) for Samsung; [PixelBudsMacOS](https://github.com/KashaMalaga/PixelBudsMacOS) (MIT, Copyright (c) 2026 Jesús Ramírez Ramos), [pbpctrl](https://github.com/qzed/pbpctrl) (MIT or Apache-2.0, Copyright (c) 2022 Maximilian Luz) and [MagicBuds](https://github.com/artistro08/MagicBuds) (MIT, Copyright (c) 2026 Devin Green) for Google; [bosectl](https://github.com/aaronsb/bosectl) (MIT, Copyright (c) 2026 Aaron Bockelie) and [bozo](https://github.com/NerdySouth/bozo) (MIT, Copyright (c) 2026 Tristen) for Bose; [swift-nothing-ear](https://github.com/bestK1ngArthur/swift-nothing-ear) and [nothing-x-macos](https://github.com/nikiomori/nothing-x-macos) (GPL-3.0), [EarA-linux](https://github.com/oneydef/EarA-linux) (GPL-3.0-or-later), [omarchy-headphones](https://github.com/ncr/omarchy-headphones) (MIT, Copyright (c) 2026 Jacek Becela; packet facts only) and [openNothing](https://github.com/Evergaster/openNothing) (protocol facts only) for Nothing / CMF.
 
@@ -98,6 +145,9 @@ vectors such as a single-earbud battery event) are credited here. No source file
 | OpenFreebuds-Android — https://github.com/Nmusin/OpenFreebuds-Android (Nmusin), revision `fc495e88ad0322911150551f3b207ec449b7b7ae` | no license file | FreeBuds 5i capability-handshake reply test vector `5A0006000A0E020100FB3F`. Facts only; no source files were copied |
 | honor-earbuds — https://github.com/Nezerkill/honor-earbuds (Nezerkill), revision `13550440b50ebb51af501c737b418021d68253e2` | no license file (README states MIT) | HONOR CHOICE Earbuds X5 battery / noise-control commands (tested), RFCOMM channels 18 / 12. Facts only; no source files were copied |
 | HonorEarbuds — https://github.com/TeskiOke/HonorEarbuds (TeskiOke), revision `5339563383e819f8f5ca6afcd4b397b6fd167cc4` | no license file | HONOR CHOICE Earbuds X5 Pro frame layout and one-byte noise-control write over the SPP service. Facts only; no source files were copied |
+| Gadgetbridge — https://codeberg.org/Freeyourgadget/Gadgetbridge (Redmi Buds support incl. PR #6818) | AGPL-3.0 | Xiaomi / Redmi facts only: per-model feature sets, Redmi Buds 6 Lite has no find command; no source files were copied |
+| WinMi-Buds — https://github.com/ios7jbpro/WinMi-Buds, revision `6379bbda52e9968894f619061524ee7cad619bcd` | AGPL-3.0 | Redmi Buds 5 Pro behaviour notes for the compatibility table; no source files were copied |
+| redmi-buds-bar — https://github.com/ChristianVeneko/redmi-buds-bar (ChristianVeneko), revision `8c2bedbd5e438e81e5ca07319eb513aba1c9c146` | AGPL-3.0 | REDMI Buds 8 noise-control report for the compatibility table; no source files were copied |
 
 License notes: OppoPodsWindows ships the full GPLv3 text without "or later" wording or a copyright
 line, so it is treated as GPL-3.0-only (GPLv3 §14). OppoPods states GPL-3.0 in its README but has no

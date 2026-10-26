@@ -599,6 +599,17 @@
   <data name="Xiaomi_Eq_17" xml:space="preserve"><value>Outdoor</value></data>
   <data name="Xiaomi_Eq_18" xml:space="preserve"><value>Underwater</value></data>
   <data name="Xiaomi_Eq_21" xml:space="preserve"><value>Balanced listening</value></data>
+  <data name="Xiaomi_Eq_10" xml:space="preserve"><value>Custom</value></data>
+  <data name="Xiaomi_Anc_0" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Xiaomi_Anc_1" xml:space="preserve"><value>Light</value></data>
+  <data name="Xiaomi_Anc_2" xml:space="preserve"><value>Deep</value></data>
+  <data name="Xiaomi_Ambient_0" xml:space="preserve"><value>Regular</value></data>
+  <data name="Xiaomi_Ambient_1" xml:space="preserve"><value>Voice</value></data>
+  <data name="Xiaomi_Ambient_2" xml:space="preserve"><value>Ambient</value></data>
+  <data name="Xiaomi_UnknownAction" xml:space="preserve"><value>Unknown function (0x{0})</value></data>
+  <data name="Toggle_AutoAnswerCalls" xml:space="preserve"><value>Auto-answer calls</value></data>
+  <data name="Toggle_AutoAnswerCalls_Description" xml:space="preserve"><value>The earbuds answer incoming calls automatically</value></data>
+  <data name="Error_FindWhileWorn" xml:space="preserve"><value>An earbud is in an ear. Take both earbuds out before playing the find tone.</value></data>
   <data name="Moondrop_Gain.Header" xml:space="preserve"><value>Gain</value></data>
   <data name="Moondrop_GainLow" xml:space="preserve"><value>Low</value></data>
   <data name="Moondrop_GainMid" xml:space="preserve"><value>Mid</value></data>

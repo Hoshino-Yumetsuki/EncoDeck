@@ -19,6 +19,8 @@
 - 新增华为 FreeBuds 6、FreeBuds 7、Eyewear 3，并识别 FreeClip 2 典藏版、FreeBuds SE 4 ANC 的蓝牙名称。新增 HONOR CHOICE Earbuds X5 / X5 Pro 的电量与降噪 / 通透 / 关闭。功能范围依据 [OpenFreebuds](https://github.com/melianmiko/OpenFreebuds)、[HuaweiPods](https://github.com/Nshpiter/HuaweiPods)、[EZBuds](https://github.com/CenSher/EZBuds) 等社区项目的实机记录，EncoDeck 尚未真机验证，详见 [兼容性列表](docs/COMPATIBILITY.md#华为)。
 - 华为耳机新增：FreeBuds 6i、Pro 5、FreeLace Pro 2 的通透“人声增强”；FreeBuds 6 / 7、Pro 5、FreeClip 2 的智能音量调节，FreeBuds 7 / 7i、Pro 5、FreeClip 2 的点头 / 摇头接听（均在耳机返回状态后才显示）；FreeBuds 7i、Pro 4 的左右耳佩戴状态；支持双设备的型号显示已连接设备列表（只读）。
 - FreeBuds 4E / 5、FreeClip 新增预设 EQ，FreeBuds 7、Pro 5 提供 7 种场景音效，FreeClip 2、FreeArc 增加运动音效；FreeBuds Pro 4 开放降噪 / 通透 / 关闭，FreeBuds 7i 开放游戏模式与双设备连接，FreeBuds 3 开放电量。
+- 小米 / Redmi 耳机新增左右耳手势设置、佩戴状态与佩戴检测开关、查找耳机、自动接听、自适应降噪和自定义 EQ 曲线编辑；空间音频可在关闭 / 开启 / 头部跟踪之间切换。每项功能只在耳机给出有效回读后显示，写入以回读确认，未识别的手势功能只显示不改写。查找耳机在任一耳机佩戴中时拒绝播放。
+- 小米 / Redmi 耳机名称不在型号目录中时，按耳机报告的 VID/PID 识别型号，新增识别 Redmi Buds 3 / 3 Pro、Redmi AirDots 3 Pro 等。功能按协议实现，尚未在 Windows 真机验证，详见 [设备兼容性](docs/COMPATIBILITY.md#小米--redmi)。
 
 ### 改进
 
@@ -26,6 +28,8 @@
 - LE Audio（LC3）连接时，降噪控件（主页、快捷面板、托盘菜单、快捷键）置灰，不再发出会被耳机拒绝的切换；“实验室”页说明切换到 LE Audio 后需在耳机上手动切换降噪。Enco X4 实测在 LE Audio 模式下不接受来自电脑的降噪切换。
 - 华为预设 EQ 只显示耳机自己列出的预设；耳机正在使用自定义或未知音效时显示原始编号，不再套用名称。
 - 按社区实机记录修正 FreeBuds Pro 3 / 7i 的降噪档位对应和 Pro 5 的音效名称；电量为 0 的部件按“未上报”处理，不再显示 0%。
+- 小米 / Redmi 降噪档位改为“轻度 / 均衡 / 深度”、通透档位改为“标准 / 人声增强 / 环境声增强”命名；Redmi Buds 6 Play、REDMI Buds 8 Active 等没有降噪硬件的型号不再显示降噪。
+- 小米 / Redmi 设置改为逐项读取，单个不支持的设置不再让其他设置一起读取失败；耳机主动推送的电量变化会即时更新界面。
 
 ### 修复
 
@@ -36,6 +40,8 @@
 - 修复 FreeBuds 5i 连接后因未应答耳机的数据能力请求而被耳机断开。
 - 修复华为 / 荣耀耳机点击“降噪”或“通透”模式按钮时提示不支持；现在会保持耳机当前的档位。
 - FreeBuds Pro 5 等写入降噪后不应答、首次回读仍为旧值时，改为继续回读确认，不再误报失败。
+- 修复部分小米 / Redmi 耳机鉴权应答计算错误，导致后续设置被耳机拒绝的问题。
+- 修复小米 / Redmi 耳机应答中的状态字节被误当作序号，导致耳机拒绝设置时只显示超时的问题。
 
 ## [1.9.0] - 2026-10-26
 

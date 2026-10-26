@@ -599,6 +599,17 @@
   <data name="Xiaomi_Eq_17" xml:space="preserve"><value>户外</value></data>
   <data name="Xiaomi_Eq_18" xml:space="preserve"><value>水下</value></data>
   <data name="Xiaomi_Eq_21" xml:space="preserve"><value>均衡聆听</value></data>
+  <data name="Xiaomi_Eq_10" xml:space="preserve"><value>自定义</value></data>
+  <data name="Xiaomi_Anc_0" xml:space="preserve"><value>均衡</value></data>
+  <data name="Xiaomi_Anc_1" xml:space="preserve"><value>轻度</value></data>
+  <data name="Xiaomi_Anc_2" xml:space="preserve"><value>深度</value></data>
+  <data name="Xiaomi_Ambient_0" xml:space="preserve"><value>标准</value></data>
+  <data name="Xiaomi_Ambient_1" xml:space="preserve"><value>人声增强</value></data>
+  <data name="Xiaomi_Ambient_2" xml:space="preserve"><value>环境声增强</value></data>
+  <data name="Xiaomi_UnknownAction" xml:space="preserve"><value>未知功能 (0x{0})</value></data>
+  <data name="Toggle_AutoAnswerCalls" xml:space="preserve"><value>自动接听来电</value></data>
+  <data name="Toggle_AutoAnswerCalls_Description" xml:space="preserve"><value>来电时由耳机自动接听</value></data>
+  <data name="Error_FindWhileWorn" xml:space="preserve"><value>检测到耳机在耳中。请先取下两只耳机，再播放查找提示音。</value></data>
   <data name="Moondrop_Gain.Header" xml:space="preserve"><value>增益</value></data>
   <data name="Moondrop_GainLow" xml:space="preserve"><value>低</value></data>
   <data name="Moondrop_GainMid" xml:space="preserve"><value>中</value></data>

@@ -183,6 +183,10 @@ internal sealed class BrandDemo
             return (from side in new[] { EarSide.Left, EarSide.Right }
                     from action in SennheiserGestures.Actions
                     select new KeyFunction(side, 0, action, action == GestureAction.SqueezeAndHold ? (side == EarSide.Left ? 5 : 4) : 1)).ToArray();
+        // Xiaomi: the gesture answer of a REDMI Buds 6 Pro (community capture).
+        if (profile is EncoDeck.Protocol.Brands.Xiaomi.XiaomiDeviceProfile
+            && EncoDeck.Protocol.Brands.Xiaomi.XiaomiGestures.TryParse(Convert.FromHexString("040808010101020303030606050B0B"), out var xiaomi))
+            return EncoDeck.Protocol.Brands.Xiaomi.XiaomiGestures.ToKeyFunctions(xiaomi);
         if (profile is MoondropProfile)
             return [.. from side in new[] { EarSide.Left, EarSide.Right }
                        from pair in new[] { (GestureAction.SingleSqueeze, 1), (GestureAction.DoubleSqueeze, 2), (GestureAction.TripleSqueeze, 3),

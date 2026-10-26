@@ -400,7 +400,8 @@ public sealed partial class SoundPage : Page
             CustomHost.Children.Clear();
             foreach (var preset in presets)
             {
-                var button = new RadioButton { Content = preset.Name, Tag = preset.Id, GroupName = "DeviceEq" };
+                // Xiaomi's single custom curve usually has no stored name.
+                var button = new RadioButton { Content = preset.Name.Length > 0 ? preset.Name : Loc.Get("Xiaomi_Eq_10"), Tag = preset.Id, GroupName = "DeviceEq" };
                 button.Click += OnCustomClick;
                 _customButtons.Add((preset.Id, button));
                 CustomHost.Children.Add(button);
@@ -412,7 +413,10 @@ public sealed partial class SoundPage : Page
             button.IsEnabled = ready && !busy;
         }
 
-        AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null);
+        // Xiaomi earbuds keep exactly one custom curve: it can be edited, not added, renamed or deleted.
+        bool fixedSlot = f.IsXiaomi;
+        AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null && !fixedSlot);
+        RenameButton.Visibility = DeleteButton.Visibility = CustomNameBox.Visibility = Show(!fixedSlot);
         AddCustomButton.IsEnabled = ready && !busy && f.CanAddCustomEqualizer;
         CustomEditor.Visibility = Show(spec is not null && selected is not null);
         if (selected is null) return;
@@ -492,16 +496,19 @@ public sealed partial class SoundPage : Page
 
     private void SyncSpatial(FeaturesViewModel f, bool ready)
     {
-        bool available = f.Has(DeviceCapability.SpatialAudio) && (f.Model is { SpatialTypes.Count: > 0 } || f.IsMoondrop) && f.State.Spatial is not null;
+        // Xiaomi earbuds report off / on / head tracking in one confirmed setting (config 29).
+        bool xiaomi = f.IsXiaomi && f.Has(DeviceCapability.HeadTracking);
+        bool available = f.Has(DeviceCapability.SpatialAudio) && (f.Model is { SpatialTypes.Count: > 0 } || f.IsMoondrop || xiaomi) && f.State.Spatial is not null;
         SpatialCard.Visibility = Show(available);
         if (!available) return;
 
         // Official buttons: the model's spatial types; "fixed" reads "on" with spatial V1, which has no head tracking.
         var model = f.Model;
-        var types = f.IsMoondrop
-            ? new[] { 0, 1 }.Concat(f.Has(DeviceCapability.HeadTracking) ? new[] { 2 } : Array.Empty<int>()).ToArray()
+        bool v2 = xiaomi || f.IsMoondrop || model?.HasSpatialAudioV2 == true;
+        int[] types = xiaomi ? [0, 1, 2]
+            : f.IsMoondrop ? new[] { 0, 1 }.Concat(f.Has(DeviceCapability.HeadTracking) ? new[] { 2 } : Array.Empty<int>()).ToArray()
             : model!.SpatialTypes.Where(t => t is 0 or 1 || (t == 2 && model.HasSpatialAudioV2)).Order().ToArray();
-        string signature = $"{string.Join(',', types)}/{model?.HasSpatialAudioV2}";
+        string signature = $"{string.Join(',', types)}/{v2}";
         if (signature != _spatialSignature)
         {
             _spatialSignature = signature;
@@ -509,7 +516,7 @@ public sealed partial class SoundPage : Page
             SpatialHost.Children.Clear();
             foreach (int type in types)
             {
-                string label = Loc.Get(type switch { 0 => "Spatial_Off", 1 => f.IsMoondrop || model?.HasSpatialAudioV2 == true ? "Spatial_Fixed" : "Spatial_On", _ => "Spatial_HeadTracking" });
+                string label = Loc.Get(type switch { 0 => "Spatial_Off", 1 => v2 ? "Spatial_Fixed" : "Spatial_On", _ => "Spatial_HeadTracking" });
                 var button = new RadioButton { Content = label, Tag = (SpatialAudioMode)type, GroupName = "Spatial" };
                 button.Click += OnSpatialClick;
                 _spatialButtons.Add(((SpatialAudioMode)type, button));
