@@ -23,10 +23,12 @@ internal static class SonyEqualizer
             try { name = new UTF8Encoding(false, true).GetString(p.Slice(offset + 2, length)); }
             catch (DecoderFallbackException) { return false; }
             if (name.Any(char.IsControl)) return false;
+            // A name from the device wins; an unnamed known preset gets a localized name.
+            var known = string.IsNullOrWhiteSpace(name) ? KnownPreset(id) : null;
             result.Add(new(
                 $"sony-{id}",
-                string.IsNullOrWhiteSpace(name) ? KnownPresetName(id) : name,
-                "",
+                known?.Name ?? (string.IsNullOrWhiteSpace(name) ? $"EQ {id}" : name),
+                known?.ResourceKey ?? "",
                 CapabilitySupport.Supported,
                 EditablePreset(id)));
             offset += length + 2;
@@ -36,23 +38,24 @@ internal static class SonyEqualizer
     }
 
     /// <summary>
-    /// The headset reports preset ids without names over LE Audio (the classic link carries them), so the
-    /// names the official Sound Connect app shows are filled in here. Ids seen on WH-1000XM6 with the
-    /// 2026 firmware; unknown ids keep the numeric fallback.
+    /// The headset reports preset ids without names over LE Audio (the Classic link carries them), so
+    /// the known presets are named here (English fallback and resource key). Ids seen on WH-1000XM6
+    /// with the 2026 firmware; unknown ids keep the numeric fallback.
     /// </summary>
-    internal static string KnownPresetName(byte id) => id switch
+    internal static (string Name, string ResourceKey)? KnownPreset(byte id) => id switch
     {
-        0x00 => "关闭",
-        0x20 => "游戏",
-        0x30 => "沉重",
-        0x31 => "清晰",
-        0x32 => "坚硬",
-        0x33 => "柔软",
-        0xA0 => "手动",
-        0xA1 => "自定义 1",
-        0xA2 => "自定义 2",
-        _ => $"EQ {id}",
+        0x00 => ("Off", "Eq_Sony_Off"),
+        0x20 => ("Game", "Eq_Sony_Game"),
+        0x30 => ("Heavy", "Eq_Sony_Heavy"),
+        0x31 => ("Clear", "Eq_Sony_Clear"),
+        0x32 => ("Hard", "Eq_Sony_Hard"),
+        0x33 => ("Soft", "Eq_Sony_Soft"),
+        0xA0 => ("Manual", "Eq_Sony_Manual"),
+        0xA1 => ("Custom 1", "Eq_Sony_Custom1"),
+        0xA2 => ("Custom 2", "Eq_Sony_Custom2"),
+        _ => null,
     };
+
     /// <summary>
     /// "Manual" and the two custom slots are the presets whose band values the headset lets us
     /// overwrite; the four sound presets are fixed and only selectable.

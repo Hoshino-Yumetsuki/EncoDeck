@@ -62,4 +62,24 @@ public sealed class SonyControlConnectionTests
         Assert.Equal(SocketProtectionLevel.BluetoothEncryptionWithAuthentication, RfcommChannelConnector.ProtectionLevelFor(SonyAkgProfiles.LegacyServiceUuid));
         Assert.Equal(SocketProtectionLevel.BluetoothEncryptionAllowNullAuthentication, RfcommChannelConnector.ProtectionLevelFor(new Guid("00001101-0000-1000-8000-00805f9b34fb")));
     }
+
+    [Theory]
+    [InlineData(@"Bluetooth#Bluetooth00:11:22:33:44:55-66:77:88:99:aa:bb#RFCOMM:00000009:{956c7b26-d49a-4ba8-b03f-b17d393cb6e2}", 9)]
+    [InlineData("RFCOMM:0000001E:{uuid}", 30)]
+    // An SDP record without a protocol descriptor: Windows would block for the whole connect timeout.
+    [InlineData("Bluetooth#Bluetooth00:11:22:33:44:55-66:77:88:99:aa:bb#RFCOMM:00000000:{956c7b26-d49a-4ba8-b03f-b17d393cb6e2}", 0)]
+    [InlineData("RFCOMM:0000001F:{uuid}", 0)]
+    [InlineData("RFCOMM::{uuid}", 0)]
+    [InlineData("no channel here", 0)]
+    [InlineData(null, 0)]
+    public void ResolvesTheRfcommChannelFromTheServiceName(string? serviceName, int channel) =>
+        Assert.Equal(channel, RfcommChannelConnector.ResolveRfcommChannel(serviceName));
+
+    [Fact]
+    public void KnownSonyChannelIsOnlyForTheVerifiedModel()
+    {
+        Assert.Equal(RfcommChannelConnector.SonyMdrV2Channel, RfcommChannelConnector.KnownSonyControlChannel("WH-1000XM6"));
+        Assert.Null(RfcommChannelConnector.KnownSonyControlChannel("WH-1000XM5"));
+        Assert.Null(RfcommChannelConnector.KnownSonyControlChannel(null));
+    }
 }

@@ -50,5 +50,11 @@ public enum ChannelOpenStatus
 
 public sealed record ChannelOpenResult(ChannelOpenStatus Status, IDuplexByteChannel? Channel, Guid? ServiceUuid, string? Detail)
 {
+    /// <summary>
+    /// Resource key of a localized explanation the UI shows instead of the generic failure, when the
+    /// connector knows what the user can do about it. <see cref="Detail"/> stays the English log text.
+    /// </summary>
+    public string? ResourceKey { get; init; }
+
     public static ChannelOpenResult Failed(ChannelOpenStatus status, string detail) => new(status, null, null, detail);
 }

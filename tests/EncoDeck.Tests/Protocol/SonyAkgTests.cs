@@ -147,6 +147,30 @@ public sealed class SonyAkgTests
     }
 
     [Fact]
+    public void SonyEq_ReportsBandsAsDecibelOffsets()
+    {
+        // Raw band byte 6 is 0 dB; the ten bands run 31 Hz-16 kHz.
+        Assert.True(SonyEqualizer.TryParameter([0x57, 0, 0xA1, 10, 9, 8, 6, 5, 6, 7, 8, 9, 8, 7], out byte preset, out int[] bands));
+        Assert.Equal(0xA1, preset);
+        Assert.Equal([3, 2, 0, -1, 0, 1, 2, 3, 2, 1], bands);
+        Assert.True(SonyEqualizer.TryParameter([0x57, 0, 0x30, 0], out _, out int[] none));
+        Assert.Empty(none);
+        Assert.Equal([0, 12, 6], SonyEqualizer.ToBandBytes([-9, 9, 0]));
+    }
+
+    [Fact]
+    public void SonyEq_NamesUnnamedKnownPresetsAndKeepsDeviceNames()
+    {
+        // 0x51 type 0: two unnamed presets (heavy, custom 1), one named by the device, one unknown id.
+        byte[] reply = [0x51, 0, 0, 0, 4, 0x30, 0, 0xA1, 0, 0x31, 5, (byte)'B', (byte)'r', (byte)'i', (byte)'t', (byte)'e', 0x44, 0];
+        Assert.True(SonyEqualizer.TryPresets(reply, out var presets));
+        Assert.Equal(("Heavy", "Eq_Sony_Heavy", false), (presets[0].DisplayName, presets[0].ResourceKey, presets[0].EditableBands));
+        Assert.Equal(("Custom 1", "Eq_Sony_Custom1", true), (presets[1].DisplayName, presets[1].ResourceKey, presets[1].EditableBands));
+        Assert.Equal(("Brite", ""), (presets[2].DisplayName, presets[2].ResourceKey));
+        Assert.Equal(("EQ 68", ""), (presets[3].DisplayName, presets[3].ResourceKey));
+    }
+
+    [Fact]
     public void CatalogOnlyModelsNeverOpenAnUnrelatedControlService()
     {
         var profiles = SonyAkgProfiles.CreateBuiltIn();

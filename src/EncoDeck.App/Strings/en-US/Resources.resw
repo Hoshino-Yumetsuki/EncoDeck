@@ -744,4 +744,15 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 component</value></data>
   <data name="About_ThanksTray.Text" xml:space="preserve"><value>Notification area icon</value></data>
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>License</value></data>
+  <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>The headset is connected over LE Audio, and its control service cannot be opened in this mode right now. In Sony | Sound Connect on your phone, set “LE Audio connection setting” to “Classic Audio only”, or set “Bluetooth connection quality” to “Priority on sound quality” or “Priority on stable connection”, so the headset reconnects over Classic Bluetooth. EncoDeck tries again once it reconnects.</value></data>
+  <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>The headset has no Classic Bluetooth connection, so there is no control channel. Connect it in Windows Settings › Bluetooth &amp; devices (or play some audio to wake it), and if needed switch the headset to Classic Audio, then try again.</value></data>
+  <data name="Eq_Sony_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Eq_Sony_Game" xml:space="preserve"><value>Game</value></data>
+  <data name="Eq_Sony_Heavy" xml:space="preserve"><value>Heavy</value></data>
+  <data name="Eq_Sony_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Eq_Sony_Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="Eq_Sony_Soft" xml:space="preserve"><value>Soft</value></data>
+  <data name="Eq_Sony_Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Eq_Sony_Custom1" xml:space="preserve"><value>Custom 1</value></data>
+  <data name="Eq_Sony_Custom2" xml:space="preserve"><value>Custom 2</value></data>
 </root>

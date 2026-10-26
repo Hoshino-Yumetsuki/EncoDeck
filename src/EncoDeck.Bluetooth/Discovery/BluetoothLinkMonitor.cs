@@ -44,7 +44,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
         foreach (var le in leDevices) le.ConnectionStatusChanged += OnConnectionStatusChanged;
         _ = MaintainAsync(leDevices);
         // Only the primary bonded so far (e.g. the LE Audio switch is still pairing the other earbud).
-        if (leDevices.Length == 1) _ = FindSecondaryAsync(SecondaryAttempts);
+        if (leDevices.Length == 1 && !singleUnit) _ = FindSecondaryAsync(SecondaryAttempts);
     }
 
     public bool IsConnected => _connected;
@@ -247,7 +247,7 @@ public sealed class BluetoothLinkMonitor : ILinkStateSource
             _connected = connected;
         }
         if (links != previousLinks) LinkDetailsChanged?.Invoke(this, EventArgs.Empty);
-        if (sender is BluetoothLEDevice && _leDevices.Length == 1) _ = FindSecondaryAsync(1);
+        if (sender is BluetoothLEDevice && _leDevices.Length == 1 && !_singleUnit) _ = FindSecondaryAsync(1);
         if (transportChanged) TransportChanged?.Invoke(this, EventArgs.Empty);
         if (connectionChanged) ConnectionChanged?.Invoke(this, connected);
     }

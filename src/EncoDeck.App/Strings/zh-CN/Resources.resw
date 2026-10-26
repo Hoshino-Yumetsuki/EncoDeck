@@ -744,4 +744,15 @@
   <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 组件</value></data>
   <data name="About_ThanksTray.Text" xml:space="preserve"><value>托盘图标</value></data>
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>许可证全文</value></data>
+  <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>耳机正通过 LE Audio 连接，这种连接下暂时打不开控制服务。可以在手机的 Sony | Sound Connect 中把“LE Audio 连接设置”改为“仅经典音频”，或把“蓝牙连接质量”设为“音质优先”或“稳定连接优先”，让耳机以经典蓝牙重新连接；重新连接后 EncoDeck 会自动重试。</value></data>
+  <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>耳机当前没有经典蓝牙连接，因此没有可用的控制通道。请在 Windows 设置 › 蓝牙和设备 中连接耳机（或播放一段音频唤醒它），必要时把耳机切换到经典音频后重试。</value></data>
+  <data name="Eq_Sony_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="Eq_Sony_Game" xml:space="preserve"><value>游戏</value></data>
+  <data name="Eq_Sony_Heavy" xml:space="preserve"><value>Heavy</value></data>
+  <data name="Eq_Sony_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Eq_Sony_Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="Eq_Sony_Soft" xml:space="preserve"><value>Soft</value></data>
+  <data name="Eq_Sony_Manual" xml:space="preserve"><value>手动</value></data>
+  <data name="Eq_Sony_Custom1" xml:space="preserve"><value>自定义 1</value></data>
+  <data name="Eq_Sony_Custom2" xml:space="preserve"><value>自定义 2</value></data>
 </root>

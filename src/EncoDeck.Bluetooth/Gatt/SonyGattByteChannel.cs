@@ -139,7 +139,6 @@ internal sealed class SonyGattByteChannel : IDuplexByteChannel
             if (channel is not null) await channel.DisposeAsync().ConfigureAwait(false);
             service?.Dispose();
             device?.Dispose();
-            _ = write;
         }
     }
 

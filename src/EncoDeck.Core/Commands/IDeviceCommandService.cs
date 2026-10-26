@@ -6,7 +6,7 @@ namespace EncoDeck.Core.Commands;
 /// <summary>
 /// The only entry point for changing device state. Implementations validate the request against
 /// the active profile, send it on the control channel, wait for the device's confirmation, and
-/// update <see cref="IDeviceStateStore"/> 鈥?rolling back any optimistic value on failure.
+/// update <see cref="IDeviceStateStore"/> — rolling back any optimistic value on failure.
 /// </summary>
 public interface IDeviceCommandService
 {

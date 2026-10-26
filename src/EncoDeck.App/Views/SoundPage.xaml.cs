@@ -46,6 +46,7 @@ public sealed partial class SoundPage : Page
             Features.Changed += OnFeaturesChanged;
             Rebuild();
         };
+        ActualThemeChanged += (_, _) => SyncCurve();
         Unloaded += (_, _) =>
         {
             ViewModel.EqualizerPresets.CollectionChanged -= OnPresetsChanged;
@@ -70,24 +71,6 @@ public sealed partial class SoundPage : Page
 
     private void OnFeaturesChanged(object? sender, EventArgs e) => Sync();
 
-    /// <summary>
-    /// The headset reports preset ids without names, and the only band data it carries is the 0x57/0x59
-    /// frame, so each known preset's curve is drawn from the bands the headset itself reported: 10 bands
-    /// from 31 Hz to 16 kHz, 1 dB per step, 6 = 0 dB. Keys are the preset ids EncoDeck uses.
-    /// </summary>
-    private static readonly System.Collections.Generic.Dictionary<string, byte[]> CurveBands = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["sony-0"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
-        ["sony-32"] = [0, 4, 8, 9, 7, 5, 7, 9, 6, 4],
-        ["sony-48"] = [10, 10, 5, 5, 6, 6, 6, 6, 6, 6],
-        ["sony-49"] = [6, 6, 6, 6, 6, 6, 6, 8, 8, 9],
-        ["sony-50"] = [10, 10, 5, 5, 6, 6, 6, 8, 8, 9],
-        ["sony-51"] = [3, 4, 5, 7, 7, 7, 6, 6, 4, 3],
-        ["sony-160"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
-        ["sony-161"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
-        ["sony-162"] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
-    };
-
     private static readonly string[] CurveFrequencies = ["31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
 
     private string? _curveKey;
@@ -100,19 +83,12 @@ public sealed partial class SoundPage : Page
         DrawCurve(_curveBands);
     }
 
+    /// <summary>Draws the band values the device reported for the active preset; nothing when it reported none.</summary>
     private void SyncCurve()
     {
         var deviceBands = ViewModel.EqualizerBands;
-        string? id = null;
-        foreach (var preset in ViewModel.EqualizerPresets)
-        {
-            if (preset.IsSelected) { id = preset.Id; break; }
-        }
-        // Manual and the two custom slots report their real band values, so those curves follow the
-        // device; the fixed presets have no band report and fall back to the built-in reference table.
-        byte[]? bands = deviceBands.Count > 0 ? ToRawBands(deviceBands) : null;
-        string key = bands is not null ? "device:" + string.Join(',', deviceBands) : id ?? string.Empty;
-        if (bands is null && (id is null || !CurveBands.TryGetValue(id, out bands)))
+        string key = $"{ActualTheme}:{string.Join(',', deviceBands)}";
+        if (deviceBands.Count == 0)
         {
             _curveKey = null;
             _curveBands = null;
@@ -123,7 +99,7 @@ public sealed partial class SoundPage : Page
         CurveChart.Visibility = Visibility.Visible;
         if (key == _curveKey) return;
         _curveKey = key;
-        DrawCurve(bands!);
+        DrawCurve(ToRawBands(deviceBands));
     }
 
     private static byte[] ToRawBands(IReadOnlyList<int> decibels)
@@ -134,8 +110,8 @@ public sealed partial class SoundPage : Page
     }
 
     /// <summary>
-    /// A compact vector response chart: +6 dB … -6 dB grid, the frequency ticks the official app shows
-    /// and a smoothed curve with a soft fill. Drawn rather than shipped as a bitmap so it stays crisp at
+    /// A compact vector response chart: +6 dB … -6 dB grid, the band frequencies and a smoothed curve
+    /// with a soft fill. Drawn rather than shipped as a bitmap so it stays crisp at
     /// any scaling and follows the theme colours.
     /// </summary>
     private void DrawCurve(byte[] bands)
@@ -155,9 +131,15 @@ public sealed partial class SoundPage : Page
         double perDb = height / 12.0;
         double step = count > 1 ? width / (count - 1) : 0;
 
-        var gridBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF));
-        var zeroBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x3D, 0xFF, 0xFF, 0xFF));
-        var labelBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF));
+        // The page's own theme (the app theme can differ from Windows'), and the accent shade WinUI uses
+        // for accent fills in that theme.
+        bool dark = ActualTheme == ElementTheme.Dark;
+        Windows.UI.Color Ink(byte alpha) => dark ? Windows.UI.Color.FromArgb(alpha, 0xFF, 0xFF, 0xFF) : Windows.UI.Color.FromArgb(alpha, 0, 0, 0);
+        var accent = (Windows.UI.Color)Application.Current.Resources[dark ? "SystemAccentColorLight2" : "SystemAccentColorDark1"];
+        Windows.UI.Color Accent(byte alpha) => Windows.UI.Color.FromArgb(alpha, accent.R, accent.G, accent.B);
+        var gridBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Ink(0x1C));
+        var zeroBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Ink(0x3D));
+        var labelBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Ink(0x9E));
 
         var plot = new Microsoft.UI.Xaml.Shapes.Rectangle
         {
@@ -165,7 +147,7 @@ public sealed partial class SoundPage : Page
             Height = height + 12,
             RadiusX = 12,
             RadiusY = 12,
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF)),
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Ink(0x0A)),
         };
         Canvas.SetLeft(plot, left - 13);
         Canvas.SetTop(plot, top - 6);
@@ -227,8 +209,8 @@ public sealed partial class SoundPage : Page
                 EndPoint = new Windows.Foundation.Point(0, 1),
                 GradientStops =
                 {
-                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Windows.UI.Color.FromArgb(0x4D, 0xA7, 0x8B, 0xFA), Offset = 0 },
-                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Windows.UI.Color.FromArgb(0x00, 0xA7, 0x8B, 0xFA), Offset = 1 },
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Accent(0x4D), Offset = 0 },
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Accent(0x00), Offset = 1 },
                 },
             },
         };
@@ -241,7 +223,7 @@ public sealed partial class SoundPage : Page
 
         var stroke = new Microsoft.UI.Xaml.Shapes.Path
         {
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xA7, 0x8B, 0xFA)),
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(Accent(0xFF)),
             StrokeThickness = 3,
             StrokeLineJoin = Microsoft.UI.Xaml.Media.PenLineJoin.Round,
             Data = SmoothedCurve(points),
@@ -254,7 +236,7 @@ public sealed partial class SoundPage : Page
             {
                 Width = 6,
                 Height = 6,
-                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xC4, 0xB5, 0xFD)),
+                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Accent(0xFF)),
             };
             Canvas.SetLeft(dot, p.X - 3);
             Canvas.SetTop(dot, p.Y - 3);

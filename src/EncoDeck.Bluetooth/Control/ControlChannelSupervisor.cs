@@ -256,15 +256,14 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         if (open.Status != ChannelOpenStatus.Opened || open.Channel is null)
         {
             _logger.LogInformation("Control channel not opened: {Status} {Detail}", open.Status, open.Detail);
-            SetError(open.Status switch
+            SetError(open.ResourceKey is not null ? open.Detail ?? "Could not open the control channel." : open.Status switch
             {
                 ChannelOpenStatus.ServiceNotFound => "The earbuds do not expose a supported control service.",
                 ChannelOpenStatus.AccessDenied => "Windows denied access to the Bluetooth device.",
                 ChannelOpenStatus.ControlEndpointNotFound => open.Detail ?? "The Bluetooth LE control endpoint was not found.",
                 ChannelOpenStatus.ClassicInsteadOfLeAudio => open.Detail ?? "The earbuds reconnected over Classic Bluetooth instead of LE Audio.",
-                // Transport-level diagnoses (e.g. Sony over LE Audio) are actionable and must reach the UI.
-                _ => open.Detail ?? "Could not open the control channel.",
-            }, open.Status switch
+                _ => "Could not open the control channel.",
+            }, open.ResourceKey ?? open.Status switch
             {
                 ChannelOpenStatus.ControlEndpointNotFound => "Error_ControlEndpointNotFound",
                 ChannelOpenStatus.ClassicInsteadOfLeAudio => "Error_LeAudioOnClassic",

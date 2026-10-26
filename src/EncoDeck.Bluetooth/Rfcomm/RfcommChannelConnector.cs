@@ -210,14 +210,12 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             ? SonyMdrV2Channel
             : null;
 
-    internal static string SonyLeAudioOnlyDetail(string? deviceName)
-    {
-        var name = string.IsNullOrWhiteSpace(deviceName) ? "耳机" : deviceName;
-        return $"{name} 正通过 LE Audio（低功耗蓝牙音频）连接，但这种连接下的控制服务当前打不开。"
-             + "可先在手机的 Sony | Sound Connect 里把「LE Audio 连接设置」改为「仅经典音频 (Classic Audio only)」"
-             + "或把「蓝牙连接质量」设为「音质优先/稳定连接优先」，让耳机以经典模式重连；"
-             + "耳机重连后本程序会自动重新检测控制通道。";
-    }
+    private const string SonyLeAudioOnly = "The headset is linked over LE Audio and its control service cannot be opened in this mode.";
+
+    /// <summary>The headset is on LE Audio and no control transport opened; the UI explains how to switch it to Classic.</summary>
+    private static ChannelOpenResult SonyLeAudioOnlyFailure(string? reason) =>
+        ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, reason is { Length: > 0 } ? $"{SonyLeAudioOnly} LE Audio GATT: {reason}" : SonyLeAudioOnly)
+            with { ResourceKey = "Error_SonyLeAudioControl" };
 
     /// <summary>
     /// Opens the Sony control channel on whichever transport the headset currently offers. A headset
@@ -269,11 +267,7 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         _logger.LogWarning(
             "Sony control service unavailable: the headset is linked over LE Audio (classic link {Status}); RFCOMM cannot exist until it reconnects as Classic Audio",
             device.ConnectionStatus);
-        return ChannelOpenResult.Failed(
-            ChannelOpenStatus.DeviceUnreachable,
-            gatt.Detail is { Length: > 0 } reason
-                ? $"{SonyLeAudioOnlyDetail(device.Name)}（LE Audio 控制服务也未能打开：{reason}）"
-                : SonyLeAudioOnlyDetail(device.Name));
+        return SonyLeAudioOnlyFailure(gatt.Detail);
     }
 
     /// <summary>
@@ -324,16 +318,10 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             "Sony control service unreachable: classic link {Classic}, LE link {Le}. The headset has to be linked over Classic Audio for the RFCOMM control channel to exist.",
             device.ConnectionStatus,
             leConnected ? "connected" : "down");
-        return ChannelOpenResult.Failed(
-            ChannelOpenStatus.DeviceUnreachable,
-            leConnected ? SonyLeAudioOnlyDetail(device.Name) : SonyClassicLinkDownDetail(device.Name));
-    }
-
-    internal static string SonyClassicLinkDownDetail(string? deviceName)
-    {
-        var name = string.IsNullOrWhiteSpace(deviceName) ? "耳机" : deviceName;
-        return $"{name} 当前没有建立经典蓝牙（Classic Audio）链路，因此没有可用的控制通道。"
-             + "请先在 Windows 设置 → 蓝牙和设备 中连接该耳机（或播放一段音频把它唤醒），必要时把耳机切到经典音频模式后重试。";
+        return leConnected
+            ? SonyLeAudioOnlyFailure(null)
+            : ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, "The headset has no Classic link, so its control channel does not exist.")
+                with { ResourceKey = "Error_SonyClassicLinkDown" };
     }
 
     internal static SocketProtectionLevel ProtectionLevelFor(Guid uuid) => SonyAkgProfiles.IsControlService(uuid)

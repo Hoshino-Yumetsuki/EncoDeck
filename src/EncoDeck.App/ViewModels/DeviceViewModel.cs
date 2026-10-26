@@ -517,10 +517,10 @@ public sealed partial class DeviceViewModel : ObservableObject
             EqualizerText = preset is not null ? Text(preset.ResourceKey, preset.DisplayName) : Loc.Format("Eq_UnknownPreset", eq.RawPresetValue);
         }
 
-        // Band values come from the device for manual/custom presets; fixed presets leave them empty
-        // so the view falls back to the built-in reference curve.
+        // The band values the device reported for the active preset (none: no curve is drawn). The
+        // faders are the ten 31 Hz-16 kHz bands, so other layouts are shown but never written.
         EqualizerBands = eq?.Bands ?? [];
-        CanEditEqualizerBands = IsReady && IsEqualizerAvailable
+        CanEditEqualizerBands = IsReady && IsEqualizerAvailable && EqualizerBands.Count == 10
             && profile?.EqualizerPresets.FirstOrDefault(p => p.Id == eq?.ActivePresetId)?.EditableBands == true;
     }
 
