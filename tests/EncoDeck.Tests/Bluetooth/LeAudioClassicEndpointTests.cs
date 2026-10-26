@@ -353,6 +353,51 @@ public class LeAudioClassicEndpointTests
         Assert.Same(active, inspection.LeAudioRender);
     }
 
+    private static AudioEndpointInfo LeCapture(bool disabled = false) =>
+        LeMicrophone() with { Kind = AudioEndpointKind.LeAudioCapture, IsDisabled = disabled, AssociatedBluetoothAddresses = [Primary] };
+
+    [Fact]
+    public void ClassifyCapture_RecognizesLeAudioMicrophone()
+    {
+        Assert.Equal(AudioEndpointKind.LeAudioCapture, WindowsAudioEndpointPlatform.ClassifyCapture(LeMicrophone().ParentInstanceId));
+        Assert.Equal(AudioEndpointKind.Other, WindowsAudioEndpointPlatform.ClassifyCapture(Le().ParentInstanceId));
+    }
+
+    [Fact]
+    public void Microphone_Inspect_IgnoresRenderAndOtherHeadsets()
+    {
+        var other = LeCapture() with { AssociatedBluetoothAddresses = [0xAABBCCDDEEFF] };
+        var inspection = LeAudioMicrophone.Inspect(Primary, [Le(), A2dp(), LeCapture(), other]);
+
+        Assert.Single(inspection.Endpoints);
+        Assert.False(inspection.Disabled);
+    }
+
+    [Fact]
+    public async Task Microphone_DisableHidesOnlyTheCaptureEndpoint()
+    {
+        var fake = new FakeEndpointPlatform([Le(), A2dp(), LeCapture()]);
+
+        var result = await LeAudioMicrophone.SetEnabledAsync(Primary, false, fake);
+
+        Assert.True(result.Success);
+        Assert.Equal((LeCapture().InstanceId, false), Assert.Single(fake.Calls));
+        Assert.True(LeAudioMicrophone.Inspect(Primary, fake.Endpoints).Disabled);
+        Assert.Empty(fake.DefaultCalls);
+    }
+
+    [Fact]
+    public async Task Microphone_EnableRestoresAndMissingEndpointFails()
+    {
+        var fake = new FakeEndpointPlatform([LeCapture(disabled: true)]);
+        Assert.True((await LeAudioMicrophone.SetEnabledAsync(Primary, true, fake)).Success);
+        Assert.False(fake.Endpoints.Single().IsDisabled);
+
+        var empty = new FakeEndpointPlatform([Le()]);
+        Assert.False((await LeAudioMicrophone.SetEnabledAsync(Primary, false, empty)).Success);
+        Assert.Empty(empty.Calls);
+    }
+
     private sealed class FakeEndpointPlatform(IEnumerable<AudioEndpointInfo> endpoints) : IAudioEndpointPlatform
     {
         public List<AudioEndpointInfo> Endpoints { get; } = [.. endpoints];
@@ -363,6 +408,9 @@ public class LeAudioClassicEndpointTests
         public bool RemoveChangedEndpoint { get; init; }
 
         public Task<IReadOnlyList<AudioEndpointInfo>> GetRenderEndpointsAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<AudioEndpointInfo>>(Endpoints.ToArray());
+
+        public Task<IReadOnlyList<AudioEndpointInfo>> GetCaptureEndpointsAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<AudioEndpointInfo>>(Endpoints.ToArray());
 
         public Task<AudioEndpointOperationResult> SetDefaultAsync(AudioEndpointInfo endpoint, CancellationToken cancellationToken)

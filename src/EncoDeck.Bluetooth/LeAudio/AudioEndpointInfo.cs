@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 namespace EncoDeck.Bluetooth.LeAudio;
 
-/// <summary>Windows render endpoint classes that matter for the LE Audio/Classic split.</summary>
+/// <summary>Windows endpoint classes that matter for the LE Audio/Classic split.</summary>
 public enum AudioEndpointKind
 {
     Other,
@@ -11,12 +11,16 @@ public enum AudioEndpointKind
     ClassicA2dpRender,
     /// <summary>Classic Hands-Free render endpoint (BTHENUM 0000111E).</summary>
     ClassicHfpRender,
+    /// <summary>Capture endpoint exposed by the LE Audio stack (APXENUM ...&amp;Microphone).</summary>
+    LeAudioCapture,
+    /// <summary>Classic Hands-Free capture endpoint (BTHENUM 0000111E).</summary>
+    ClassicHfpCapture,
 }
 
 /// <summary>
-/// One render endpoint as seen by PnP. <see cref="ParentInstanceId"/> is the key evidence: APXENUM
+/// One render or capture endpoint as seen by PnP. <see cref="ParentInstanceId"/> is the key evidence: APXENUM
 /// identifies the LE Audio endpoint, BTHENUM 0000110B the Classic A2DP endpoint. The instance id is
-/// the MMDEVAPI render node (SWD\MMDEVAPI\{0.0.0...}); capture nodes use {0.0.1...} and are ignored.
+/// the MMDEVAPI node: render endpoints use SWD\MMDEVAPI\{0.0.0...}, capture endpoints {0.0.1...}.
 /// </summary>
 public sealed record AudioEndpointInfo(
     string InstanceId,

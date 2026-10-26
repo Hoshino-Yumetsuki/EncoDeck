@@ -9,6 +9,10 @@
    <TextBlock x:Uid="LeAudio_Summary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    <TextBlock x:Uid="LeAudio_NoiseNote" TextWrapping="Wrap" />
    <TextBlock x:Name="Status" TextWrapping="Wrap" />
+   <StackPanel x:Name="MicPanel" Spacing="2" Visibility="Collapsed">
+    <ToggleSwitch x:Name="MicOff" x:Uid="LeAudio_MicOff" Toggled="OnMicToggled" />
+    <TextBlock x:Uid="LeAudio_MicOffNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+   </StackPanel>
    <TextBlock x:Name="Message" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" Visibility="Collapsed" />
    <ProgressBar x:Name="Progress" IsIndeterminate="True" Visibility="Collapsed" />
    <StackPanel Orientation="Horizontal" Spacing="8">

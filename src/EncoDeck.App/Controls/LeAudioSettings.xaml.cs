@@ -19,6 +19,8 @@ public sealed partial class LeAudioSettings : UserControl
 {
     private CancellationTokenSource? _operation;
     private LeAudioBondState? _bond;
+    private LeAudioMicrophoneInspection? _mic;
+    private bool _syncingMic;
     private string? _deviceId;
     private ulong _address;
     private bool _busy;
@@ -65,6 +67,7 @@ public sealed partial class LeAudioSettings : UserControl
             _deviceId = device.DeviceId;
             _address = device.Address.Value;
             _bond = null;
+            _mic = null;
             _lastLinks = state.LeAudioLinks;
             _ = LoadBondAsync();
         }
@@ -92,6 +95,17 @@ public sealed partial class LeAudioSettings : UserControl
         {
             if (address != _address || request != _bondRequest) return;
             _bond = null;
+        }
+        try
+        {
+            var mic = await LeAudioMicrophone.InspectAsync(address);
+            if (address != _address || request != _bondRequest) return;
+            _mic = mic;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            if (address != _address || request != _bondRequest) return;
+            _mic = null;
         }
         if (!_busy) Refresh();
     }
@@ -121,6 +135,15 @@ public sealed partial class LeAudioSettings : UserControl
         Switch.IsEnabled = Restore.IsEnabled = !_busy && !_dialogOpen && _bond is not null;
         DisableClassic.IsEnabled = EnableClassic.IsEnabled = !_busy && !_dialogOpen;
         OpenBluetooth.IsEnabled = !_busy && !_dialogOpen;
+        MicPanel.Visibility = _mic?.Present == true ? Visibility.Visible : Visibility.Collapsed;
+        MicOff.IsEnabled = !_busy && !_dialogOpen && _mic?.StateKnown == true;
+        if (!_busy && _mic is not null)
+        {
+            // Toggled also fires for programmatic changes.
+            _syncingMic = true;
+            MicOff.IsOn = _mic.Disabled;
+            _syncingMic = false;
+        }
         Progress.Visibility = Cancel.Visibility = _busy ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -157,6 +180,36 @@ public sealed partial class LeAudioSettings : UserControl
 
     private async void OnEnableClassic(object sender, RoutedEventArgs e) =>
         await RunEndpointAsync(ct => LeAudioClassicAudioEndpoint.RestoreAsync(_address, ct));
+
+    private async void OnMicToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncingMic || _busy || _mic is null || MicOff.IsOn == _mic.Disabled) return;
+        bool enable = !MicOff.IsOn;
+        ulong address = _address;
+        _busy = true;
+        Sync();
+        try
+        {
+            var result = await LeAudioMicrophone.SetEnabledAsync(address, enable);
+            // Show what Windows reports, not what was requested.
+            if (address == _address) _mic = await LeAudioMicrophone.InspectAsync(address);
+            if (!result.Success)
+            {
+                Message.Text = Loc.Format("LeAudio_MicFailed", result.Detail ?? "");
+                Message.Visibility = Visibility.Visible;
+            }
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            Message.Text = Loc.Format("LeAudio_MicFailed", ex.Message);
+            Message.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            _busy = false;
+            Sync();
+        }
+    }
 
     private async Task RunEndpointAsync(Func<CancellationToken, Task<LeAudioEndpointResult>> operation)
     {

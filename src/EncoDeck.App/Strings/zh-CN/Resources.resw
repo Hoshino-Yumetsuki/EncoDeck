@@ -636,6 +636,9 @@
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>无法确认 Windows 的音频端点状态；不要把 ACL/GATT 就绪当作双耳播放成功。</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>禁用经典音频端点</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>恢复经典音频端点</value></data>
+  <data name="LeAudio_MicOff.Header" xml:space="preserve"><value>禁用耳机麦克风</value></data>
+  <data name="LeAudio_MicOffNote" xml:space="preserve"><value>应用打开耳机麦克风时，Windows 会把 LE Audio 切到双向通话配置，播放音质明显下降。禁用后应用只能使用其他麦克风，耳机播放保持媒体音质。重新配对后需要再次开启。</value></data>
+  <data name="LeAudio_MicFailed" xml:space="preserve"><value>无法更改耳机麦克风：{0}</value></data>
   <data name="LeAudio_Endpoint_Disabled" xml:space="preserve"><value>已禁用经典 A2DP 渲染端点；请在声音设置中选择 LE Audio 的“扬声器”。</value></data>
   <data name="LeAudio_Endpoint_AlreadyLeAudioOnly" xml:space="preserve"><value>经典 A2DP 端点已经处于禁用状态。</value></data>
   <data name="LeAudio_Endpoint_NoClassicEndpoint" xml:space="preserve"><value>没有找到可禁用的经典 A2DP 端点。</value></data>

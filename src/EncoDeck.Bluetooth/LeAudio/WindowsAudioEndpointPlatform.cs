@@ -9,7 +9,7 @@ namespace EncoDeck.Bluetooth.LeAudio;
 /// <summary>
 /// Production endpoint platform. Endpoints are enumerated through PnP and hidden/shown through
 /// IPolicyConfig::SetEndpointVisibility (the same non-admin switch as Sound settings &gt; Disable).
-/// Only the MMDEVAPI render node is touched; disabling the BTHENUM service or parent device tears
+/// Only MMDEVAPI endpoint nodes are touched; disabling the BTHENUM service or parent device tears
 /// down the LE Audio endpoint as well and is never done.
 /// </summary>
 public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
@@ -24,13 +24,21 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
 
     private const string RenderPrefix = "SWD\\MMDEVAPI\\";
     private const string RenderNodeMarker = "{0.0.0.";
+    private const string CaptureNodeMarker = "{0.0.1.";
     private const string A2dpService = "BTHENUM\\{0000110B-";
     private const string HfpService = "BTHENUM\\{0000111E-";
     private const string LeAudioEnum = "APXENUM\\";
 
     private const int DeviceStateDisabledMask = 0x10000000;
 
-    public async Task<IReadOnlyList<AudioEndpointInfo>> GetRenderEndpointsAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<AudioEndpointInfo>> GetRenderEndpointsAsync(CancellationToken cancellationToken) =>
+        GetEndpointsAsync(RenderNodeMarker, "Render", Classify, cancellationToken);
+
+    public Task<IReadOnlyList<AudioEndpointInfo>> GetCaptureEndpointsAsync(CancellationToken cancellationToken) =>
+        GetEndpointsAsync(CaptureNodeMarker, "Capture", ClassifyCapture, cancellationToken);
+
+    private static async Task<IReadOnlyList<AudioEndpointInfo>> GetEndpointsAsync(
+        string nodeMarker, string flow, Func<string?, AudioEndpointKind> classify, CancellationToken cancellationToken)
     {
         var objects = await PnpObject.FindAllAsync(PnpObjectType.Device, PropertyKeys)
             .AsTask(cancellationToken).ConfigureAwait(false);
@@ -55,18 +63,18 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
             string? id = GetString(obj, "System.Devices.DeviceInstanceId") ?? obj.Id;
             if (string.IsNullOrEmpty(id)
                 || !id.StartsWith(RenderPrefix, StringComparison.OrdinalIgnoreCase)
-                || !id.Contains(RenderNodeMarker, StringComparison.OrdinalIgnoreCase))
+                || !id.Contains(nodeMarker, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
             string? parent = GetString(obj, "System.Devices.Parent");
-            AudioEndpointKind kind = Classify(parent);
+            AudioEndpointKind kind = classify(parent);
             if (kind == AudioEndpointKind.Other) continue;
             string name = GetString(obj, "System.Devices.FriendlyName")
                 ?? GetFriendlyNameFromCfgMgr(id)
                 ?? id;
-            int? state = GetDeviceState(id);
+            int? state = GetDeviceState(id, flow);
             string? containerId = GetContainerId(obj);
             found.Add(new AudioEndpointInfo(id, name, parent, kind, state is { } flags && (flags & (DeviceStateDisabledMask | 2)) != 0)
             {
@@ -83,9 +91,12 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         cancellationToken.ThrowIfCancellationRequested();
-        if (endpoint.Kind is not (AudioEndpointKind.ClassicA2dpRender or AudioEndpointKind.ClassicHfpRender)
-            || !IsRenderNode(endpoint.InstanceId))
-            return Task.FromResult(new AudioEndpointOperationResult(false, "Only Classic MMDEVAPI render endpoints can be changed"));
+        bool allowed = endpoint.Kind is AudioEndpointKind.ClassicA2dpRender or AudioEndpointKind.ClassicHfpRender
+            ? IsEndpointNode(endpoint.InstanceId, RenderNodeMarker)
+            : endpoint.Kind is AudioEndpointKind.LeAudioCapture or AudioEndpointKind.ClassicHfpCapture
+              && IsEndpointNode(endpoint.InstanceId, CaptureNodeMarker);
+        if (!allowed)
+            return Task.FromResult(new AudioEndpointOperationResult(false, "Only Classic render or headset capture MMDEVAPI endpoints can be changed"));
         // IPolicyConfig is the same non-admin visibility switch as Sound settings > Disable.
         // CfgMgr32 CM_Disable_DevNode returns CR_ACCESS_DENIED (0x33) for these nodes without elevation.
         int hr = PolicyConfig.SetEndpointVisibility(ToAudioEndpointId(endpoint.InstanceId), enabled);
@@ -98,7 +109,7 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         cancellationToken.ThrowIfCancellationRequested();
-        if (endpoint.Kind != AudioEndpointKind.LeAudioRender || !IsRenderNode(endpoint.InstanceId)
+        if (endpoint.Kind != AudioEndpointKind.LeAudioRender || !IsEndpointNode(endpoint.InstanceId, RenderNodeMarker)
             || endpoint.IsDisabled || !endpoint.IsActive || !endpoint.IsStateKnown)
             return Task.FromResult(new AudioEndpointOperationResult(false, "LE Audio render endpoint is not available"));
         string id = ToAudioEndpointId(endpoint.InstanceId);
@@ -119,6 +130,19 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
         }
         if (parent.StartsWith(A2dpService, StringComparison.OrdinalIgnoreCase)) return AudioEndpointKind.ClassicA2dpRender;
         if (parent.StartsWith(HfpService, StringComparison.OrdinalIgnoreCase)) return AudioEndpointKind.ClassicHfpRender;
+        return AudioEndpointKind.Other;
+    }
+
+    internal static AudioEndpointKind ClassifyCapture(string? parent)
+    {
+        if (string.IsNullOrEmpty(parent)) return AudioEndpointKind.Other;
+        // X4 over LC3: APXENUM\{2D68507B-...}&AUDIO\...&Microphone, sibling of the &Speaker node.
+        if (parent.StartsWith(LeAudioEnum, StringComparison.OrdinalIgnoreCase)
+            && parent.Contains("&Microphone", StringComparison.OrdinalIgnoreCase))
+        {
+            return AudioEndpointKind.LeAudioCapture;
+        }
+        if (parent.StartsWith(HfpService, StringComparison.OrdinalIgnoreCase)) return AudioEndpointKind.ClassicHfpCapture;
         return AudioEndpointKind.Other;
     }
 
@@ -178,17 +202,17 @@ public sealed class WindowsAudioEndpointPlatform : IAudioEndpointPlatform
         return index >= 0 ? instanceId[index..] : instanceId;
     }
 
-    private static bool IsRenderNode(string instanceId) =>
-        instanceId.StartsWith(RenderPrefix + RenderNodeMarker, StringComparison.OrdinalIgnoreCase)
+    private static bool IsEndpointNode(string instanceId, string nodeMarker) =>
+        instanceId.StartsWith(RenderPrefix + nodeMarker, StringComparison.OrdinalIgnoreCase)
         && instanceId.LastIndexOf('{') is var index && index >= 0 && Guid.TryParse(instanceId[index..], out _);
 
-    private static int? GetDeviceState(string instanceId)
+    private static int? GetDeviceState(string instanceId, string flow)
     {
         int open = instanceId.LastIndexOf('{');
         int close = instanceId.LastIndexOf('}');
         if (open < 0 || close <= open) return null;
         string guid = instanceId[open..(close + 1)];
-        string path = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render\{guid}";
+        string path = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\{flow}\{guid}";
         using RegistryKey? key = Registry.LocalMachine.OpenSubKey(path);
         if (key?.GetValue("DeviceState") is not int state) return null;
         // Sound settings' "Disable" sets the high bit (observed 0x10000001); keep the endpoint

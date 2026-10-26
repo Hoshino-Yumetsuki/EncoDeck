@@ -16,7 +16,10 @@ public interface IAudioEndpointPlatform
     /// <summary>All MMDEVAPI render endpoints, including disabled ones.</summary>
     Task<IReadOnlyList<AudioEndpointInfo>> GetRenderEndpointsAsync(CancellationToken cancellationToken);
 
-    /// <summary>Disables or enables exactly one render endpoint. No BTHENUM service is touched.</summary>
+    /// <summary>All MMDEVAPI capture endpoints, including disabled ones.</summary>
+    Task<IReadOnlyList<AudioEndpointInfo>> GetCaptureEndpointsAsync(CancellationToken cancellationToken);
+
+    /// <summary>Disables or enables exactly one endpoint. No BTHENUM service is touched.</summary>
     Task<AudioEndpointOperationResult> SetEnabledAsync(AudioEndpointInfo endpoint, bool enabled, CancellationToken cancellationToken);
 
     /// <summary>Makes the endpoint the default console/multimedia render device.</summary>

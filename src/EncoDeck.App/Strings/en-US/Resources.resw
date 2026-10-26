@@ -636,6 +636,9 @@
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>The Windows audio endpoint state could not be confirmed; ACL/GATT readiness does not prove dual-ear playback.</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>Disable Classic audio endpoint</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>Restore Classic audio endpoint</value></data>
+  <data name="LeAudio_MicOff.Header" xml:space="preserve"><value>Disable headset microphone</value></data>
+  <data name="LeAudio_MicOffNote" xml:space="preserve"><value>When an app opens the headset microphone, Windows switches LE Audio to a two-way call configuration and playback quality drops noticeably. While disabled, apps can only use other microphones and the earbuds keep media-quality playback. Turn it on again after re-pairing.</value></data>
+  <data name="LeAudio_MicFailed" xml:space="preserve"><value>Could not change the headset microphone: {0}</value></data>
   <data name="LeAudio_Endpoint_Disabled" xml:space="preserve"><value>The Classic A2DP render endpoint was disabled. Choose the LE Audio "Speakers" endpoint in Sound settings.</value></data>
   <data name="LeAudio_Endpoint_AlreadyLeAudioOnly" xml:space="preserve"><value>The Classic A2DP endpoint is already disabled.</value></data>
   <data name="LeAudio_Endpoint_NoClassicEndpoint" xml:space="preserve"><value>No Classic A2DP endpoint was found to disable.</value></data>
