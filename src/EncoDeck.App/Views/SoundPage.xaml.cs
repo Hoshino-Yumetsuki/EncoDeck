@@ -198,8 +198,8 @@ public sealed partial class SoundPage : Page
         bool available = f.Has(DeviceCapability.BassEngine) && f.HasSwitch(DeviceToggle.BassEngine);
         BassCard.Visibility = Show(available);
         if (!available) return;
-        BassTitle.Text = Loc.Get(f.IsMoondrop ? "Moondrop_Bass_Title" : "Bass_Title.Text");
-        BassSummary.Text = Loc.Get(f.IsMoondrop ? "Moondrop_Bass_Summary" : "Bass_Summary.Text");
+        BassTitle.Text = Loc.Get(f.IsMoondrop ? "Moondrop_Bass_Title" : "Bass_Title/Text");
+        BassSummary.Text = Loc.Get(f.IsMoondrop ? "Moondrop_Bass_Summary" : "Bass_Summary/Text");
         bool? on = f.Toggle(DeviceToggle.BassEngine);
         BassSwitch.IsOn = on == true;
         BassSwitch.IsEnabled = ready && on is not null && !f.IsPending("toggle:BassEngine");
