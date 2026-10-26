@@ -343,6 +343,40 @@ public sealed class EdifierSettingsTests
         });
     }
 
+    [Fact]
+    public async Task W820nb_SilentGameModeAndTimerDoNotHoldBackBatteryOrNoise()
+    {
+        // A variant that never answers game mode (0x08) or the timer (0xD3): the session is ready with
+        // battery and noise control first; the two settings stay hidden once their reads time out.
+        var device = new FakeEdifier(Hex("02 06")) { Silent = [0x08, 0xD3] };
+        var identity = Device("EDIFIER W820NB");
+        var profile = (IControllableProfile)new DeviceProfileRegistry(EdifierProfiles.CreateBuiltIn()).Match(identity)!;
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = identity, Profile = profile });
+        var context = new ControllerContext(identity, store, () => false, NullLoggerFactory.Instance, TimeProvider.System);
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        var emulator = Task.Run(() => device.RunAsync(stop.Token), Ct);
+        await using var controller = (EdifierDeviceController)profile.CreateController(device.Channel, context);
+        try
+        {
+            var started = System.Diagnostics.Stopwatch.StartNew();
+            Assert.True(await controller.InitializeAsync(Ct));
+            Assert.True(started.Elapsed < EdifierDeviceController.RequestTimeout, $"Session took {started.Elapsed}.");
+            Assert.NotNull(store.Current.Battery);
+            Assert.NotNull(store.Current.NoiseControl);
+
+            await controller.DeferredSettingsRead.WaitAsync(Ct);
+            Assert.Null(store.Current.PowerOffTimer);
+            Assert.False(store.Current.Toggles.ContainsKey(DeviceToggle.GamingMode));
+            Assert.DoesNotContain(DeviceToggle.GamingMode, ((IControllableProfile)store.Current.Profile!).Toggles);
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            await emulator;
+        }
+    }
+
     private static async Task RunAsync(string name, FakeEdifier device, bool allowExperimental,
         Func<IDeviceController, DeviceStateStore, Task> assertions)
     {
@@ -357,6 +391,8 @@ public sealed class EdifierSettingsTests
         try
         {
             Assert.True(await controller.InitializeAsync(Ct));
+            // Game mode and the power-off timer are read in the background after the session is ready.
+            if (controller is EdifierDeviceController edifier) await edifier.DeferredSettingsRead.WaitAsync(Ct);
             await assertions(controller, store);
         }
         finally
@@ -380,6 +416,9 @@ public sealed class EdifierSettingsTests
         public FakeByteChannel Channel { get; } = new();
 
         public bool IgnoreWrites { get; init; }
+
+        /// <summary>Commands this variant never answers.</summary>
+        public byte[] Silent { get; init; } = [];
 
         public byte[] Battery { get; init; } = [80];
 
@@ -410,7 +449,7 @@ public sealed class EdifierSettingsTests
                     {
                         var (command, payload) = Parse(writes[handled]);
                         lock (_requests) _requests.Add((command, payload));
-                        if (Answer(command, payload) is { } reply) Channel.Receive(Encode(reply.Head, command, reply.Payload));
+                        if (!Silent.Contains(command) && Answer(command, payload) is { } reply) Channel.Receive(Encode(reply.Head, command, reply.Payload));
                     }
                     await Task.Delay(5, ct);
                 }

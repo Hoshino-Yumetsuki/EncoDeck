@@ -124,6 +124,6 @@ internal static partial class VivoCatalog
         4 => ("Immersive audio", "Vivo_Eq_Immersive"),
         5 => ("Audiobooks", "Vivo_Eq_Audiobooks"),
         11 => ("Ultimate master", "Vivo_Eq_UltimateMaster"),
-        _ => ($"Preset {id}", "Eq_UnknownPreset"),
+        _ => ($"Preset {id}", $"Eq_UnknownPreset:{id}"),
     };
 }

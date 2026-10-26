@@ -32,6 +32,7 @@ public sealed class EdifierDeviceController : BrandControllerBase
     private readonly List<(byte Command, TaskCompletionSource<EdifierFrame> Waiter)> _waiters = [];
     private readonly CancellationTokenSource _pollStop = new();
     private Task? _pollTask;
+    private readonly TaskCompletionSource _deferredSettings = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly EdifierProfile _profile;
     private EdifierFeatures _confirmed;
     private bool _version2;
@@ -110,12 +111,32 @@ public sealed class EdifierDeviceController : BrandControllerBase
     private async Task QuerySettingsAsync(CancellationToken ct)
     {
         var features = Spec.Features;
-        if (features.HasFlag(EdifierFeatures.GameMode)) await QueryAsync(EdifierConstants.QueryGameMode, [], ct).ConfigureAwait(false);
         if (features.HasFlag(EdifierFeatures.KeyControl)) await QueryAsync(EdifierConstants.QueryKeyControl, [EdifierConstants.KeyControlSlot], ct).ConfigureAwait(false);
         if (features.HasFlag(EdifierFeatures.SoundEffect)) await QueryAsync(EdifierConstants.QuerySoundEffect, [], ct).ConfigureAwait(false);
-        if (features.HasFlag(EdifierFeatures.PowerOffTimer)) await QueryAsync(EdifierConstants.QueryPowerOffTimer, [], ct).ConfigureAwait(false);
         if (features.HasFlag(EdifierFeatures.InEarSwitch)) await QueryAsync(EdifierConstants.QueryInEarSwitch, [], ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Game mode and the auto power-off timer are read after the session is ready: a variant that
+    /// does not answer them would otherwise hold back battery and noise control for a full request
+    /// timeout each. Either setting still appears only once the headset answered for it.
+    /// </summary>
+    private async Task QueryDeferredSettingsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var features = Spec.Features;
+            if (features.HasFlag(EdifierFeatures.GameMode)) await QueryAsync(EdifierConstants.QueryGameMode, [], ct).ConfigureAwait(false);
+            if (features.HasFlag(EdifierFeatures.PowerOffTimer)) await QueryAsync(EdifierConstants.QueryPowerOffTimer, [], ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _deferredSettings.TrySetResult();
+        }
+    }
+
+    /// <summary>Completes once the deferred game-mode / power-off reads have been answered or timed out.</summary>
+    internal Task DeferredSettingsRead => _deferredSettings.Task;
 
     private async Task<EdifierFrame?> QueryAsync(byte command, byte[] payload, CancellationToken ct)
     {
@@ -482,6 +503,7 @@ public sealed class EdifierDeviceController : BrandControllerBase
     {
         try
         {
+            await QueryDeferredSettingsAsync(cancellationToken).ConfigureAwait(false);
             using var timer = new PeriodicTimer(PollInterval, Context.Time);
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false) && !Closed.IsCompleted)
             {

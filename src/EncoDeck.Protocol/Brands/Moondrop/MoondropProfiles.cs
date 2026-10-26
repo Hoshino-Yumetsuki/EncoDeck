@@ -198,7 +198,7 @@ public sealed class MoondropProfile : IControllableProfile, IBandEqualizerProfil
         ProfileKey = ModelId + (features is null ? string.Empty : "/" + string.Join(',', features.Order()))
             + (_equalizer is null ? string.Empty : $"/eq:{string.Join(',', _equalizer.FactoryPresets)}:{_equalizer.UserCurve}:{_equalizer.Curve}");
         EqualizerPresets = _equalizer is null || eqSupport is CapabilitySupport.Unknown or CapabilitySupport.Unsupported ? [] :
-            [.. _equalizer.FactoryPresets.Select(id => new EqualizerPreset(FactoryPresetId(id), $"Preset {id + 1}", $"Eq_DevicePreset{id + 1}", eqSupport))];
+            [.. _equalizer.FactoryPresets.Select(id => new EqualizerPreset(FactoryPresetId(id), $"Preset {id + 1}", $"Eq_DevicePreset:{id + 1}", eqSupport))];
     }
 
     public string Brand => "moondrop";

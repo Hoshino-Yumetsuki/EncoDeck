@@ -572,9 +572,16 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     private static bool IsAllowed(CapabilitySupport support) => support == CapabilitySupport.Supported;
 
+    /// <summary>
+    /// Localized text for a profile resource key, or <paramref name="fallback"/> when the key is unknown.
+    /// A key of the form <c>Name:argument</c> names a format string with one argument (e.g. <c>Eq_DevicePreset:6</c>).
+    /// </summary>
     private static string Text(string key, string fallback)
     {
-        string value = Loc.Get(key);
-        return value == key ? fallback : value;
+        int colon = key.IndexOf(':');
+        string name = colon < 0 ? key : key[..colon];
+        string value = Loc.Get(name);
+        if (value == name) return fallback;
+        return colon < 0 ? value : string.Format(System.Globalization.CultureInfo.CurrentCulture, value, key[(colon + 1)..]);
     }
 }

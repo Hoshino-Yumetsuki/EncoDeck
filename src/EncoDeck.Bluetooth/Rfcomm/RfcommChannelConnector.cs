@@ -113,10 +113,17 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             }
             if (uuid == MoondropConstants.GattServiceId)
             {
-                var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                // The GAIA v1 service is shared by MOONDROP and vivo; label the channel after the matched brand.
+                string brand = profiles.Match(identity) switch
+                {
+                    MoondropProfile => "MOONDROP",
+                    EncoDeck.Protocol.Brands.Vivo.VivoDeviceProfile => "vivo",
+                    _ => "Generic",
+                };
+                var result = await GaiaGattByteChannel.OpenAsync(device.BluetoothAddress, brand, cancellationToken).ConfigureAwait(false);
                 if (result.Status == ChannelOpenStatus.Opened) return result;
                 gattFailure = result;
-                _logger.LogInformation("GAIA GATT connect failed: {Detail}", result.Detail);
+                _logger.LogInformation("{Brand} GAIA GATT connect failed: {Detail}", brand, result.Detail);
                 continue;
             }
             RfcommDeviceServicesResult services;

@@ -70,6 +70,8 @@ public sealed partial class MoondropTests
         Assert.True(live.Capabilities.IsAvailable(DeviceCapability.CustomEqualizer, false));
         Assert.True(live.Capabilities.IsAvailable(DeviceCapability.Equalizer, false));
         Assert.Equal(Enumerable.Range(0, 5).Select(i => MoondropProfile.FactoryPresetId((byte)i)), live.EqualizerPresets.Select(p => p.Id));
+        // One localized format string covers every preset number, including ids beyond the first five.
+        Assert.Equal(Enumerable.Range(1, 5).Select(n => $"Eq_DevicePreset:{n}"), live.EqualizerPresets.Select(p => p.ResourceKey));
         Assert.Equal(new EqualizerState(MoondropProfile.FactoryPresetId(4), 4), store.Current.Equalizer?.Value);
         var curve = Assert.Single(store.Current.CustomEqualizers!.Value);
         Assert.Equal(MoondropDeviceController.UserCurvePreset, curve.Id);

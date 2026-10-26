@@ -814,11 +814,7 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Nothing_Eq_EnhanceVocals" xml:space="preserve"><value>Enhance vocals</value></data>
   <data name="Nothing_Eq_Classical" xml:space="preserve"><value>Classical</value></data>
   <data name="Eq_DeviceCustom" xml:space="preserve"><value>Custom EQ</value></data>
-  <data name="Eq_DevicePreset1" xml:space="preserve"><value>Preset 1</value></data>
-  <data name="Eq_DevicePreset2" xml:space="preserve"><value>Preset 2</value></data>
-  <data name="Eq_DevicePreset3" xml:space="preserve"><value>Preset 3</value></data>
-  <data name="Eq_DevicePreset4" xml:space="preserve"><value>Preset 4</value></data>
-  <data name="Eq_DevicePreset5" xml:space="preserve"><value>Preset 5</value></data>
+  <data name="Eq_DevicePreset" xml:space="preserve"><value>Preset {0}</value></data>
   <data name="Sennheiser_EqOff" xml:space="preserve"><value>Off</value></data>
   <data name="Sennheiser_EqPodcast" xml:space="preserve"><value>Podcast</value></data>
   <data name="Dual_ConnectOnly" xml:space="preserve"><value>You can connect a listed device here. To disconnect or remove a device, use Bluetooth settings on that device.</value></data>
