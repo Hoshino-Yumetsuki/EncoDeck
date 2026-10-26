@@ -26,7 +26,7 @@ dotnet test tests/EncoDeck.Tests -c Debug
 dotnet test tests/EncoDeck.Tests --filter "FullyQualifiedName~Xiaomi|FullyQualifiedName~Huawei|FullyQualifiedName~SonyAkg"
 ```
 
-`XiaomiFeaturesTests` 覆盖型号配置报文、写后回读、拒绝写入、通知 ACK 和未知型号；`HuaweiDeviceControllerTests` 覆盖独立空间音频、错误应答和非法 TLV；`SonyAkgTests` 覆盖 MDR v1/v2、EQ 能力及 BES 自动播放/暂停。协议模拟器通过不代表全部型号真机可用。
+`XiaomiFeaturesTests` 覆盖型号配置报文、写后回读、拒绝写入、通知 ACK 和未知型号；`HuaweiDeviceControllerTests` 覆盖独立空间音频、写入应答 / 结果码、无应答与延迟回读、佩戴状态、设备列表、耳机列出的 EQ 预设、智能音量与点头 / 摇头、5i 连接握手、错误应答和非法 TLV，部分报文取自社区项目公开的真机记录；`HonorTests` 覆盖 HONOR CHOICE 报文差异；`SonyAkgTests` 覆盖 MDR v1/v2、EQ 能力及 BES 自动播放/暂停。协议模拟器通过不代表全部型号真机可用。
 
 ### MOONDROP 控制通道回归
 

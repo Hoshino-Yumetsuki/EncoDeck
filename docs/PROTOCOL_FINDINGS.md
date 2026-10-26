@@ -10,7 +10,7 @@
 |---|---|
 | **[X4 实测]** | 用 `EncoDeck.Probe` 在真实 OPPO Enco X4 上发送/接收并确认（2026-10-20，固件 左 116 / 右 116 / 盒 100） |
 | **[协议实现]** | 按已知协议格式实现并有单元测试覆盖，尚未在真机上验证 |
-| **[社区]** | 来自参考项目（OppoPodsWindows / OppoPodsManager / OppoPods）的源码或说明 |
+| **[社区]** | 来自参考项目（OppoPodsWindows / OppoPodsManager / OppoPods；华为 / 荣耀见 §11）的源码或说明 |
 | **[推测]** | 由以上证据推断，尚未验证 |
 
 > 隐私：耳机会通过事件上报**其他配对设备的蓝牙地址和名称**（见 §5.7）。本文中的抓包均已删除或替换这类数据，EncoDeck 的日志和诊断报告也会遮盖它们。
@@ -246,4 +246,27 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 - 触控 MMI GET `1601 [side,pattern]` → `[side,pattern,function]`，SET `1600 [side,pattern,function]` → 空 ACK。wire side 左=1、右=0（与通用 `EarSide` 不同）；pattern 单击/双击/三击/长按=1/2/3/4。每个槽位分别读，写之前重新读，写之后按同一 side/pattern 回读确认；错误侧或错误动作的应答不能完成请求。
 - TW4 允许的动作：0 无、1 播放暂停、2 下一首、3 上一首、4/5 音量增减、6 通透切换、7 语音助手、9 ANC 切换、13 触控锁定切换。播放/切歌仅用于单/双/三击，音量仅长按，锁定仅三击/长按；其余可用于所有四种动作。不改通话映射，未知功能值只显示并保留。
 - 已通过 TW4 模拟设备读写、拒绝/超时/回读不一致、通知缺失/格式错误、版本 4 分片、动作约束和其他森海型号隔离测试，以及真实 WinUI 截图检查。用户截图固件为 5.19.1；本机无已连接 TW4，未将模拟测试标为真机验证。
+
+## 11. 华为 / 荣耀（独立于 OPPO）
+
+来源：[OpenFreebuds `0b4f14c`](https://github.com/melianmiko/OpenFreebuds/tree/0b4f14c0b500d491f0fb4ea38f2984ec334e3649)（含 issue / PR #56、#95、#116、#128、#133、#138、#142）及其 [vicrodh 分支 `a12ccc5`](https://github.com/vicrodh/OpenFreebuds/tree/a12ccc5a4030cba6ce2b8e9a402209b2e63268f5)、[HuaweiPods `115f080`](https://github.com/Nshpiter/HuaweiPods/tree/115f080100c07fb51174b3238473c512a2c6d3b8)、[EZBuds `4d1c6aa`](https://github.com/CenSher/EZBuds/tree/4d1c6aaddb3b089cfb1b464ac86b65e3fa365ce2)；另核对 Gadgetbridge、fxxkHilife、OpenFreebuds-Android、Nezerkill/honor-earbuds、TeskiOke/HonorEarbuds 公开的测试结果。本节的 **[社区]** 指上述项目在真机上测试或抓包确认；EncoDeck 自己尚未在华为 / 荣耀真机上验证，全部路径都有字节向量和模拟设备测试。
+
+| 事实 | 证据 |
+| --- | --- |
+| 帧：`5A len_hi len_lo 00 svc cmd TLV… crc_hi crc_lo`。长度 2 字节大端 = TLV 长度 + 3；CRC-16/XMODEM 覆盖 `5A` 至最后一个 TLV 字节。超过 255 字节的应答（FreeBuds Pro 5 设备信息 282 字节）必须读高字节；EncoDeck 旧实现按小端读并要求第二字节为 0，会丢弃长应答，已修正 | [社区]（OpenFreebuds #116、fxxkHilife、EZBuds） |
+| 写入应答 `7F 04 00 01 86 A0`（结果码 100000）表示已接受，只是应答而不是状态；其他结果码（如 100003 不支持）为拒绝。EncoDeck 旧实现把任何 `7F` 都当作拒绝，会把正常写入判为失败，已修正 | 应答格式 [社区]；判定 [协议实现] |
+| 降噪：读 `2B2A` TLV1 = [档位, 模式]，写 `2B04` TLV1 = [模式, 档位]；档位 `FF` 保持当前档位。FreeBuds Pro 5 的写入可能没有应答，首次回读也可能仍是旧值，EncoDeck 不等待应答并重读确认 | [社区]（OpenFreebuds #133、#142） |
+| 降噪档位编号随型号：FreeBuds 5 / 5i / 6 / 6i / 7 / Pro 5 为智慧动态 3、舒适 1、均衡 0、深度 2；Pro 3 / 7i 为智慧动态 1、舒适 0、均衡 2、深度 3；4E 为舒适 1、均衡 0 | [社区]（HuaweiPods）；Pro 3 / 7i 与 OpenFreebuds 的通用标注冲突，采用 HuaweiPods [推测] |
+| 通透子模式：2 标准、1 人声增强（6i、Pro 5、FreeLace Pro 2）；Pro 5 的 4（智慧动态通透）只显示不提供。Pro 3 / 7i 的标准通透记录为 `FF`，与 OpenFreebuds 的 2 冲突，未开放人声增强 | [社区] |
+| FreeBuds 5i 连接后主动发送 `0A0E` TLV1 = 0，主机须回复 `0A0E` TLV2 = 0（`5A0006000A0E020100FB3F`），否则耳机断开 | [社区]（OpenFreebuds #142、OpenFreebuds-Android） |
+| 电量 `0108` / `0127`：TLV2 = [左, 右, 盒]，其中 0 表示该部分未上报（如在关闭的充电盒中），不是 0% | [社区]（OpenFreebuds #142） |
+| 佩戴状态 `2B25`：TLV1 左、TLV2 右（1 = 佩戴）；7i、Pro 4 用它代替 `2B03` | [社区]（vicrodh 7i 抓包、OpenFreebuds #138）；Pro 4 的左右对应未核实 [推测] |
+| EQ `2B4A`：TLV2 当前预设、TLV3 耳机提供的内置预设、TLV8 自定义预设（每条 36 字节，名称 24 字节）；写 `2B49` TLV1。7i 会静默丢弃名称超过 24 字节的自定义预设写入。自定义 EQ 未实现，选中时只显示原始编号 | [社区] |
+| 内置预设编号：通用 1 默认、2 低音、3 高音、9 人声；FreeBuds 6 默认为 0；Pro 3 / 4 与 FreeClip 为 5 / 1 / 2 / 9；FreeBuds 7 / Pro 5 为 5 均衡、9 人声、2 低音、13 电影、15 播客、14 游戏、16 运动；FreeClip 2 / FreeArc 另有 10 运动增强。界面只显示 TLV3 列出的预设 | [社区]；Pro 5 的 2 号 OpenFreebuds 标为高音、HuaweiPods 标为低音，采用后者 [推测] |
+| 低时延 `2B6C` 写 TLV1、读 TLV2；佩戴检测开关 `2B10` / `2B11`；双设备开关 `2B2E` 写 / `2B2F` 读 | [社区] |
+| 设备列表 `2B31`：一次查询按设备逐帧应答，TLV2 总数、3 序号、4 地址（倒序）、5 状态（0 未连接、9 播放中）、7 优先、8 自动连接、9 名称；`2B36` 通知列表变化。连接 / 断开 `2B33`、优先设备 `2B32` 未实现，列表只读 | [社区]（EZBuds Windows 实测） |
+| 功能开关 `2BB4`，TLV1 为功能 ID：24 独立空间音频（0 关、1 头部跟踪、2 固定）、2 自适应音量、11 点头 / 摇头（TLV2 开关，TLV3 点头、TLV4 摇头：0 无、1 接听、2 拒接）。各功能仅在耳机返回有效状态后开放；单耳降噪（5）、掉落提醒（7）未实现 | [社区]（HuaweiPods FreeBuds 7 逐项写入回读、vicrodh 7i）；7i 空间音频编码两个项目记录不一致，以回读一致为准 |
+| 防风噪 `2B94` / `2B95` 在 5i 上极性相反（0 开、1 关）；高清音质 / 音质优先 `2BA2` / `2BA3` 在 Windows 11 与部分手机上会导致断音或重连。均未提供 | [社区]（OpenFreebuds #142、#138，Gadgetbridge） |
+| HONOR Earbuds 2 SE 可用 FreeBuds 4i 的命令控制（电量、降噪、佩戴检测） | [社区]（OpenFreebuds #56） |
+| HONOR CHOICE X5 / X5 Pro：同样的 `5A` 帧；`0108`、`2B2A` 查询不带 TLV；`2B04` TLV1 = [模式]（0 关、1 降噪、2 通透）；状态取 TLV1 的最后一个字节。Linux 上社区工具直接打开 RFCOMM 通道 18 / 12，Windows 工具经 SPP 服务连接 | [社区]（Nezerkill X5 实测、TeskiOke X5 Pro）；EncoDeck 经 SDP 查找 SPP 服务 [协议实现] |
 

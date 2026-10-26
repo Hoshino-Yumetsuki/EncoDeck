@@ -500,6 +500,11 @@
   <data name="Huawei_Eq_Bass" xml:space="preserve"><value>Bass boost</value></data>
   <data name="Huawei_Eq_Treble" xml:space="preserve"><value>Treble boost</value></data>
   <data name="Huawei_Eq_Voices" xml:space="preserve"><value>Vocals</value></data>
+  <data name="Huawei_Eq_Balanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Huawei_Eq_Movie" xml:space="preserve"><value>Movie</value></data>
+  <data name="Huawei_Eq_Podcast" xml:space="preserve"><value>Podcast</value></data>
+  <data name="Huawei_Eq_Game" xml:space="preserve"><value>Game</value></data>
+  <data name="Huawei_Eq_Sport" xml:space="preserve"><value>Sport</value></data>
   <data name="Artwork_Left.Text" xml:space="preserve"><value>Left earbud</value></data>
   <data name="Artwork_Right.Text" xml:space="preserve"><value>Right earbud</value></data>
   <data name="Artwork_Case.Text" xml:space="preserve"><value>Charging case</value></data>
