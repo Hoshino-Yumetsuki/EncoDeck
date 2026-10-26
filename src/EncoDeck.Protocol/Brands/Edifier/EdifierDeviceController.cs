@@ -317,19 +317,39 @@ public sealed class EdifierDeviceController : BrandControllerBase
             s => s.Equalizer?.Value.ActivePresetId == presetId, cancellationToken);
     }
 
+    /// <summary>Id of the power-off timer in <see cref="DeviceState.Options"/> (value in minutes, 0 = off).</summary>
+    internal const string PowerOffOption = "edifier-power-off-timer";
+
+    /// <summary>
+    /// The power-off timer as a device option: off plus the official durations, and the reported value
+    /// when it is not one of them (shown as reported, never offered for writing by the controller).
+    /// </summary>
+    internal static DeviceOption PowerOffTimerOption(int minutes)
+    {
+        int[] values = [0, .. EdifierConstants.PowerOffTimerMinutes, .. EdifierConstants.PowerOffTimerMinutes.Contains(minutes) || minutes == 0 ? [] : new[] { minutes }];
+        var choices = values.Select(m => m == 0 ? new DeviceOptionChoice(0, "AutoOff_Off")
+            : m % 60 == 0 ? new DeviceOptionChoice(m, "PowerOff_Hours", (m / 60).ToString(System.Globalization.CultureInfo.InvariantCulture))
+            : new DeviceOptionChoice(m, "PowerOff_Minutes", m.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray();
+        return new DeviceOption(PowerOffOption, "PowerOff_Timer", minutes, choices, 10) { DescriptionKey = "PowerOff_Timer_Description" };
+    }
+
+    private static int? PowerOffMinutes(DeviceState state) =>
+        state.Options.TryGetValue(PowerOffOption, out var option) ? option.Value.Value : null;
+
     /// <summary>
     /// Power-off timer: zero disables it (never a zero-minute set, which powers off at once); other
     /// values must be one of the official choices. Confirmed by reading the timer back.
     /// </summary>
-    public override Task<CommandResult> SetPowerOffTimerAsync(int minutes, CancellationToken cancellationToken = default)
+    public override Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default)
     {
-        if (!CurrentProfile.Offers(EdifierFeatures.PowerOffTimer)) return Task.FromResult(NotSupported("Power-off timer"));
+        if (id != PowerOffOption || !CurrentProfile.Offers(EdifierFeatures.PowerOffTimer)) return Task.FromResult(NotSupported($"Option {id}"));
+        int minutes = value;
         if (minutes != 0 && !EdifierConstants.PowerOffTimerMinutes.Contains(minutes)) return Task.FromResult(NotSupported($"A {minutes}-minute timer"));
         return minutes == 0
             ? WriteSettingAsync("power-off-timer", EdifierConstants.DisablePowerOffTimer, [], EdifierConstants.QueryPowerOffTimer, [],
-                s => s.PowerOffTimer?.Value == 0, cancellationToken)
+                s => PowerOffMinutes(s) == 0, cancellationToken)
             : WriteSettingAsync("power-off-timer", EdifierConstants.SetPowerOffTimer, [(byte)(minutes >> 8), (byte)minutes], EdifierConstants.QueryPowerOffTimer, [],
-                s => s.PowerOffTimer?.Value == minutes, cancellationToken);
+                s => PowerOffMinutes(s) == minutes, cancellationToken);
     }
 
     /// <summary>
@@ -429,7 +449,7 @@ public sealed class EdifierDeviceController : BrandControllerBase
                 return true;
             case EdifierConstants.QueryPowerOffTimer when Spec.Features.HasFlag(EdifierFeatures.PowerOffTimer) && ParsePowerOffTimer(p) is { } minutes:
                 Confirm(EdifierFeatures.PowerOffTimer);
-                Store.TryUpdate(DeviceId, s => s with { PowerOffTimer = Observed.From(minutes, now, source), LastUpdateSource = source });
+                Store.TryUpdate(DeviceId, s => s with { Options = s.Options.SetItem(PowerOffOption, Observed.From(PowerOffTimerOption(minutes), now, source)), LastUpdateSource = source });
                 return true;
             default:
                 return false;

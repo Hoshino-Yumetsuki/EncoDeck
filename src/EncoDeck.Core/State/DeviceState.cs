@@ -38,6 +38,9 @@ public sealed record DeviceState
 
     public ImmutableDictionary<DeviceToggle, Observed<bool>> Toggles { get; init; } = ImmutableDictionary<DeviceToggle, Observed<bool>>.Empty;
 
+    /// <summary>Multi-value settings reported by the device, keyed by <see cref="DeviceOption.Id"/>.</summary>
+    public ImmutableDictionary<string, Observed<DeviceOption>> Options { get; init; } = ImmutableDictionary<string, Observed<DeviceOption>>.Empty;
+
     public Observed<FirmwareInfo>? Firmware { get; init; }
 
     /// <summary>A2DP codec reported by the earbuds; null when unknown or not on Classic audio (e.g. LE Audio).</summary>
@@ -88,9 +91,6 @@ public sealed record DeviceState
 
     /// <summary>Present when the earbuds answer the LE/BR switch query, i.e. their firmware can run LE Audio.</summary>
     public Observed<LeAudioSwitchState>? LeAudioSwitch { get; init; }
-
-    /// <summary>Auto power-off timer in minutes (0 = off); present only after the headset reported it.</summary>
-    public Observed<int>? PowerOffTimer { get; init; }
 
     public FitTestResult? FitTest { get; init; }
 

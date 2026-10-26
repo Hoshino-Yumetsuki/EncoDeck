@@ -56,6 +56,7 @@ public sealed class SonyConnectionTests
             byte[] payload = frame.Payload[0] switch
             {
                 0 => [1, 0, 0, 0, 2, 0, 0, 0],
+                4 => [5, 2, 5, (byte)'3', (byte)'.', (byte)'1', (byte)'.', (byte)'5'],
                 6 => [7, 0, 2, 32, 1, 107, 1],
                 0x22 => [0x23, 0, 80, 0],
                 0x66 => [0x67, 23, 1, 1, 1, 0, 20],
@@ -98,7 +99,7 @@ public sealed class SonyConnectionTests
         Assert.Equal(80, store.Current.Battery.Left?.Value.Level);
         Assert.Equal(NoiseControlMode.Transparency, store.Current.NoiseControl?.Value.Mode);
         Assert.True(peer.Acknowledgements.Count >= 6);
-        Assert.All(peer.Requests, frame => Assert.Contains(frame.Payload[0], new byte[] { 0, 6, 0x22, 0x66 }));
+        Assert.All(peer.Requests, frame => Assert.Contains(frame.Payload[0], new byte[] { 0, 4, 6, 0x22, 0x66 }));
     }
 
     [Fact]

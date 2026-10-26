@@ -62,7 +62,10 @@ public interface IAdvancedDeviceCommands
 
     Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default);
 
-    /// <summary>Sets the auto power-off timer in minutes (0 turns it off). Unsupported unless the device reported one.</summary>
-    Task<CommandResult> SetPowerOffTimerAsync(int minutes, CancellationToken cancellationToken = default) =>
-        Task.FromResult(CommandResult.Unsupported("Power-off timer is not supported on this device."));
+    /// <summary>
+    /// Writes a device-reported <see cref="DeviceOption"/> and confirms it by readback. Brands without
+    /// such options keep this default.
+    /// </summary>
+    Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) =>
+        Task.FromResult(CommandResult.Unsupported($"Option {id} is not supported on this device."));
 }

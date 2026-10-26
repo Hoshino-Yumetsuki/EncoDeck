@@ -5,7 +5,7 @@ using EncoDeck.Core.State;
 
 namespace EncoDeck.Protocol.Brands.Sony;
 
-internal sealed partial class SonyAkgController
+internal sealed partial class SonyMdrController
 {
     private byte? _eqType;
     private IReadOnlyList<EqualizerPreset> _equalizers = [];
@@ -16,31 +16,32 @@ internal sealed partial class SonyAkgController
         if (_equalizers.Count == 0)
         {
             var capability = await Query(0x50, 0x51, type, ct, [type, 1]).ConfigureAwait(false);
-            if (capability is null || !SonyEqualizer.TryPresets(capability, out _equalizers, !_v2)) return;
+            if (capability is null || !SonyEqualizer.TryPresets(capability, out var presets, !_v2)) return;
+            _equalizers = presets.Where(p => SonySettings.IsPresetAccepted(Model, byte.Parse(p.Id.AsSpan(5)))).ToArray();
+            if (_equalizers.Count == 0) { _eqType = null; return; }
         }
         var value = await Query(0x56, 0x57, type, ct).ConfigureAwait(false);
         if (value is null || !SonyEqualizer.TryParameter(value, out var current, out var bands, !_v2)) return;
+        _profile = _profile.WithEqualizers(_equalizers);
+        PublishProfile();
         // The report carries the band values of whichever preset is active, so custom curves show up
         // exactly as the headset stored them instead of a guessed flat line.
         Store.TryUpdate(DeviceId, s => s with
         {
-            Profile = profile.WithNoiseSupport(_noiseReady).WithEqualizers(_equalizers),
             Equalizer = Observed.From(new EqualizerState($"sony-{current}", current, bands), Now, StateSource.QueryResponse),
         });
     }
 
     public override async Task<CommandResult> SetEqualizerPresetAsync(string presetId, CancellationToken cancellationToken)
     {
-        bool entered = false;
-        try
+        return await Exclusive(async ct =>
         {
-            await _commands.WaitAsync(cancellationToken).ConfigureAwait(false); entered = true;
-            if (Closed.IsCompleted) return CommandResult.NotConnected;
-            if (!Sony || !_eqType.HasValue || !_equalizers.Any(p => p.Id == presetId)
+            if (!_eqType.HasValue || !_equalizers.Any(p => p.Id == presetId)
                 || !byte.TryParse(presetId.AsSpan(5), out byte id)) return NotSupported("EQ preset has not been reported by this device.");
-            // The official app selects an existing preset with a zero-length band vector.
-            if (!await Send(0x58, [_eqType.Value, id, 0], cancellationToken).ConfigureAwait(false)) return new(CommandStatus.TransportError);
-            var value = await Query(0x56, 0x57, _eqType.Value, cancellationToken).ConfigureAwait(false);
+            // A preset is selected with a zero-length band vector; band steps would define a custom EQ
+            // instead (WF-LC900 2.0.3 then switches to CUSTOM, mos9527/SonyHeadphonesClient notes).
+            if (!await Send(0x58, [_eqType.Value, id, 0], ct).ConfigureAwait(false)) return new(CommandStatus.TransportError);
+            var value = await Query(0x56, 0x57, _eqType.Value, ct).ConfigureAwait(false);
             if (Store.Current.Device?.DeviceId != DeviceId) return CommandResult.NotConnected;
             bool parsed = false;
             byte actual = 0;
@@ -62,19 +63,14 @@ internal sealed partial class SonyAkgController
                 LastError = result.IsSuccess ? null : new DeviceError(result.Detail ?? result.Status.ToString(), result.Status, Now),
             });
             return result;
-        }
-        catch (OperationCanceledException) { return new(CommandStatus.Cancelled); }
-        finally { if (entered) _commands.Release(); }
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<CommandResult> SetEqualizerBandsAsync(IReadOnlyList<int> bands, CancellationToken cancellationToken)
     {
-        bool entered = false;
-        try
+        return await Exclusive(async ct =>
         {
-            await _commands.WaitAsync(cancellationToken).ConfigureAwait(false); entered = true;
-            if (Closed.IsCompleted) return CommandResult.NotConnected;
-            if (!Sony || !_eqType.HasValue) return NotSupported("Equalizer");
+            if (!_eqType.HasValue) return NotSupported("Equalizer");
             if (bands.Count == 0) return new(CommandStatus.Rejected, "No band values were supplied.");
             if (Store.Current.Equalizer?.Value?.RawPresetValue is not { } preset
                 || !SonyEqualizer.EditablePreset((byte)preset))
@@ -85,9 +81,9 @@ internal sealed partial class SonyAkgController
             payload[1] = (byte)preset;
             payload[2] = (byte)bands.Count;
             SonyEqualizer.ToBandBytes(bands).CopyTo(payload, 3);
-            if (!await Send(0x58, payload, cancellationToken).ConfigureAwait(false)) return new(CommandStatus.TransportError);
+            if (!await Send(0x58, payload, ct).ConfigureAwait(false)) return new(CommandStatus.TransportError);
 
-            var value = await Query(0x56, 0x57, _eqType.Value, cancellationToken).ConfigureAwait(false);
+            var value = await Query(0x56, 0x57, _eqType.Value, ct).ConfigureAwait(false);
             if (Store.Current.Device?.DeviceId != DeviceId) return CommandResult.NotConnected;
             if (value is null) return new(CommandStatus.Timeout);
             if (!SonyEqualizer.TryParameter(value, out var reported, out var applied, !_v2))
@@ -103,8 +99,6 @@ internal sealed partial class SonyAkgController
                 if (applied[i] != Math.Clamp(bands[i], -6, 6)) return new(CommandStatus.Rejected, "The device kept different band values.");
             }
             return CommandResult.Ok;
-        }
-        catch (OperationCanceledException) { return new(CommandStatus.Cancelled); }
-        finally { if (entered) _commands.Release(); }
+        }, cancellationToken).ConfigureAwait(false);
     }
 }

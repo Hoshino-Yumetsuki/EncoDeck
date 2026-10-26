@@ -34,10 +34,14 @@ public enum DeviceToggle
     ChannelSwap,
     /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
     AutoVolume,
-    /// <summary>Lock the earbuds' touch controls (on = touch disabled).</summary>
-    TouchLock,
     /// <summary>Earbud-side automatic answering of incoming calls (Xiaomi config 3).</summary>
     AutoAnswerCalls,
+    /// <summary>Pause playback and let ambient sound in when the wearer starts talking (Sony Speak-to-Chat).</summary>
+    SpeakToChat,
+    /// <summary>Device-side upscaling of compressed audio (Sony DSEE).</summary>
+    Upscaling,
+    /// <summary>Touch panel / touch sensor operation on or off (off = touch locked; Sony, Samsung).</summary>
+    TouchControls,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

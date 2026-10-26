@@ -10,7 +10,7 @@
 |---|---|
 | **[X4 实测]** | 用 `EncoDeck.Probe` 在真实 OPPO Enco X4 上发送/接收并确认（2026-10-20，固件 左 116 / 右 116 / 盒 100） |
 | **[协议实现]** | 按已知协议格式实现并有单元测试覆盖，尚未在真机上验证 |
-| **[社区]** | 来自参考项目（OppoPodsWindows / OppoPodsManager / OppoPods；华为 / 荣耀见 §11，小米 / Redmi 见 §12，vivo / iQOO 见 §13，漫步者见 §14）的源码或说明 |
+| **[社区]** | 来自参考项目（OppoPodsWindows / OppoPodsManager / OppoPods；华为 / 荣耀见 §11，小米 / Redmi 见 §12，vivo / iQOO 见 §13，漫步者见 §14，索尼 / AKG 见 §15）的源码或说明 |
 | **[推测]** | 由以上证据推断，尚未验证 |
 
 > 隐私：耳机会通过事件上报**其他配对设备的蓝牙地址和名称**（见 §5.7）。本文中的抓包均已删除或替换这类数据，EncoDeck 的日志和诊断报告也会遮盖它们。
@@ -368,3 +368,34 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 | X5 Pro 佩戴检测 `0xFB` / `0xFC`、游戏模式无应答样本：回读后作为实验功能 | [推测] |
 | W860NB PRO 降噪切换后约 1.9 秒播报提示音，期间不应答；回读超时后延迟 2 秒重试一次 | [社区] |
 | 漫步者充电状态没有任何真机证据，不实现 | — |
+
+## 15. 索尼 MDR 与 AKG（独立于 OPPO）
+
+来源：[SonyHeadphonesClient `4061cf3`](https://github.com/mos9527/SonyHeadphonesClient/tree/4061cf353fd0044e559e9a1f1b7f2faa334d09c6)（libmdr 协议定义及 WH-1000XM3 4.5.2、WF-1000XM5 6.1.0、WF-LC900 2.0.3 真机抓包）、[SonyPods `3f701ff`](https://github.com/Mercury000/SonyPods/tree/3f701ff8f9b30c6909b9dbe8d99248f20d55560e)（GATT 特征 UUID）、[akg_earbud_control `184d2e2`](https://github.com/tthayer/akg_earbud_control/tree/184d2e21542d0f419e4d5789cc555e5c41c9863e)（N400NC 真机记录）、[jbl-control `a276b85`](https://github.com/AhmadRun/jbl-control/tree/a276b8561c15fc5a3effa76cb75500847219d750)（同一 GATT 服务的交叉核对）、[Raito `5804b65`](https://github.com/kalicyh/Raito/tree/5804b657e7d6aa5fcd17d33a3c6f13ce4602086a)（N9 Hybrid 真机记录）。本项目均未在 Windows 真机上验证。
+
+### 15.1 索尼 MDR
+
+- **[社区]** 帧 `3E type seq len(4,BE) payload checksum 3C`；ACK 为 type 1、空 payload、sequence 取反。WH-1000XM3 4.5.2 先发送回包再发送 ACK，等待器同时接受两种顺序，不重发已被回应的请求。
+- **[社区]** `CONNECT_RET_PROTOCOL_INFO` payload 长 8 字节时为 v2。功能表 `0x06 → 0x07`：v1 每项 1 字节，v2 为（功能，优先级）对。设置只在功能表列出时查询。
+- **[社区]** NC/ASM v1（inquired type 2）：`[67,02,effect,ncType,ncValue,asmType,asmId,asmLevel]`，asmId 1 为聚焦人声，级别 1–20。环境声写入 `68 02 11 01 00 01 00 14` 与 XM3 抓包一致。v2 布局 0x13–0x19：聚焦人声字节位于环境声级别前一字节；写入以设备读回为基础，只改模式、聚焦人声和级别字段。
+- **[协议实现]** 布尔设置：v1 DSEE `E6/E8 type 2`、佩戴控制 `F6 type 3`（以 `FC` 写入）、Speak-to-Chat `F6/F8 type 5`；v2 DSEE `E6/E8 type 1`、摘下暂停 `F6/F8 type 1`、Speak-to-Chat `F6/F8 type 0x0C`，v2 中 0 表示开启。WF-1000XM5 6.1.0 抓包的读回均可解析。
+- **[社区]** 通用设置 `D0 → D1` 返回设置名称；仅 `TOUCH_PANEL_SETTING` 与 `MULTIPOINT_SETTING` 的布尔项映射为开关，值 `D6 → D7`、写入 `D8`（v1 开 = 1，v2 开 = 0）。XM3 GS1 是列表型设置，不作为开关。
+- **[社区]** 自动关机：v1 `F0/F6/FC type 4`，v2 `20/26/28 type 4 或 5`；元素 0/1/2/3 = 5/30/60/180 分钟，v2 另有 4 = 15 分钟，0x11 关闭，0x10 摘下时关机（v2 仅 type 5）。只提供耳机能力回包列出的元素。
+- **[协议实现]** 按键分配（v2）：`F0 → F1 type 3` 列出每个按键可选的预设，`F6 → F7 type 3` 读当前预设，`F8 03 n presets…` 写入全部按键。能力回包长度必须正好消费完，截断即拒绝。
+- **[社区]** EQ：预设名称为空时（WF-LC900 2.0.3、XM3）按编号显示名称；选择预设时频段数为 0，否则固件会切到 Custom。WH-1000XM6（固件 3.0.0 起）只应用 0x30–0x33、0xA0 与用户设置，其余上报的编号隐藏。ULT 组合 EQ 未实现。
+- **[社区]** WF-C700N 固件 2.0.5 会确认并回显 NC/ASM 写入但不生效，2.0.7 修复；EncoDeck 在 2.0.5 上拒绝写入。
+- **[社区]** BLE GATT：服务 `5b833e20-6bc7-4802-8e9a-723ceca4bd8f`，写 `5b833c60-…`、通知 `5b833c61-…`，承载与 RFCOMM 相同的 MDR 字节流。SonyHeadphonesClient PR #43 取服务中第一个可写 / 第一个可通知特征；EncoDeck 优先使用上述命名特征，找不到时同样回退到第一个。**[推测]** 该 PR 优先无响应写入，EncoDeck 在特征支持时使用有响应写入，未发现影响。GATT 只在两个 RFCOMM 服务都失败后尝试。
+
+### 15.2 AKG N400NC / N200NC / N700NCM2 / Y600
+
+- **[社区]** 帧 `AA cmd len payload…`，无校验、无 ACK。BLE 服务 `65786365-6c70-6f69-6e74-2e636f6d0000`，通知 `…0001`、写 `…0002`（有响应写入），jbl-control 的 JBL 耳机使用同一服务。N400NC 没有 SPP 服务；SPP 仅作为备用保留。
+- **[社区]** 设备信息 `AA 11 00 → 12`：整帧偏移 22 的 bit 7 为充电、低 7 位为电量，29–31 为固件版本。电量命令 `0x25` 在 N400NC 上无应答。
+- **[社区]** 状态 `AA 21 01 sub → 22 sub …`：0x30 全部（ANC、环境模式、自动关机、EQ），0x31 ANC，0x32 环境模式（0 关 / 1 对话模式 / 2 环境感知），0x34 EQ，0x38 自动播放暂停；不带选择字节的请求不会应答。
+- **[协议实现]** 写入：ANC `31`、环境模式 `32`、EQ 预设 `40`（0–8：Off / Jazz / Vocal / Bass / User / Rock / Piano / Club / Studio）、自动播放暂停 `35`。切换降噪 / 环境声时先关闭另一项，再读状态确认。N200NC / N700NCM2 / Y600 共用同一命令层 **[推测]**。
+- **[社区]** 原版 N700NC 使用不同的 SPP 控制层，公开资料不足，仅识别。
+
+### 15.3 AKG N5 / N9 Hybrid（Airoha RACE）
+
+- **[社区]** N9 Hybrid 广播独立的 `-LE` 外设，RACE GATT 服务 `5052494d-2dab-0341-6972-6f6861424c45`；经典 RACE SPP 为首选路径。
+- **[社区]** 电量 `0x0CD6`（payload 为角色 0 主耳 / 1 副耳）、充电 `0x0009`、充电盒 `0x000B`；副耳无数据时以状态非零的 `0x5B` 应答。左右只在 `0x0CD4` 回报声道后分配。
+- **[推测]** ANC 写 `0x0E06`、读 `0x0901` 的数值来自 JBL Tune 770NC 的社区记录，未在 AKG 上验证；只在实验性开关打开且读回布局有效时显示。

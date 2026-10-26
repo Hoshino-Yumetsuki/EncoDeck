@@ -23,12 +23,13 @@ internal static class SonyEqualizer
             try { name = new UTF8Encoding(false, true).GetString(p.Slice(offset + 2, length)); }
             catch (DecoderFallbackException) { return false; }
             if (name.Any(char.IsControl)) return false;
-            // A name from the device wins; an unnamed known preset gets a localized name.
-            var known = string.IsNullOrWhiteSpace(name) ? KnownPreset(id) : null;
+            // A name from the device wins; an unnamed known preset gets a localized label (some firmware,
+            // e.g. WF-LC900 2.0.3 and WH-1000XM3, and every LE Audio link send all names empty).
+            var label = string.IsNullOrWhiteSpace(name) ? SonySettings.PresetLabel(id, legacy) : null;
             result.Add(new(
                 $"sony-{id}",
-                known?.Name ?? (string.IsNullOrWhiteSpace(name) ? $"EQ {id}" : name),
-                known?.ResourceKey ?? "",
+                label?.Name ?? (string.IsNullOrWhiteSpace(name) ? $"EQ {id}" : name),
+                label?.Key ?? "",
                 CapabilitySupport.Supported,
                 EditablePreset(id)));
             offset += length + 2;
@@ -36,25 +37,6 @@ internal static class SonyEqualizer
         if (offset != p.Length || result.Count == 0) return false;
         presets = result; return true;
     }
-
-    /// <summary>
-    /// The headset reports preset ids without names over LE Audio (the Classic link carries them), so
-    /// the known presets are named here (English fallback and resource key). Ids seen on WH-1000XM6
-    /// with the 2026 firmware; unknown ids keep the numeric fallback.
-    /// </summary>
-    internal static (string Name, string ResourceKey)? KnownPreset(byte id) => id switch
-    {
-        0x00 => ("Off", "Eq_Sony_Off"),
-        0x20 => ("Game", "Eq_Sony_Game"),
-        0x30 => ("Heavy", "Eq_Sony_Heavy"),
-        0x31 => ("Clear", "Eq_Sony_Clear"),
-        0x32 => ("Hard", "Eq_Sony_Hard"),
-        0x33 => ("Soft", "Eq_Sony_Soft"),
-        0xA0 => ("Manual", "Eq_Sony_Manual"),
-        0xA1 => ("Custom 1", "Eq_Sony_Custom1"),
-        0xA2 => ("Custom 2", "Eq_Sony_Custom2"),
-        _ => null,
-    };
 
     /// <summary>
     /// "Manual" and the two custom slots are the presets whose band values the headset lets us

@@ -32,12 +32,15 @@ public sealed partial class ControlsPage : Page
     private bool _sennheiserGestureWrite;
     private readonly List<(BrandGestureSlot Slot, ComboBox Box, SettingRow Row)> _brandGestures = [];
     private bool _brandGestureWrite;
-    private readonly List<int> _powerOffItems = [];
-    private string _powerOffSignature = string.Empty;
     private readonly HashSet<string> _moondropWrites = [];
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
     private DispatcherQueueTimer? _promptVolumeTimer;
+    private readonly List<(string Id, FrameworkElement Control, TextBlock? Value)> _optionControls = [];
+    private readonly HashSet<string> _optionWrites = [];
+    private string _optionSignature = string.Empty;
+    private DispatcherQueueTimer? _optionSliderTimer;
+    private (string Id, int Value)? _optionSliderTarget;
     private string? _builtFor;
     private string _sourceSignature = string.Empty;
     private bool _syncing;
@@ -67,6 +70,7 @@ public sealed partial class ControlsPage : Page
             Features.Changed -= OnFeaturesChanged;
             foreach (var (toggle, _, _) in _switches) toggle.PropertyChanged -= OnToggleChanged;
             _promptVolumeTimer?.Stop();
+            _optionSliderTimer?.Stop();
         };
     }
 
@@ -280,6 +284,7 @@ public sealed partial class ControlsPage : Page
             GainBox.SelectedIndex = gain ? f.State.Gain!.Value : -1;
             GainBox.IsEnabled = gain && !f.IsPending("gain") && !_moondropWrites.Contains("gain");
 
+            SyncOptions(f, ready);
             SyncGame(f, ready);
             SyncDual(f, ready);
             SyncGestures(f, ready);
@@ -293,7 +298,6 @@ public sealed partial class ControlsPage : Page
             PromptVolumeValue.Text = ((int)Math.Round(PromptVolumeSlider.Value)).ToString(System.Globalization.CultureInfo.CurrentCulture);
             PromptVolumeSlider.IsEnabled = ready && !f.IsPending("prompt-volume")
                 && (!f.IsMoondrop || (!f.IsPending("prompt-tone") && !f.IsPending("toggle:PromptTone") && !_moondropWrites.Contains("toggle:PromptTone")));
-            SyncPowerOff(f, ready);
         }
         finally
         {
@@ -327,35 +331,6 @@ public sealed partial class ControlsPage : Page
         }
     }
 
-    /// <summary>Auto power-off choices, shown once the headset reported its timer; an unlisted value is shown as reported.</summary>
-    private void SyncPowerOff(FeaturesViewModel f, bool ready)
-    {
-        var choices = f.PowerOffTimerChoices;
-        int? current = f.State.PowerOffTimer?.Value;
-        PowerOffSection.Visibility = Show(choices.Count > 0);
-        if (choices.Count == 0) return;
-        List<int> items = current is int value && !choices.Contains(value) ? [.. choices, value] : [.. choices];
-        string signature = string.Join(',', items);
-        if (signature != _powerOffSignature)
-        {
-            _powerOffSignature = signature;
-            _powerOffItems.Clear();
-            _powerOffItems.AddRange(items);
-            PowerOffBox.Items.Clear();
-            foreach (int minutes in items)
-            {
-                PowerOffBox.Items.Add(new ComboBoxItem
-                {
-                    Content = minutes == 0 ? Loc.Get("PowerOff_Off")
-                        : minutes % 60 == 0 ? Loc.Format("PowerOff_Hours", minutes / 60) : Loc.Format("PowerOff_Minutes", minutes),
-                    IsEnabled = choices.Contains(minutes),
-                });
-            }
-        }
-        PowerOffBox.SelectedIndex = current is int selected ? _powerOffItems.IndexOf(selected) : -1;
-        PowerOffBox.IsEnabled = ready && !f.IsPending("power-off-timer");
-    }
-
     private void SyncDual(FeaturesViewModel f, bool ready)
     {
         bool available = f.HasDualConnectionCard;
@@ -376,7 +351,8 @@ public sealed partial class ControlsPage : Page
 
         SourceHost.Children.Clear();
         foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready && !f.IsPending("multi-connect") && !f.AreSourceDevicesCached));
-        if (!f.CanManageSourceDevices)
+        // Brands that report only the multipoint switch have no list to manage.
+        if (!f.CanManageSourceDevices && devices.Count > 0)
             SourceHost.Children.Add(new TextBlock { Text = Loc.Get(f.CanConnectSourceDevices ? "Dual_ConnectOnly" : "Dual_ManagementUnavailable"), TextWrapping = TextWrapping.Wrap,
                 Style = (Style)Application.Current.Resources["SecondaryTextStyle"] });
 
@@ -538,6 +514,97 @@ public sealed partial class ControlsPage : Page
             box.IsChecked = (mask & bit) != 0;
             box.IsEnabled = ready && !f.IsPending("noise-cycle");
         }
+    }
+
+    /// <summary>Device-reported options: a list or a slider per option, always showing the confirmed value.</summary>
+    private void SyncOptions(FeaturesViewModel f, bool ready)
+    {
+        var options = f.Options;
+        string signature = string.Join('|', options.Select(o =>
+            $"{o.Id}/{o.LabelKey}/{o.DescriptionKey}/{o.Minimum}/{o.Maximum}/{string.Join(',', o.Choices.Select(c => $"{c.Value}:{c.LabelKey}:{c.Argument}"))}"));
+        if (signature != _optionSignature)
+        {
+            _optionSignature = signature;
+            _optionControls.Clear();
+            OptionHost.Children.Clear();
+            foreach (var option in options)
+            {
+                FrameworkElement control;
+                TextBlock? valueText = null;
+                if (option.IsRange)
+                {
+                    var slider = new Slider
+                    {
+                        Width = (double)Application.Current.Resources["RowSliderWidth"], Minimum = option.Minimum, Maximum = option.Maximum,
+                        StepFrequency = 1, TickFrequency = 1, TickPlacement = Microsoft.UI.Xaml.Controls.Primitives.TickPlacement.BottomRight,
+                        VerticalAlignment = VerticalAlignment.Center, Tag = option.Id,
+                    };
+                    slider.ValueChanged += OnOptionSliderChanged;
+                    valueText = new TextBlock { MinWidth = 20, VerticalAlignment = VerticalAlignment.Center };
+                    var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+                    panel.Children.Add(slider);
+                    panel.Children.Add(valueText);
+                    control = slider;
+                    OptionHost.Children.Add(new SettingRow { Header = Loc.Get(option.LabelKey), Description = OptionDescription(option), Action = panel });
+                }
+                else
+                {
+                    var box = new ComboBox { MinWidth = 200, Tag = option.Id };
+                    foreach (var choice in option.Choices)
+                        box.Items.Add(new ComboBoxItem { Content = choice.Argument is null ? Loc.Get(choice.LabelKey) : Loc.Format(choice.LabelKey, choice.Argument), Tag = choice.Value });
+                    box.SelectionChanged += OnOptionChanged;
+                    control = box;
+                    OptionHost.Children.Add(new SettingRow { Header = Loc.Get(option.LabelKey), Description = OptionDescription(option), Action = box });
+                }
+                _optionControls.Add((option.Id, control, valueText));
+            }
+        }
+        foreach (var (id, control, valueText) in _optionControls)
+        {
+            var option = options.First(o => o.Id == id);
+            bool busy = _optionWrites.Contains(id);
+            if (control is Control enabled) enabled.IsEnabled = ready && !busy;
+            if (control is ComboBox box)
+                box.SelectedIndex = option.Choices.ToList().FindIndex(c => c.Value == option.Value);
+            else if (control is Slider slider && !busy && _optionSliderTarget?.Id != id)
+                slider.Value = option.Value;
+            if (valueText is not null && control is Slider shown)
+                valueText.Text = ((int)Math.Round(shown.Value)).ToString(System.Globalization.CultureInfo.CurrentCulture);
+        }
+    }
+
+    private static string? OptionDescription(DeviceOption option) => option.DescriptionKey is { } key ? Loc.Get(key) : null;
+
+    private async void OnOptionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncing || !IsLoaded || sender is not ComboBox { IsEnabled: true, Tag: string id, SelectedItem: ComboBoxItem { Tag: int value } }
+            || Features.Options.FirstOrDefault(o => o.Id == id) is not { } option || option.Value == value || !_optionWrites.Add(id)) return;
+        Sync(); // the device decides; snap back until it confirms
+        try { await Features.SetOptionAsync(id, value); }
+        finally { _optionWrites.Remove(id); Sync(); }
+    }
+
+    private void OnOptionSliderChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (_syncing || !IsLoaded || sender is not Slider { Tag: string id } slider) return;
+        if (_optionControls.FirstOrDefault(c => c.Id == id).Value is { } text)
+            text.Text = ((int)Math.Round(slider.Value)).ToString(System.Globalization.CultureInfo.CurrentCulture);
+        _optionSliderTarget = (id, (int)Math.Round(slider.Value));
+        // Written 500 ms after the slider stops, like the prompt volume.
+        _optionSliderTimer ??= CreateTimer(PromptVolumeDebounce, async () =>
+        {
+            if (_optionSliderTarget is not { } target) return;
+            if (Features.Options.FirstOrDefault(o => o.Id == target.Id) is not { } option || option.Value == target.Value || !_optionWrites.Add(target.Id))
+            {
+                _optionSliderTarget = null;
+                Sync();
+                return;
+            }
+            try { await Features.SetOptionAsync(target.Id, target.Value); }
+            finally { _optionWrites.Remove(target.Id); _optionSliderTarget = null; Sync(); }
+        });
+        _optionSliderTimer.Stop();
+        _optionSliderTimer.Start();
     }
 
     private void SyncHead(FeaturesViewModel f, bool ready)
@@ -712,18 +779,6 @@ public sealed partial class ControlsPage : Page
         Sync();
         try { await f.SetBrandGestureAsync(slot, function); }
         finally { _brandGestureWrite = false; Sync(); }
-    }
-
-    private async void OnPowerOffChanged(object sender, SelectionChangedEventArgs e)
-    {
-        var f = Features;
-        int index = PowerOffBox.SelectedIndex;
-        if (_syncing || !IsLoaded || !PowerOffBox.IsEnabled || !f.IsReady || index < 0 || index >= _powerOffItems.Count
-            || f.State.PowerOffTimer?.Value == _powerOffItems[index] || f.IsPending("power-off-timer")) return;
-        int minutes = _powerOffItems[index];
-        Sync();
-        await f.SetPowerOffTimerAsync(minutes);
-        Sync();
     }
 
     private async void OnMoondropGestureChanged(object sender, SelectionChangedEventArgs e)

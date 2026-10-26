@@ -189,7 +189,7 @@ public sealed class EdifierSettingsTests
             Assert.Contains(DeviceToggle.GamingMode, profile.Toggles);
             Assert.Equal(4, profile.EqualizerPresets.Count);
             Assert.Equal(CapabilitySupport.Supported, profile.Capabilities.Get(DeviceCapability.TouchCustomization).Support);
-            Assert.Equal(0, store.Current.PowerOffTimer?.Value);
+            Assert.Equal(0, Timer(store));
             Assert.Equal(6, Assert.Single(store.Current.KeyFunctions!.Value).Function);
             Assert.Equal("edifier-eq-1", store.Current.Equalizer?.Value.ActivePresetId);
             Assert.Equal(new NoiseControlState(NoiseControlMode.Off), store.Current.NoiseControl?.Value);
@@ -198,14 +198,14 @@ public sealed class EdifierSettingsTests
             Assert.Equal(Hex("03 09"), device.Last(0xC1));
             Assert.Equal("ambient+3", store.Current.NoiseControl?.Value.LevelId);
 
-            Assert.True((await controller.SetPowerOffTimerAsync(180, Ct)).IsSuccess);
+            Assert.True((await controller.SetOptionAsync(EdifierDeviceController.PowerOffOption, 180, Ct)).IsSuccess);
             Assert.Equal(Hex("00 B4"), device.Last(0xD1));
-            Assert.Equal(180, store.Current.PowerOffTimer?.Value);
-            Assert.True((await controller.SetPowerOffTimerAsync(0, Ct)).IsSuccess);
+            Assert.Equal(180, Timer(store));
+            Assert.True((await controller.SetOptionAsync(EdifierDeviceController.PowerOffOption, 0, Ct)).IsSuccess);
             Assert.Empty(device.Last(0xD2));
-            Assert.Equal(0, store.Current.PowerOffTimer?.Value);
+            Assert.Equal(0, Timer(store));
             // Only the official choices are written; a zero-minute set would power off at once.
-            Assert.Equal(CommandStatus.Unsupported, (await controller.SetPowerOffTimerAsync(7, Ct)).Status);
+            Assert.Equal(CommandStatus.Unsupported, (await controller.SetOptionAsync(EdifierDeviceController.PowerOffOption, 7, Ct)).Status);
             Assert.DoesNotContain(device.Requests, r => r.Command == 0xD1 && r.Payload.SequenceEqual(new byte[] { 0, 0 }));
 
             Assert.True((await controller.SetKeyFunctionAsync(new KeyFunction(EarSide.Both, 0, GestureAction.SingleSqueeze, 5), Ct)).IsSuccess);
@@ -232,8 +232,8 @@ public sealed class EdifierSettingsTests
             Assert.DoesNotContain(device.Requests, r => r.Command is 0xF0 or 0xD5);
             Assert.Equal(CommandStatus.Rejected, (await controller.SetToggleAsync(DeviceToggle.GamingMode, true, Ct)).Status);
             Assert.False(store.Current.Toggles[DeviceToggle.GamingMode].Value);
-            Assert.Equal(CommandStatus.Rejected, (await controller.SetPowerOffTimerAsync(30, Ct)).Status);
-            Assert.Equal(0, store.Current.PowerOffTimer?.Value);
+            Assert.Equal(CommandStatus.Rejected, (await controller.SetOptionAsync(EdifierDeviceController.PowerOffOption, 30, Ct)).Status);
+            Assert.Equal(0, Timer(store));
             Assert.Equal(CommandStatus.Unsupported, (await controller.SetEqualizerPresetAsync("edifier-eq-0", Ct)).Status);
         });
     }
@@ -245,7 +245,7 @@ public sealed class EdifierSettingsTests
         await RunAsync("EDIFIER W200BT Plus", device, false, (controller, store) =>
         {
             Assert.DoesNotContain(device.Requests, r => r.Command is 0xCC or 0xC1 or 0x08 or 0xF0);
-            Assert.Equal(0, store.Current.PowerOffTimer?.Value);
+            Assert.Equal(0, Timer(store));
             Assert.Equal("edifier-eq-0", store.Current.Equalizer?.Value.ActivePresetId);
             Assert.Empty(store.Current.Profile!.NoiseControlOptions);
             return Task.CompletedTask;
@@ -366,7 +366,7 @@ public sealed class EdifierSettingsTests
             Assert.NotNull(store.Current.NoiseControl);
 
             await controller.DeferredSettingsRead.WaitAsync(Ct);
-            Assert.Null(store.Current.PowerOffTimer);
+            Assert.Null(Timer(store));
             Assert.False(store.Current.Toggles.ContainsKey(DeviceToggle.GamingMode));
             Assert.DoesNotContain(DeviceToggle.GamingMode, ((IControllableProfile)store.Current.Profile!).Toggles);
         }
@@ -375,6 +375,21 @@ public sealed class EdifierSettingsTests
             await stop.CancelAsync();
             await emulator;
         }
+    }
+
+    /// <summary>The power-off timer the headset reported, in minutes (a shared device option).</summary>
+    private static int? Timer(DeviceStateStore store) =>
+        store.Current.Options.TryGetValue(EdifierDeviceController.PowerOffOption, out var option) ? option.Value.Value : null;
+
+    [Fact]
+    public void PowerOffTimer_IsOfferedAsADeviceOption()
+    {
+        var option = EdifierDeviceController.PowerOffTimerOption(60);
+        Assert.Equal(new[] { 0, 5, 15, 30, 60, 180 }, option.Choices.Select(c => c.Value));
+        Assert.Equal(("PowerOff_Hours", "1"), (option.Choices[4].LabelKey, option.Choices[4].Argument));
+        Assert.True(option.Accepts(180));
+        // A reported value outside the official list is shown as reported.
+        Assert.Contains(EdifierDeviceController.PowerOffTimerOption(45).Choices, c => c.Value == 45 && c.LabelKey == "PowerOff_Minutes");
     }
 
     private static async Task RunAsync(string name, FakeEdifier device, bool allowExperimental,

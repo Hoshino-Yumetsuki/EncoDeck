@@ -333,8 +333,6 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetPreferredDeviceAsync(byte[]? address, CancellationToken cancellationToken = default) => WithController(c => c.SetPreferredDeviceAsync(address, cancellationToken));
 
-    public Task<CommandResult> SetPowerOffTimerAsync(int minutes, CancellationToken cancellationToken = default) => WithController(c => c.SetPowerOffTimerAsync(minutes, cancellationToken));
-
     public Task<CommandResult> SelectCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => WithController(c => c.SelectCustomEqualizerAsync(id, cancellationToken));
 
     public Task<CommandResult> SaveCustomEqualizerAsync(CustomEqualizer preset, CancellationToken cancellationToken = default) => WithController(c => c.SaveCustomEqualizerAsync(preset, cancellationToken));
@@ -342,6 +340,8 @@ public sealed class DeviceManager : IDeviceManager
     public Task<CommandResult> AddCustomEqualizerAsync(CancellationToken cancellationToken = default) => WithController(c => c.AddCustomEqualizerAsync(cancellationToken));
 
     public Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => WithController(c => c.DeleteCustomEqualizerAsync(id, cancellationToken));
+
+    public Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) => WithController(c => c.SetOptionAsync(id, value, cancellationToken));
 
     public Task<CommandResult> ReconnectAsync(CancellationToken cancellationToken = default)
     {

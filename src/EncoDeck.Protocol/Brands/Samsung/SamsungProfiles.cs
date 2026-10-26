@@ -195,7 +195,7 @@ public sealed class SamsungProfile : IControllableProfile
 
     public IDeviceCapabilities Capabilities { get; }
 
-    public IReadOnlyCollection<DeviceToggle> Toggles => StatusConfirmed && Model != SamsungModel.Buds4Pro ? [DeviceToggle.TouchLock] : [];
+    public IReadOnlyCollection<DeviceToggle> Toggles => StatusConfirmed && Model != SamsungModel.Buds4Pro ? [DeviceToggle.TouchControls] : [];
 
     public IReadOnlyList<NoiseControlOption> NoiseControlOptions => !StatusConfirmed ? [] :
     [

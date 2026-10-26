@@ -224,7 +224,7 @@ public class SamsungTests
         Assert.Equal(CapabilitySupport.Supported, profile.Capabilities.Get(DeviceCapability.NoiseCancellation).Support);
         Assert.Equal(new[] { "0", "1", "2", "3", "4", "5" }, profile.EqualizerPresets.Select(p => p.Id));
         Assert.Equal(model == SamsungModel.Buds4Pro, profile.NoiseControlOptions.Any(o => o.Mode == NoiseControlMode.Adaptive));
-        Assert.Equal(model != SamsungModel.Buds4Pro, profile.Toggles.Contains(DeviceToggle.TouchLock));
+        Assert.Equal(model != SamsungModel.Buds4Pro, profile.Toggles.Contains(DeviceToggle.TouchControls));
 
         int baseline = device.Writes.Count;
         Assert.True((await controller.SetNoiseControlAsync(new(NoiseControlMode.Transparency), Ct)).IsSuccess);
@@ -259,7 +259,7 @@ public class SamsungTests
         Assert.True((await controller.SetNoiseControlAsync(new(NoiseControlMode.NoiseCancellation, "level1"), Ct)).IsSuccess);
         Assert.Equal(new[] { new SamsungFrame(0x78, [1]), new SamsungFrame(0x83, [0]) }, device.Writes.Skip(baseline).Take(2));
         Assert.Equal(CommandStatus.Unsupported, (await controller.SetNoiseControlAsync(new(NoiseControlMode.NoiseCancellation, "level6"), Ct)).Status);
-        Assert.Equal(CommandStatus.Unsupported, (await controller.SetToggleAsync(DeviceToggle.TouchLock, true, Ct)).Status);
+        Assert.Equal(CommandStatus.Unsupported, (await controller.SetToggleAsync(DeviceToggle.TouchControls, false, Ct)).Status);
         Assert.DoesNotContain(device.Writes, f => f.Command == 0x90);
     }
 
@@ -271,12 +271,12 @@ public class SamsungTests
         var device = new Device(model);
         var (controller, store) = Create(device, model); await using var session = controller;
         Assert.True(await controller.InitializeAsync(Ct));
-        Assert.False(store.Current.Toggles[DeviceToggle.TouchLock].Value);
+        Assert.True(store.Current.Toggles[DeviceToggle.TouchControls].Value); // touch not locked
         device.Status[10] = 0xA5; // changed on the phone since the last cached status
-        Assert.True((await controller.SetToggleAsync(DeviceToggle.TouchLock, true, Ct)).IsSuccess);
+        Assert.True((await controller.SetToggleAsync(DeviceToggle.TouchControls, false, Ct)).IsSuccess); // lock touch
         Assert.Equal(new byte[] { 0, 0, 1, 0, 1, 0, 1 }, device.Writes.First(f => f.Command == 0x90).Payload);
         Assert.Equal((byte)0x25, device.Status[10]);
-        Assert.True(store.Current.Toggles[DeviceToggle.TouchLock].Value);
+        Assert.False(store.Current.Toggles[DeviceToggle.TouchControls].Value);
     }
 
     [Fact]
@@ -295,7 +295,7 @@ public class SamsungTests
         Assert.Null(store.Current.NoiseControl);
         Assert.Null(store.Current.Equalizer);
         Assert.Empty(store.Current.Profile!.NoiseControlOptions);
-        Assert.False(store.Current.Toggles.ContainsKey(DeviceToggle.TouchLock));
+        Assert.False(store.Current.Toggles.ContainsKey(DeviceToggle.TouchControls));
         Assert.Equal(CommandStatus.Unsupported, (await controller.SetEqualizerPresetAsync("1", Ct)).Status);
 
         device.Override = null;

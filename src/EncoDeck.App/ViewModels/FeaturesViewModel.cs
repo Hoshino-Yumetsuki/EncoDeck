@@ -62,7 +62,13 @@ public sealed class FeaturesViewModel
     public bool IsEdifier => State.Profile is EncoDeck.Protocol.Brands.Edifier.EdifierProfile;
 
     /// <summary>Brands whose controllers gate read-back-only settings behind the experimental switch.</summary>
-    public bool AllowExperimental => (IsMoondrop || IsVivo || IsEdifier) && _settings.Current.EnableExperimentalFeatures;
+    public static bool OffersExperimental(EncoDeck.Core.Profiles.IDeviceProfile? profile) => profile
+        is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile
+        or EncoDeck.Protocol.Brands.Akg.AkgHybridProfile
+        or EncoDeck.Protocol.Brands.Vivo.VivoDeviceProfile
+        or EncoDeck.Protocol.Brands.Edifier.EdifierProfile;
+
+    public bool AllowExperimental => OffersExperimental(State.Profile) && _settings.Current.EnableExperimentalFeatures;
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
 
@@ -186,6 +192,13 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetBassEngineLevelAsync(int level) => Run(() => _commands.SetBassEngineLevelAsync(level));
 
+    // ---- device-reported options (auto power off, button assignment, levels) -----------------------
+
+    /// <summary>Options the earbuds reported, in display order. Only present after a device readback.</summary>
+    public IReadOnlyList<DeviceOption> Options => State.Options.Values.Select(o => o.Value).OrderBy(o => o.Order).ThenBy(o => o.Id, StringComparer.Ordinal).ToArray();
+
+    public Task<CommandResult> SetOptionAsync(string id, int value) => Run(() => _commands.SetOptionAsync(id, value));
+
     // ---- gestures --------------------------------------------------------------------------------
 
     /// <summary>Gesture rows with a function choice (rows that only open the noise cycle are left out).</summary>
@@ -290,15 +303,6 @@ public sealed class FeaturesViewModel
     /// <summary>The dual connection card: a device switch (OPPO family) or a source list reported without one.</summary>
     public bool HasDualConnectionCard => Has(DeviceCapability.DualDeviceConnection)
         && (HasSwitch(DeviceToggle.DualDeviceConnection) || HasSourceListWithoutSwitch);
-
-    // ---- power-off timer -------------------------------------------------------------------------
-
-    /// <summary>Timer choices in minutes (0 = off); empty unless the device reported a timer.</summary>
-    public IReadOnlyList<int> PowerOffTimerChoices => State.PowerOffTimer is null || !IsEdifier
-        ? Array.Empty<int>()
-        : (int[])[0, .. EncoDeck.Protocol.Brands.Edifier.EdifierConstants.PowerOffTimerMinutes];
-
-    public Task<CommandResult> SetPowerOffTimerAsync(int minutes) => Run(() => _commands.SetPowerOffTimerAsync(minutes));
 
     /// <summary>Sennheiser: listed hosts can be connected from here; disconnect / remove are never offered (they can clear pairings).</summary>
     public bool CanConnectSourceDevices => CanManageSourceDevices

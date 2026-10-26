@@ -503,9 +503,6 @@
   <data name="Edifier_Eq_Classical" xml:space="preserve"><value>古典</value></data>
   <data name="Edifier_Eq_Rock" xml:space="preserve"><value>摇滚</value></data>
   <data name="Edifier_ButtonCycle" xml:space="preserve"><value>按键循环切换的模式</value></data>
-  <data name="PowerOff_Timer.Header" xml:space="preserve"><value>定时关机</value></data>
-  <data name="PowerOff_Timer.Description" xml:space="preserve"><value>到达所选时间后自动关闭耳机</value></data>
-  <data name="PowerOff_Off" xml:space="preserve"><value>关闭</value></data>
   <data name="PowerOff_Minutes" xml:space="preserve"><value>{0} 分钟</value></data>
   <data name="PowerOff_Hours" xml:space="preserve"><value>{0} 小时</value></data>
   <data name="Huawei_NoiseLevel_Dynamic" xml:space="preserve"><value>动态</value></data>
@@ -776,18 +773,7 @@
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>许可证全文</value></data>
   <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>耳机正通过 LE Audio 连接，这种连接下暂时打不开控制服务。可以在手机的 Sony | Sound Connect 中把“LE Audio 连接设置”改为“仅经典音频”，或把“蓝牙连接质量”设为“音质优先”或“稳定连接优先”，让耳机以经典蓝牙重新连接；重新连接后 EncoDeck 会自动重试。</value></data>
   <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>耳机当前没有经典蓝牙连接，因此没有可用的控制通道。请在 Windows 设置 › 蓝牙和设备 中连接耳机（或播放一段音频唤醒它），必要时把耳机切换到经典音频后重试。</value></data>
-  <data name="Eq_Sony_Off" xml:space="preserve"><value>关闭</value></data>
-  <data name="Eq_Sony_Game" xml:space="preserve"><value>游戏</value></data>
-  <data name="Eq_Sony_Heavy" xml:space="preserve"><value>Heavy</value></data>
-  <data name="Eq_Sony_Clear" xml:space="preserve"><value>Clear</value></data>
-  <data name="Eq_Sony_Hard" xml:space="preserve"><value>Hard</value></data>
-  <data name="Eq_Sony_Soft" xml:space="preserve"><value>Soft</value></data>
-  <data name="Eq_Sony_Manual" xml:space="preserve"><value>手动</value></data>
-  <data name="Eq_Sony_Custom1" xml:space="preserve"><value>自定义 1</value></data>
-  <data name="Eq_Sony_Custom2" xml:space="preserve"><value>自定义 2</value></data>
   <data name="Update_BadgeHint" xml:space="preserve"><value>有新版本可用</value></data>
-  <data name="Toggle_TouchLock" xml:space="preserve"><value>锁定触控</value></data>
-  <data name="Toggle_TouchLock_Description" xml:space="preserve"><value>开启后耳机的触控操作不再响应；各手势的原有设置保持不变。</value></data>
   <data name="Samsung_AncLevel_1" xml:space="preserve"><value>1 档</value></data>
   <data name="Samsung_AncLevel_2" xml:space="preserve"><value>2 档</value></data>
   <data name="Samsung_AncLevel_3" xml:space="preserve"><value>3 档</value></data>
@@ -819,4 +805,78 @@
   <data name="Sennheiser_EqPodcast" xml:space="preserve"><value>播客</value></data>
   <data name="Dual_ConnectOnly" xml:space="preserve"><value>可在这里连接列表中的设备；断开或移除设备请在对应设备的蓝牙设置中操作。</value></data>
   <data name="Find_Loud_Message" xml:space="preserve"><value>提示音非常响亮。请先确认耳机不在任何人耳中，否则可能会损伤听力。</value></data>
+  <data name="Toggle_SpeakToChat" xml:space="preserve"><value>说话即对话</value></data>
+  <data name="Toggle_SpeakToChat_Description" xml:space="preserve"><value>开口说话时暂停播放并切换到环境声</value></data>
+  <data name="Toggle_Upscaling" xml:space="preserve"><value>DSEE</value></data>
+  <data name="Toggle_Upscaling_Description" xml:space="preserve"><value>耳机端提升压缩音源的音质，可能增加耗电</value></data>
+  <data name="Toggle_TouchControls" xml:space="preserve"><value>触控操作</value></data>
+  <data name="Toggle_TouchControls_Description" xml:space="preserve"><value>开启或关闭触控面板 / 触控传感器；关闭时各手势的原有设置保持不变</value></data>
+  <data name="NoiseLevel_SonyAmbient" xml:space="preserve"><value>标准</value></data>
+  <data name="NoiseLevel_SonyVoice" xml:space="preserve"><value>聚焦人声</value></data>
+  <data name="NoiseLevel_AkgAmbientAware" xml:space="preserve"><value>环境感知</value></data>
+  <data name="NoiseLevel_AkgTalkThrough" xml:space="preserve"><value>对话模式</value></data>
+  <data name="SonyOption_AmbientLevel" xml:space="preserve"><value>环境声级别</value></data>
+  <data name="SonyOption_Unknown" xml:space="preserve"><value>未知（0x{0}）</value></data>
+  <data name="AutoOff_Title" xml:space="preserve"><value>自动关机</value></data>
+  <data name="AutoOff_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="AutoOff_WhenRemoved" xml:space="preserve"><value>摘下时关机</value></data>
+  <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分钟后</value></data>
+  <data name="SonyKey_Left" xml:space="preserve"><value>左耳触控</value></data>
+  <data name="SonyKey_Right" xml:space="preserve"><value>右耳触控</value></data>
+  <data name="SonyKey_Custom" xml:space="preserve"><value>自定义按钮</value></data>
+  <data name="SonyKey_NcAmbient" xml:space="preserve"><value>降噪 / 环境声按钮</value></data>
+  <data name="SonyKey_Other" xml:space="preserve"><value>可分配按键</value></data>
+  <data name="SonyPreset_00" xml:space="preserve"><value>环境声控制</value></data>
+  <data name="SonyPreset_10" xml:space="preserve"><value>音量控制</value></data>
+  <data name="SonyPreset_20" xml:space="preserve"><value>播放控制</value></data>
+  <data name="SonyPreset_21" xml:space="preserve"><value>曲目控制</value></data>
+  <data name="SonyPreset_30" xml:space="preserve"><value>语音助手</value></data>
+  <data name="SonyPreset_31" xml:space="preserve"><value>Google 助理</value></data>
+  <data name="SonyPreset_32" xml:space="preserve"><value>Amazon Alexa</value></data>
+  <data name="SonyPreset_35" xml:space="preserve"><value>环境声控制 / 快速访问</value></data>
+  <data name="SonyPreset_36" xml:space="preserve"><value>快速访问</value></data>
+  <data name="SonyPreset_45" xml:space="preserve"><value>环境声控制（麦克风）</value></data>
+  <data name="SonyPreset_46" xml:space="preserve"><value>聆听模式 / 快速访问</value></data>
+  <data name="SonyPreset_47" xml:space="preserve"><value>环境声控制 / 聆听模式</value></data>
+  <data name="SonyPreset_FF" xml:space="preserve"><value>无功能</value></data>
+  <data name="SonyEq_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="SonyEq_Rock" xml:space="preserve"><value>摇滚</value></data>
+  <data name="SonyEq_Pop" xml:space="preserve"><value>流行</value></data>
+  <data name="SonyEq_Jazz" xml:space="preserve"><value>爵士</value></data>
+  <data name="SonyEq_Dance" xml:space="preserve"><value>舞曲</value></data>
+  <data name="SonyEq_Edm" xml:space="preserve"><value>电子舞曲</value></data>
+  <data name="SonyEq_RnbHipHop" xml:space="preserve"><value>R&amp;B / 嘻哈</value></data>
+  <data name="SonyEq_Acoustic" xml:space="preserve"><value>原声</value></data>
+  <data name="SonyEq_Bright" xml:space="preserve"><value>明亮</value></data>
+  <data name="SonyEq_Excited" xml:space="preserve"><value>激昂</value></data>
+  <data name="SonyEq_Mellow" xml:space="preserve"><value>柔和</value></data>
+  <data name="SonyEq_Relaxed" xml:space="preserve"><value>放松</value></data>
+  <data name="SonyEq_Vocal" xml:space="preserve"><value>人声</value></data>
+  <data name="SonyEq_TrebleBoost" xml:space="preserve"><value>高音增强</value></data>
+  <data name="SonyEq_BassBoost" xml:space="preserve"><value>低音增强</value></data>
+  <data name="SonyEq_Speech" xml:space="preserve"><value>语音</value></data>
+  <data name="SonyEq_Heavy" xml:space="preserve"><value>Heavy</value></data>
+  <data name="SonyEq_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="SonyEq_Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="SonyEq_Soft" xml:space="preserve"><value>Soft</value></data>
+  <data name="SonyEq_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="AkgEq_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="AkgEq_Jazz" xml:space="preserve"><value>爵士</value></data>
+  <data name="AkgEq_Vocal" xml:space="preserve"><value>人声</value></data>
+  <data name="AkgEq_Bass" xml:space="preserve"><value>低音</value></data>
+  <data name="AkgEq_User" xml:space="preserve"><value>用户</value></data>
+  <data name="AkgEq_Rock" xml:space="preserve"><value>摇滚</value></data>
+  <data name="AkgEq_Piano" xml:space="preserve"><value>钢琴</value></data>
+  <data name="AkgEq_Club" xml:space="preserve"><value>俱乐部</value></data>
+  <data name="AkgEq_Studio" xml:space="preserve"><value>录音室</value></data>
+  <data name="Settings_AkgExperimental.Header" xml:space="preserve"><value>AKG Hybrid 实验性功能</value></data>
+  <data name="Settings_AkgExperimental.Description" xml:space="preserve"><value>启用 AKG N5 / N9 Hybrid 未经验证的降噪命令。默认关闭，风险自负。开启后请重新连接以读取新功能。</value></data>
+  <data name="SonyEq_Game" xml:space="preserve"><value>游戏</value></data>
+  <data name="SonyEq_Manual" xml:space="preserve"><value>手动</value></data>
+  <data name="SonyEq_CustomN" xml:space="preserve"><value>自定义 {0}</value></data>
+  <data name="SonyEq_UserSetting" xml:space="preserve"><value>用户设置 {0}</value></data>
+  <data name="PowerOff_Timer" xml:space="preserve"><value>定时关机</value></data>
+  <data name="PowerOff_Timer_Description" xml:space="preserve"><value>到达所选时间后自动关闭耳机</value></data>
+  <data name="Settings_BrandExperimental.Header" xml:space="preserve"><value>实验性功能</value></data>
+  <data name="Settings_BrandExperimental.Description" xml:space="preserve"><value>启用尚无真机记录的设置（如手势、佩戴检测或游戏模式）。默认关闭，风险自负。开启后请重新连接以读取新功能。</value></data>
 </root>

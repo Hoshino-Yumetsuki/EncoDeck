@@ -165,7 +165,7 @@ public abstract class BrandControllerBase : IDeviceController
 
     public virtual Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Custom EQ"));
 
-    public virtual Task<CommandResult> SetPowerOffTimerAsync(int minutes, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported("Power-off timer"));
+    public virtual Task<CommandResult> SetOptionAsync(string id, int value, CancellationToken cancellationToken = default) => Task.FromResult(NotSupported($"Option {id}"));
 
     public async ValueTask DisposeAsync()
     {

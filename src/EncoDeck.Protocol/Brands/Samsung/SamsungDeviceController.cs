@@ -71,7 +71,7 @@ internal sealed class SamsungDeviceController(IDuplexByteChannel channel, Contro
             Battery = new BatteryStatus(Reading(status.Left, status.Charging?.Left), Reading(status.Right, status.Charging?.Right), Reading(status.Case, status.Charging?.Case)),
             NoiseControl = Observed.From(noise, Now, source),
             Equalizer = status.Equalizer is { } eq ? Observed.From(new EqualizerState(eq.ToString(), eq), Now, source) : null,
-            Toggles = Model == SamsungModel.Buds4Pro ? s.Toggles : s.Toggles.SetItem(DeviceToggle.TouchLock, Observed.From(status.TouchLocked, Now, source)),
+            Toggles = Model == SamsungModel.Buds4Pro ? s.Toggles : s.Toggles.SetItem(DeviceToggle.TouchControls, Observed.From(!status.TouchLocked, Now, source)),
             LastResponseAt = Now,
             LastUpdateSource = source,
         });
@@ -86,7 +86,7 @@ internal sealed class SamsungDeviceController(IDuplexByteChannel channel, Contro
             Profile = _profile,
             NoiseControl = null,
             Equalizer = null,
-            Toggles = s.Toggles.Remove(DeviceToggle.TouchLock),
+            Toggles = s.Toggles.Remove(DeviceToggle.TouchControls),
         });
     }
 
@@ -193,14 +193,16 @@ internal sealed class SamsungDeviceController(IDuplexByteChannel channel, Contro
 
     public override Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken)
     {
-        if (toggle != DeviceToggle.TouchLock || !_profile.Toggles.Contains(toggle)) return Task.FromResult(NotSupported(toggle.ToString()));
+        // The shared toggle is "touch controls on"; the earbuds store the inverse (touch locked).
+        if (toggle != DeviceToggle.TouchControls || !_profile.Toggles.Contains(toggle)) return Task.FromResult(NotSupported(toggle.ToString()));
+        bool locked = !enabled;
         return Serialized(async ct =>
         {
             // Build the payload from fresh flags so gestures changed on the phone are preserved.
             var (result, fresh) = await ReadStatusAsync(ct).ConfigureAwait(false);
             if (result == ReadResult.TimedOut) return TimedOut;
-            if (fresh is null || SamsungProfiles.TouchLockPayload(Model, enabled, fresh) is not { } payload) return Malformed;
-            return await WriteAndConfirm([SamsungFrameCodec.Encode(LockTouch, payload)], s => s.TouchLocked == enabled, ct).ConfigureAwait(false);
+            if (fresh is null || SamsungProfiles.TouchLockPayload(Model, locked, fresh) is not { } payload) return Malformed;
+            return await WriteAndConfirm([SamsungFrameCodec.Encode(LockTouch, payload)], s => s.TouchLocked == locked, ct).ConfigureAwait(false);
         }, cancellationToken);
     }
 }

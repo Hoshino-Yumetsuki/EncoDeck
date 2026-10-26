@@ -88,12 +88,30 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         foreach (var uuid in serviceUuids)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (EncoDeck.Protocol.Brands.GattStreamEndpoints.Find(uuid) is { } stream)
+            {
+                var result = await StreamGattByteChannel.OpenAsync(device.BluetoothAddress, device.Name, stream, _logger, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("{Endpoint} connect failed: {Detail}", stream.Name, result.Detail);
+                continue;
+            }
             if (EdifierConstants.IsGattService(uuid))
             {
                 var result = await EdifierGattByteChannel.OpenAsync(device.BluetoothAddress, uuid, cancellationToken).ConfigureAwait(false);
                 if (result.Status == ChannelOpenStatus.Opened) return result;
                 gattFailure = result;
                 _logger.LogInformation("EDIFIER GATT connect failed: {Detail}", result.Detail);
+                continue;
+            }
+            if (uuid == SonyAkgProfiles.BleServiceUuid)
+            {
+                // Both RFCOMM services failed with the classic link up: try the same MDR GATT channel the
+                // LE Audio path uses (mos9527/SonyHeadphonesClient PR #43 controls WH-1000XM6 this way).
+                var result = await SonyGattByteChannel.OpenAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
+                if (result.Status == ChannelOpenStatus.Opened) return result;
+                gattFailure = result;
+                _logger.LogInformation("Sony MDR GATT connect failed: {Detail}", result.Detail);
                 continue;
             }
             if (SonyAkgProfiles.IsControlService(uuid)

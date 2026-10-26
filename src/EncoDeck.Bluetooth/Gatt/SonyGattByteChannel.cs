@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Channels;
+using EncoDeck.Protocol.Brands.Sony;
 using EncoDeck.Protocol.Transport;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
@@ -19,9 +20,9 @@ namespace EncoDeck.Bluetooth.Gatt;
 /// </summary>
 internal sealed class SonyGattByteChannel : IDuplexByteChannel
 {
-    internal static readonly Guid ServiceUuid = new("5b833e20-6bc7-4802-8e9a-723ceca4bd8f");
-    internal static readonly Guid WriteCharacteristicUuid = new("5b833c60-6bc7-4802-8e9a-723ceca4bd8f");
-    internal static readonly Guid NotifyCharacteristicUuid = new("5b833c61-6bc7-4802-8e9a-723ceca4bd8f");
+    internal static readonly Guid ServiceUuid = SonyAkgProfiles.BleServiceUuid;
+    internal static readonly Guid WriteCharacteristicUuid = SonyAkgProfiles.BleWriteUuid;
+    internal static readonly Guid NotifyCharacteristicUuid = SonyAkgProfiles.BleNotifyUuid;
 
     private readonly BluetoothLEDevice _device;
     private readonly GattDeviceService _service;
