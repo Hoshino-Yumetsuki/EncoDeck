@@ -16,16 +16,26 @@
 - 新增 Bose QuietComfort 45、QuietComfort Ultra Headphones (2nd Gen)：电量、固件版本，以及“安静 / 感知”两种内置模式的切换。
 - 新增 Nothing Ear (a)、Nothing Headphone (1)、CMF Buds 2、CMF Buds Pro 2：电量与充电状态、关闭 / 降噪 / 通透、预设 EQ、固件版本。CMF Buds 2 的 EQ 需固件 1.0.1.50 及以上；Headphone (1) 仅在高级 EQ 关闭时提供预设。
 - 以上 11 款依据社区项目 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 的协议实现移植，按协议实现、尚未真机验证。各项设置在耳机回读后才显示，写入也以回读结果为准；暂无产品图片，使用通用插图。详见[兼容性说明](docs/COMPATIBILITY.md)。
+- 新增华为 FreeBuds 6、FreeBuds 7、Eyewear 3，并识别 FreeClip 2 典藏版、FreeBuds SE 4 ANC 的蓝牙名称。新增 HONOR CHOICE Earbuds X5 / X5 Pro 的电量与降噪 / 通透 / 关闭。功能范围依据 [OpenFreebuds](https://github.com/melianmiko/OpenFreebuds)、[HuaweiPods](https://github.com/Nshpiter/HuaweiPods)、[EZBuds](https://github.com/CenSher/EZBuds) 等社区项目的实机记录，EncoDeck 尚未真机验证，详见 [兼容性列表](docs/COMPATIBILITY.md#华为)。
+- 华为耳机新增：FreeBuds 6i、Pro 5、FreeLace Pro 2 的通透“人声增强”；FreeBuds 6 / 7、Pro 5、FreeClip 2 的智能音量调节，FreeBuds 7 / 7i、Pro 5、FreeClip 2 的点头 / 摇头接听（均在耳机返回状态后才显示）；FreeBuds 7i、Pro 4 的左右耳佩戴状态；支持双设备的型号显示已连接设备列表（只读）。
+- FreeBuds 4E / 5、FreeClip 新增预设 EQ，FreeBuds 7、Pro 5 提供 7 种场景音效，FreeClip 2、FreeArc 增加运动音效；FreeBuds Pro 4 开放降噪 / 通透 / 关闭，FreeBuds 7i 开放游戏模式与双设备连接，FreeBuds 3 开放电量。
 
 ### 改进
 
 - 检测到新版本（GitHub 版或商店版）后，导航栏的“关于”显示小红点，悬停提示“有新版本可用”；安装更新后消失。
 - LE Audio（LC3）连接时，降噪控件（主页、快捷面板、托盘菜单、快捷键）置灰，不再发出会被耳机拒绝的切换；“实验室”页说明切换到 LE Audio 后需在耳机上手动切换降噪。Enco X4 实测在 LE Audio 模式下不接受来自电脑的降噪切换。
+- 华为预设 EQ 只显示耳机自己列出的预设；耳机正在使用自定义或未知音效时显示原始编号，不再套用名称。
+- 按社区实机记录修正 FreeBuds Pro 3 / 7i 的降噪档位对应和 Pro 5 的音效名称；电量为 0 的部件按“未上报”处理，不再显示 0%。
 
 ### 修复
 
 - 修复 LE Audio（LC3）连接后，耳机从充电盒取出或佩戴时电量、充电和佩戴状态停留在连接时的值，并因此误判“未佩戴”而无法切换降噪：控制耳切换到另一只耳机后，EncoDeck 现在会在 30 秒内通过定时电量查询发现并改用另一只耳机；降噪和贴合度检测在因未佩戴拒绝前会先重新读取佩戴状态。
 - 修复索尼头戴式耳机连接约 15 秒后电量显示为 0%，以及 LE Audio 下未命名的索尼 EQ 预设显示为“EQ 48”之类编号。
+- 修复华为耳机写入设置时，耳机正常的写入应答被误判为拒绝，导致降噪、EQ、佩戴检测等设置显示失败。荣耀耳机同样接受这种应答。
+- 修复华为耳机超过 255 字节的应答被截断、导致后续数据错位的问题（社区记录 FreeBuds Pro 5 设备信息为 282 字节）。
+- 修复 FreeBuds 5i 连接后因未应答耳机的数据能力请求而被耳机断开。
+- 修复华为 / 荣耀耳机点击“降噪”或“通透”模式按钮时提示不支持；现在会保持耳机当前的档位。
+- FreeBuds Pro 5 等写入降噪后不应答、首次回读仍为旧值时，改为继续回读确认，不再误报失败。
 
 ## [1.9.0] - 2026-10-26
 

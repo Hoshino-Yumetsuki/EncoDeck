@@ -94,25 +94,44 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 
 ## 华为
 
-| 兼容设备 | 对应功能 |
-| --- | --- |
-| HUAWEI FreeBuds 3 | 型号识别 / 素材；独立空间音频需设备确认；暂不开放降噪控制 |
-| HUAWEI FreeBuds 3i | 电量、充电状态、降噪、通透、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds 4E | 电量、充电状态、降噪、降噪档位、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds 4i | 电量、充电状态、降噪、通透、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds 5 | 电量、充电状态、降噪、降噪档位、游戏模式、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds 5i、HUAWEI FreeBuds 6i、HUAWEI FreeBuds Pro 3、HUAWEI FreeBuds Pro 5 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds 7i、HUAWEI FreeBuds Studio | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds Pro | 电量、充电状态、降噪、通透、降噪档位、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds Pro 2 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds Pro 4、HUAWEI FreeClip 2 | 电量、充电状态、预设 EQ、游戏模式、佩戴检测开关、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds SE、HUAWEI FreeClip、HUAWEI Eyewear | 电量、充电状态、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds SE 2 | 电量、充电状态、预设 EQ、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeBuds SE 4 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeArc | 电量、充电状态、预设 EQ、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeLace Pro | 电量、充电状态、降噪、通透、降噪档位、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI FreeLace Pro 2 | 电量、充电状态、降噪、通透、降噪档位、游戏模式、双设备连接、独立空间音频 / 头部跟踪（需设备确认） |
-| HUAWEI Eyewear 2 | 电量、充电状态、游戏模式、独立空间音频 / 头部跟踪（需设备确认） |
+依据社区项目 [OpenFreebuds](https://github.com/melianmiko/OpenFreebuds/tree/0b4f14c0b500d491f0fb4ea38f2984ec334e3649)（含 [vicrodh 分支](https://github.com/vicrodh/OpenFreebuds/tree/a12ccc5a4030cba6ce2b8e9a402209b2e63268f5)）、[HuaweiPods](https://github.com/Nshpiter/HuaweiPods/tree/115f080100c07fb51174b3238473c512a2c6d3b8) 与 [EZBuds](https://github.com/CenSher/EZBuds/tree/4d1c6aaddb3b089cfb1b464ac86b65e3fa365ce2) 的协议实现和实机记录移植，并参考 Gadgetbridge、fxxkHilife 的公开测试结果。**EncoDeck 本身尚未在华为真机上验证**；“社区真机依据”列出参考项目在真机上测试或抓包并读回确认的项目，其余按协议实现，只有字节向量和模拟设备测试。
+
+| 兼容设备 | 对应功能 | 社区真机依据 |
+| --- | --- | --- |
+| HUAWEI FreeBuds 3 | 电量、充电状态；降噪无法回读，暂不开放 | 电量（OpenFreebuds） |
+| HUAWEI FreeBuds 3i | 电量、充电状态、降噪、通透 | — |
+| HUAWEI FreeBuds 4E | 电量、充电状态、降噪、降噪档位、预设 EQ、佩戴检测开关 | 降噪档位、预设 EQ（HuaweiPods） |
+| HUAWEI FreeBuds 4i | 电量、充电状态、降噪、通透、佩戴检测开关 | 电量、降噪、佩戴检测（OpenFreebuds） |
+| HUAWEI FreeBuds 5 | 电量、充电状态、降噪、降噪档位、预设 EQ、游戏模式、佩戴检测开关 | 降噪档位、预设 EQ（HuaweiPods） |
+| HUAWEI FreeBuds 5i | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、双设备连接及设备列表 | 全部列出项（OpenFreebuds，含 5i 连接握手） |
+| HUAWEI FreeBuds 6 | 电量、充电状态、降噪、降噪档位、预设 EQ、游戏模式、佩戴检测开关、智能音量调节（耳机返回状态后） | 全部列出项（HuaweiPods） |
+| HUAWEI FreeBuds 6i | 电量、充电状态、降噪、通透（标准 / 人声增强）、降噪档位、预设 EQ、游戏模式、佩戴检测开关、双设备连接及设备列表 | 全部列出项（OpenFreebuds、HuaweiPods、fxxkHilife） |
+| HUAWEI FreeBuds 7 | 电量、充电状态、降噪、通透、降噪档位、7 种预设音效、游戏模式、佩戴检测开关、智能音量调节与点头 / 摇头控制（耳机返回状态后） | 全部列出项（HuaweiPods 逐项写入并回读） |
+| HUAWEI FreeBuds 7i | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、左右耳佩戴状态、双设备连接及设备列表、点头 / 摇头控制（耳机返回状态后） | 全部列出项（OpenFreebuds vicrodh 分支、HuaweiPods） |
+| HUAWEI FreeBuds Pro | 电量、充电状态、降噪、通透、降噪档位、佩戴检测开关、双设备连接及设备列表 | — |
+| HUAWEI FreeBuds Pro 2 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关、双设备连接及设备列表 | — |
+| HUAWEI FreeBuds Pro 3 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式、佩戴检测开关、双设备连接及设备列表 | 降噪档位（HuaweiPods） |
+| HUAWEI FreeBuds Pro 4 | 电量、充电状态、降噪、通透、预设 EQ、游戏模式、佩戴检测开关、左右耳佩戴状态、双设备连接及设备列表 | 全部列出项（OpenFreebuds，Windows 11）；降噪档位名称未核实，暂不提供档位 |
+| HUAWEI FreeBuds Pro 5 | 电量、充电状态、降噪、通透（标准 / 人声增强）、降噪档位、7 种预设音效、游戏模式、佩戴检测开关、双设备连接及设备列表、智能音量调节与点头 / 摇头控制（耳机返回状态后） | 全部列出项（OpenFreebuds、HuaweiPods） |
+| HUAWEI FreeBuds SE、HUAWEI Eyewear、HUAWEI Eyewear 3 | 电量、充电状态 | FreeBuds SE（OpenFreebuds）；Eyewear、Eyewear 3（HuaweiPods） |
+| HUAWEI FreeClip | 电量、充电状态、预设 EQ、游戏模式、佩戴检测开关、双设备连接及设备列表 | 全部列出项（OpenFreebuds） |
+| HUAWEI FreeBuds SE 2 | 电量、充电状态、预设 EQ、游戏模式 | 全部列出项（OpenFreebuds） |
+| HUAWEI FreeBuds SE 4 | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、游戏模式 | 降噪、预设 EQ（HuaweiPods） |
+| HUAWEI FreeBuds Studio | 电量、充电状态、降噪、通透、降噪档位、预设 EQ、佩戴检测开关 | — |
+| HUAWEI FreeClip 2（含典藏版） | 电量、充电状态、预设 EQ、游戏模式、佩戴检测开关、双设备连接及设备列表、智能音量调节与点头 / 摇头控制（耳机返回状态后） | 电量、双设备列表（EZBuds，Windows）；其余列出项（OpenFreebuds、HuaweiPods、Gadgetbridge） |
+| HUAWEI FreeArc | 电量、充电状态、预设 EQ | 预设 EQ（HuaweiPods） |
+| HUAWEI FreeLace Pro | 电量、充电状态、降噪、通透、降噪档位 | 电量、降噪（OpenFreebuds） |
+| HUAWEI FreeLace Pro 2 | 电量、充电状态、降噪、通透（标准 / 人声增强）、降噪档位、游戏模式、双设备连接及设备列表 | 全部列出项（OpenFreebuds） |
+| HUAWEI Eyewear 2 | 电量、充电状态、游戏模式 | 电量、游戏模式（HuaweiPods） |
+
+所有型号另有独立空间音频 / 头部跟踪，仅在耳机返回状态后开放。
+
+- 写入一律以回读确认：耳机对写入的应答（结果码 100000）只表示已收到，不作为设置成功；其他结果码视为拒绝。部分固件（如 Pro 5 的降噪）写入后不应答，EncoDeck 不等待应答，并在首次回读仍为旧值时重读两次。
+- 预设 EQ 只显示耳机自己列出的预设；耳机正在使用自定义 EQ 或未知预设时显示原始编号，不套用名称。自定义 EQ 编辑、手势、单耳降噪、防风噪、高清音质未适配。
+- 双设备设备列表为只读，连接、断开、移除和优先设备请在对应设备的蓝牙设置中操作。
+- 降噪模式按钮会保持耳机当前的降噪档位；FreeBuds 5i 连接后发出的数据能力请求会被应答，避免连接被耳机主动断开。
+- Windows 上的已知差异（社区记录）：在 Windows 11 上开启“音质优先 / 高清音质”会导致音频断开，因此未提供此开关；佩戴检测只切换耳机自身设置，EncoDeck 不负责暂停播放。
+- 社区记录中的冲突：FreeBuds Pro 3 / 7i 的降噪档位编号采用 HuaweiPods 的实机记录（与 OpenFreebuds 的通用标注不同）；Pro 5 的预设音效按 HuaweiPods 的实机记录命名。
 
 ## 水月雨 MOONDROP
 
@@ -264,4 +283,18 @@ dotnet run --project tools/EncoDeck.Probe -- usb-devices
 
 ## 荣耀耳机
 
-7 个型号档案，均未真机验证。Earbuds 2 SE/2 Lite、3 Pro、3i、3i 尊享版按配置提供电量、降噪与佩戴检测；3 Pro 另有降噪档位与双设备。X3i 提供电量和设备返回预设后的 EQ；3i、3i 尊享版也在设备返回预设后提供 EQ；X5 提供电量、佩戴检测、双设备与设备返回预设后的 EQ。X3 仅识别和素材，Milan BLE 控制未移植；新型号不继承旧型号的控制能力。
+9 个型号档案，EncoDeck 尚未在荣耀真机上验证；新型号不继承旧型号的控制能力。
+
+| 兼容设备 | 对应功能 | 社区真机依据 |
+| --- | --- | --- |
+| HONOR Earbuds 2 SE / 2 Lite | 电量、充电状态、降噪、通透、佩戴检测开关 | 电量、降噪、佩戴检测（OpenFreebuds 用户以 FreeBuds 4i 配置实测） |
+| HONOR Earbuds 3 Pro | 电量、充电状态、降噪、通透、降噪档位、佩戴检测开关、双设备连接 | — |
+| HONOR Earbuds 3i、HONOR Earbuds 3i 尊享版 | 电量、充电状态、降噪、通透、佩戴检测开关、耳机返回预设后的 EQ | — |
+| HONOR Earbuds X3i | 电量、充电状态、耳机返回预设后的 EQ | — |
+| HONOR Earbuds X5 | 电量、充电状态、佩戴检测开关、双设备连接、耳机返回预设后的 EQ | — |
+| HONOR Earbuds X3 | 型号识别 / 素材；Milan BLE 控制未移植 | — |
+| HONOR CHOICE Earbuds X5 | 电量、充电状态、降噪 / 通透 / 关闭 | 全部列出项（[Nezerkill/honor-earbuds](https://github.com/Nezerkill/honor-earbuds/tree/13550440b50ebb51af501c737b418021d68253e2)，Linux） |
+| HONOR CHOICE Earbuds X5 Pro | 电量、充电状态、降噪 / 通透 / 关闭 | 社区工具（[TeskiOke/HonorEarbuds](https://github.com/TeskiOke/HonorEarbuds/tree/5339563383e819f8f5ca6afcd4b397b6fd167cc4)，Windows / Android），未逐项标注实测 |
+
+- 写入均以回读确认。耳机对写入的应答（TLV 1 = 0，或与华为相同的结果码 100000）只表示已收到。降噪模式按钮会保持耳机当前的降噪档位。
+- HONOR CHOICE 是使用 BES 方案的独立系列，查询不带参数、降噪写入只有一个字节，与名称相近的 HONOR Earbuds X3 / X5 档案互不通用。社区记录在 Linux 上直接打开 RFCOMM 通道 18 / 12，EncoDeck 通过标准串口服务（SPP）查找通道；X5 Pro 的社区 Windows 工具同样经 SPP 服务连接。X5 Pro 的硬件 EQ 没有可回读的状态，未开放。
