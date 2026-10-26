@@ -61,6 +61,18 @@
                     Severity="Informational"
                     Title="Unrecognized model"
                     Message="{x:Bind ViewModel.GenericModelMessage, Mode=OneWay}" />
+                <!-- A2DP Windows Bridge streams to these earbuds over its own adapter (Windows may not see them). -->
+                <InfoBar
+                    x:Uid="Home_Bridge"
+                    IsOpen="{x:Bind ViewModel.IsBridgeAudio, Mode=OneWay}"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="Connected through A2DP Bridge"
+                    Message="{x:Bind ViewModel.BridgeMessage, Mode=OneWay}">
+                    <InfoBar.ActionButton>
+                        <HyperlinkButton x:Uid="Home_Bridge_Open" Content="Open Labs" Click="OnOpenLabs" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
 
                 <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind services:Ui.Collapsed(ViewModel.HasDevice), Mode=OneWay}">
                     <StackPanel Spacing="12">

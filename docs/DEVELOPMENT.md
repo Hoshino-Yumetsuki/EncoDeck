@@ -87,7 +87,19 @@ tests/EncoDeck.Tests     单元测试（含 X4 实测抓包回归）
 
 ## 数据位置
 
-`%LOCALAPPDATA%\EncoDeck\`：`settings.json`、`device-cache.json`（哈希键，无地址）、`logs\encodeck-yyyyMMdd.log`（JSON Lines，保留 7 天，已脱敏）、`diagnostics\`、`Resources\`（设备素材缓存，见 [架构说明](ARCHITECTURE.md#设备资源)）、`Updates\`（应用内更新下载的安装包、`last-check.txt`、`install.log`）。
+`%LOCALAPPDATA%\EncoDeck\`：`settings.json`、`device-cache.json`（哈希键，无地址）、`logs\encodeck-yyyyMMdd.log`（JSON Lines，保留 7 天，已脱敏）、`diagnostics\`、`Resources\`（设备素材缓存，见 [架构说明](ARCHITECTURE.md#设备资源)）、`Updates\`（应用内更新下载的安装包、`last-check.txt`、`install.log`）、`Components\`（实验室组件：`LHDC\`、`A2DPWB\`，各含 `current.json`、版本目录和续传中的下载）。
+
+## 发布流程
+
+应用和组件分开发布：
+
+1. **组件**（仅当固定的组件变化时）：修改 `src/EncoDeck.Platform/Components/components.json` 的版本、标签和上游提交，推送对应标签：
+   - `lhdc-v<组件版本>`：CI 从固定的 LHDC-Win 提交编译并发布组件 Release；把运行摘要中的大小与 SHA-256 填回 `components.json`。
+   - `a2dpwb-v<组件版本>`：CI 下载上游官方 portable 包，与 `components.json` 中已填写的大小和 SHA-256 逐字节比对后原样发布。
+   组件 Release 都以 `--latest=false` 创建，仓库的“最新版本”始终是应用；两个发布脚本都会附上 `component.json`（`build/component-manifest.ps1` 生成，已发布的应用据此发现新组件）。`minApp` 填写需要的最低应用版本，接口变化时提高 `interface`。
+2. **应用**：更新 `Directory.Build.props` 与 `CHANGELOG.md`，推送 `v<版本>`（预发布用 `v1.11.0-beta.1` 这类带后缀的标签）。CI 先用 `build/verify-components.ps1` 确认每个固定的组件包已发布且大小、摘要一致，再以 `CHANGELOG.md` 对应段落为说明创建发布草稿；带后缀的标签标记为预发布，且不提交微软商店。
+
+`EncoDeck.Probe bridge` 可以只读查看 A2DPWB 后台；`--instance <名称> --start <目录> --config-dir <目录>` 会以独立实例和独立设置目录启动一个测试后台，`--quit` 结束它，不影响正常安装的 A2DPWB。`EncoDeck.exe --ui-snapshot <目录> --bridge-instance <名称>` 在离屏截图中加入实验室卡片（连接到该测试后台）和首页的 Bridge 状态。
 
 ## 应用内更新
 

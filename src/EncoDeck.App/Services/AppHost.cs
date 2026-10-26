@@ -34,6 +34,7 @@ public sealed class AppHost : IAsyncDisposable
             new GitHubUpdateClient(new HttpClient(), paths.UpdatesDirectory, SemanticVersion.FromAssembly(typeof(AppHost).Assembly)),
             settings, Path.Combine(paths.UpdatesDirectory, "last-check.txt"), loggers.CreateLogger<UpdateManager>());
         StoreUpdates = new StoreUpdateService(loggers.CreateLogger<StoreUpdateService>());
+        Bridge = new A2dpBridgeCompanion(Path.Combine(paths.Root, "Components"), store, settings, loggers.CreateLogger<A2dpBridgeCompanion>());
         Paths = paths;
         FileLog = fileLog;
         Loggers = loggers;
@@ -67,6 +68,9 @@ public sealed class AppHost : IAsyncDisposable
 
     /// <summary>Store updates for the MSIX build (see <see cref="PackageIdentity"/>).</summary>
     public StoreUpdateService StoreUpdates { get; }
+
+    /// <summary>A2DP Windows Bridge: the optional component, its core and the "connected through the bridge" state.</summary>
+    public A2dpBridgeCompanion Bridge { get; internal set; }
 
     public StartupRegistration Startup { get; } = new();
 
@@ -125,6 +129,7 @@ public sealed class AppHost : IAsyncDisposable
         Resources.StartWatching();
         ResourceSync.Start();
         Devices.Start();
+        Bridge.Start();
         // The Store updates the MSIX build; GitHub Releases are for the installer build only.
         if (!PackageIdentity.IsPackaged) Updates.Start();
     }
@@ -132,6 +137,7 @@ public sealed class AppHost : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await Devices.DisposeAsync();
+        await Bridge.DisposeAsync();
         await ResourceSync.DisposeAsync();
         await Updates.DisposeAsync();
         ResourceClient.Dispose();

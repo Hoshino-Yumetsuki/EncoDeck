@@ -57,7 +57,8 @@ jobs:
       - name: Publish app (win-x64, self-contained, unpackaged)
         shell: pwsh
         run: |
-          $suffix = if ($env:GITHUB_REF_TYPE -eq 'tag') { '' } else { "ci.$env:GITHUB_RUN_NUMBER" }
+          # A pre-release tag (v1.11.0-beta.1) keeps its suffix; a CI build is ci.<run>.
+          $suffix = if ($env:GITHUB_REF_TYPE -ne 'tag') { "ci.$env:GITHUB_RUN_NUMBER" } elseif ($env:GITHUB_REF_NAME -match '-(.+)$') { $Matches[1] } else { '' }
           dotnet publish src/EncoDeck.App -c Release -r win-x64 -p:Platform=x64 -p:VersionSuffix=$suffix -o artifacts/EncoDeck-win-x64
           dotnet publish tools/EncoDeck.Probe -c Release -r win-x64 --self-contained -p:VersionSuffix=$suffix -o artifacts/EncoDeck.Probe-win-x64
           Copy-Item LICENSE, THIRD_PARTY_NOTICES.md, README.md, README_EN.md artifacts/EncoDeck-win-x64/
@@ -85,83 +86,57 @@ jobs:
             artifacts/installer/*.exe
             artifacts/installer/*.sha256
 
-  lhdc-runtime:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-test
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-      - name: Install matching SDK and WDK
-        shell: pwsh
-        run: |
-          # Use Microsoft's package manager on this disposable runner; no custom download-and-execute installer.
-          if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-            Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Scope CurrentUser -Force
-            Import-Module Microsoft.WinGet.Client
-            Repair-WinGetPackageManager -AllUsers
-          }
-          $winget = (Get-Command winget -ErrorAction SilentlyContinue).Source
-          if (-not $winget) {
-            $location = (Get-AppxPackage Microsoft.DesktopAppInstaller).InstallLocation
-            if (-not $location) { throw 'Microsoft WinGet is unavailable.' }
-            $winget = Join-Path $location 'winget.exe'
-          }
-          $kits = (Get-ItemProperty 'HKLM:/SOFTWARE/Microsoft/Windows Kits/Installed Roots').KitsRoot10
-          foreach ($kit in @(@{Id='Microsoft.WindowsSDK.10.0.28000';Path='Include/10.0.28000.0/um/Windows.h'},@{Id='Microsoft.WindowsWDK.10.0.28000';Path='Include/10.0.28000.0/km/wdm.h'})) {
-            if (Test-Path -LiteralPath (Join-Path $kits $kit.Path)) { continue }
-            & $winget install --id $kit.Id --exact --source winget --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
-            if ($LASTEXITCODE -notin @(0,3010)) { throw "Kit installation failed: $($kit.Id) ($LASTEXITCODE)" }
-          }
-      - name: Fetch upstream and compile this release's LHDC runtime
-        shell: pwsh
-        run: |
-          $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          ./build/publish-lhdc-runtime.ps1 -Version $version -PowerShellDirectory $PSHOME -OutputDirectory artifacts/lhdc-release
-          if ($LASTEXITCODE -ne 0) { throw 'LHDC runtime build failed.' }
-      - uses: actions/upload-artifact@v4
-        with:
-          name: EncoDeck-LHDC-runtime
-          if-no-files-found: error
-          path: |
-            artifacts/lhdc-release/EncoDeck-LHDC-*.zip
-            artifacts/lhdc-release/EncoDeck-LHDC-*.zip.sha256
-
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [package, lhdc-runtime]
+    needs: [package]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
+      # Components (LHDC, A2DP Bridge) have their own releases (components.yml). An app must not ship a pin
+      # that cannot be downloaded: check every pinned package is published with exactly its size and digest.
+      - name: Verify component pins
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./build/verify-components.ps1
+
+      - name: Release notes from CHANGELOG.md
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          $pattern = '(?ms)^## \[' + [regex]::Escape($version) + '\][^\r\n]*\r?\n(.*?)(?=^## |\z)'
+          $notes = [regex]::Match((Get-Content CHANGELOG.md -Raw), $pattern).Groups[1].Value.Trim()
+          if (-not $notes) { throw "Release notes missing for $version." }
+          Set-Content release-notes.md $notes -Encoding utf8
+
       - uses: actions/download-artifact@v4
         with:
           name: EncoDeck-win-x64
-      - uses: actions/download-artifact@v4
-        with:
-          name: EncoDeck-LHDC-runtime
+          path: dist
+
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: release-notes.md
           fail_on_unmatched_files: true
           files: |
-            EncoDeck-win-x64.zip
-            EncoDeck.Probe-win-x64.zip
-            installer/*.exe
-            installer/*.sha256
-            EncoDeck-LHDC-*.zip
-            EncoDeck-LHDC-*.zip.sha256
+            dist/EncoDeck-win-x64.zip
+            dist/EncoDeck.Probe-win-x64.zip
+            dist/installer/*.exe
+            dist/installer/*.sha256
 
   # Microsoft Store: build the MSIX bundle and submit it to Partner Center (certification + publish).
   # Uses build/submit-store.ps1 (Partner Center submission API). Needs the STORE_* secrets from a Microsoft Entra app added in Partner Center (Account settings →
   # User management → Microsoft Entra applications, role Manager). Without them the job is skipped.
   # Also runnable by hand (Actions → CI → Run workflow) to resubmit the version in Directory.Build.props.
   store:
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    # Pre-release tags (v1.11.0-beta.1) are GitHub-only; the Store gets stable versions.
+    if: (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')) || github.event_name == 'workflow_dispatch'
     needs: build-test
     runs-on: windows-latest
     env:

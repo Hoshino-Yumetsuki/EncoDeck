@@ -109,6 +109,11 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     /// <summary>The audio runs over LE Audio (shown as an "LC3" tag next to the status).</summary>
     [ObservableProperty] public partial bool IsLeAudio { get; set; }
+    /// <summary>A2DP Windows Bridge connects or streams to these earbuds through its own USB adapter.</summary>
+    [ObservableProperty] public partial bool IsBridgeAudio { get; set; }
+    /// <summary>Connected only through the bridge: Windows does not see the earbuds, so their controls are unavailable.</summary>
+    [ObservableProperty] public partial bool IsBridgeOnly { get; set; }
+    [ObservableProperty] public partial string BridgeMessage { get; set; } = string.Empty;
     /// <summary>Classic (A2DP) codec the earbuds report, shown as a tag like "LC3" (null when unknown or on LE Audio).</summary>
     [ObservableProperty] public partial string? ClassicCodec { get; set; }
     [ObservableProperty] public partial bool HasClassicCodec { get; set; }
@@ -320,6 +325,25 @@ public sealed partial class DeviceViewModel : ObservableObject
             AudioCodec.Lhdc => "LHDC",
             _ => null,
         };
+        // A2DP Windows Bridge streams to these earbuds over its own adapter: Windows (and so the control
+        // channel) may not see them at all, but they are connected, and the codec is the bridge's.
+        IsBridgeAudio = state.Bridge is not null;
+        IsBridgeOnly = state.Bridge is not null && !state.Connection.IsLinkUp();
+        if (state.Bridge is { } bridge)
+        {
+            if (IsBridgeOnly)
+            {
+                ConnectionText = Loc.Get(bridge.IsStreaming ? "Connection_Bridge" : "Connection_BridgeConnecting");
+                IsLinkDown = false;
+                IsBusyConnecting = !bridge.IsStreaming;
+                IsLeAudio = false;
+            }
+            if (bridge.IsStreaming && bridge.Codec is { } bridgeCodec) ClassicCodec = bridgeCodec;
+            BridgeMessage = bridge.IsStreaming
+                ? Loc.Format(IsBridgeOnly ? "Home_Bridge_Only" : "Home_Bridge_Both", DescribeBridge(bridge))
+                : Loc.Get("Connection_BridgeConnecting");
+        }
+        else BridgeMessage = string.Empty;
         HasClassicCodec = ClassicCodec is not null;
         // A single-body LC3 headset has only the one LE identity, so one link is all of it. Warn
         // only for a pair whose other earbud is bonded, or earbuds whose other half was never found.
@@ -328,7 +352,7 @@ public sealed partial class DeviceViewModel : ObservableObject
             ConnectionText = Loc.Get("Connection_LeAudioSingleEar");
         // Switched to LE Audio but LC3 is not up (e.g. after the case reopened): the earbuds only come
         // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect.
-        if (state.IsLeAudioBonded && !state.IsLeAudio && state.Connection != DeviceConnectionState.ControlReady)
+        if (state.IsLeAudioBonded && !state.IsLeAudio && state.Connection != DeviceConnectionState.ControlReady && !IsBridgeOnly)
             ConnectionText = Loc.Get("Connection_WaitingForLeAudio");
         // Until the earbuds connect and report their ids, use the ones remembered from last time
         // (restored by the device cache) or the model's own product id, so the art shows at once.
@@ -581,6 +605,16 @@ public sealed partial class DeviceViewModel : ObservableObject
     }
 
     public static string DescribeConnection(DeviceConnectionState state) => Loc.Get($"Connection_{state}");
+
+    /// <summary>"LDAC · 990 kbps · 96 kHz" for the bridge's stream (what is known of it).</summary>
+    internal static string DescribeBridge(BridgeAudioLink link)
+    {
+        var parts = new List<string>();
+        if (link.Codec is { } codec) parts.Add(codec);
+        if (link.BitrateKbps > 0) parts.Add($"{link.BitrateKbps} kbps");
+        if (link.SampleRate > 0) parts.Add((link.SampleRate / 1000.0).ToString(link.SampleRate % 1000 == 0 ? "0" : "0.#", System.Globalization.CultureInfo.CurrentCulture) + " kHz");
+        return parts.Count > 0 ? string.Join(" · ", parts) : "A2DP";
+    }
 
     private static bool IsAllowed(CapabilitySupport support) => support == CapabilitySupport.Supported;
 

@@ -5,12 +5,18 @@
  <Border Style="{StaticResource CardStyle}">
   <StackPanel Spacing="10">
    <TextBlock x:Uid="Lhdc_Title" Style="{StaticResource BodyStrongTextBlockStyle}" />
+   <!-- Codecs, as the home page tags them; outlined ones are experimental upstream. -->
+   <StackPanel Orientation="Horizontal" Spacing="6" x:Uid="Lhdc_Codecs">
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="LHDC V5" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+   </StackPanel>
    <TextBlock x:Name="Status" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
-   <HyperlinkButton x:Name="StandaloneLink" x:Uid="Lhdc_StandaloneLink" NavigateUri="https://github.com/TIANLI0/EncoDeck/releases" Visibility="Collapsed" Padding="0" />
+   <HyperlinkButton x:Name="StandaloneLink" x:Uid="Lhdc_StandaloneLink" NavigateUri="https://github.com/TIANLI0/EncoDeck/releases/latest" Visibility="Collapsed" Padding="0" />
    <ProgressBar x:Name="Progress" Visibility="Collapsed" Maximum="100" />
    <StackPanel Orientation="Horizontal" Spacing="8">
     <Button x:Name="Download" Click="OnDownload" />
     <Button x:Name="Cancel" Click="OnCancel" Visibility="Collapsed" />
+    <Button x:Name="CheckUpdates" Click="OnCheckUpdates" Visibility="Collapsed" />
+    <Button x:Name="Uninstall" Click="OnUninstall" Visibility="Collapsed" />
    </StackPanel>
    <StackPanel x:Name="Editor" Spacing="10" Visibility="Collapsed">
     <ComboBox x:Name="Devices" HorizontalAlignment="Stretch" DisplayMemberPath="Label" SelectionChanged="OnDeviceChanged" />

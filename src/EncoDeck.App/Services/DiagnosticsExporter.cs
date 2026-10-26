@@ -43,8 +43,18 @@ internal static class DiagnosticsExporter
             lastError = state.LastError?.Message,
             capabilities = state.Profile?.Capabilities.All.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.Support.ToString()),
             settings = host.Settings.Current,
+            bridge = new
+            {
+                link = host.Bridge.Status.Link.ToString(),
+                server = host.Bridge.Status.Server,
+                origin = host.Bridge.Installation?.Origin.ToString(),
+                stream = state.Bridge,
+                component = host.Bridge.Managed?.Version,
+            },
         };
         await WriteEntryAsync(zip, "summary.json", JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
+        // A2DP Windows Bridge's own diagnostics (its addresses masked by the core), when it runs.
+        if (await host.Bridge.DiagnosticsAsync() is { } bridge) await WriteEntryAsync(zip, "a2dpwb.txt", LogRedactor.Redact(bridge));
 
         foreach (var log in new DirectoryInfo(host.Paths.LogDirectory).GetFiles("encodeck-*.log").OrderByDescending(f => f.Name).Take(3))
         {

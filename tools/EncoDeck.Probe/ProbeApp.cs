@@ -34,6 +34,8 @@ internal static class ProbeApp
                 "le-audio" => await LeAudioCommand.RunAsync(options, ct),
                 "multipoint-off" => await LeAudioCommand.DisableMultipointCommandAsync(options, ct),
                 "render-model" => await RenderModelCommand.RunAsync(options, ct),
+                "bridge" => await BridgeCommand.RunAsync(options, ct),
+                "components" => await ComponentsCommand.RunAsync(options, ct),
                 _ => Unknown(options.Command),
             };
         }
@@ -95,6 +97,18 @@ internal static class ProbeApp
               monitor [--seconds N]       Run the app's device runtime headlessly, print state changes
                                           and finally every feature value the session start read.
                       [--set-anc a,b --confirm-write]  Also run commands (off|anc|transparency|adaptive|smart|deep|medium|light|less|standard|more).
+
+            A2DP Windows Bridge:
+              bridge [--seconds N]        Connect to the A2DPWB core's pipe, print its state and changes.
+                     [--diag]             Also print A2DPWB's diagnostic text (addresses masked).
+                     [--instance <name>]  A side-by-side test core (A2DPWB_INSTANCE).
+                     [--start <folder> [--config-dir <dir>]]  Start that core first (--background).
+                     [--quit]             Ask the core to exit afterwards.
+
+            Components:
+              components                  List the component pins of this build (LHDC, A2DP Bridge).
+                         [--install lhdc|a2dpwb --root <folder>]  Download and unpack one as the app does.
+                         [--check [--floor <x.y.z-rN>]]  Look for component releases online as the Labs page does.
 
             Diagnostics:
               render-model --file <x.vfxms> --out <dir>  Render a HeyMelody 3D model off screen to PNG
