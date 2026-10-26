@@ -404,6 +404,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         AddToggle(profile, DeviceToggle.SleepDetection);
         AddToggle(profile, DeviceToggle.SwiftPair);
         AddToggle(profile, DeviceToggle.VoiceCommands);
+        AddToggle(profile, DeviceToggle.TouchLock);
         if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile { LhdcSupport: CapabilitySupport.Supported }) AddToggle(profile, DeviceToggle.HiRes);
         if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile)
         {

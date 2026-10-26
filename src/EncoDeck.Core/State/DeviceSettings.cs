@@ -28,6 +28,8 @@ public enum DeviceToggle
     PromptTone,
     /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
     AutoVolume,
+    /// <summary>Lock the earbuds' touch controls (on = touch disabled).</summary>
+    TouchLock,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

@@ -710,4 +710,31 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>Smart volume</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>Automatically adjust playback volume as ambient noise changes</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>This firmware can list devices but cannot remotely connect, disconnect, or remove them. Use Bluetooth settings on the corresponding device.</value></data>
+  <data name="Toggle_TouchLock" xml:space="preserve"><value>Lock touch controls</value></data>
+  <data name="Toggle_TouchLock_Description" xml:space="preserve"><value>When on, the earbuds ignore touch input; each gesture keeps its existing setting.</value></data>
+  <data name="Samsung_AncLevel_1" xml:space="preserve"><value>Level 1</value></data>
+  <data name="Samsung_AncLevel_2" xml:space="preserve"><value>Level 2</value></data>
+  <data name="Samsung_AncLevel_3" xml:space="preserve"><value>Level 3</value></data>
+  <data name="Samsung_AncLevel_4" xml:space="preserve"><value>Level 4</value></data>
+  <data name="Samsung_AncLevel_5" xml:space="preserve"><value>Level 5</value></data>
+  <data name="Samsung_Eq_Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Samsung_Eq_BassBoost" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="Samsung_Eq_Soft" xml:space="preserve"><value>Soft</value></data>
+  <data name="Samsung_Eq_Dynamic" xml:space="preserve"><value>Dynamic</value></data>
+  <data name="Samsung_Eq_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Samsung_Eq_TrebleBoost" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="Google_Eq_Balanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Google_Eq_HeavyBass" xml:space="preserve"><value>Heavy bass</value></data>
+  <data name="Google_Eq_VocalBoost" xml:space="preserve"><value>Vocal boost</value></data>
+  <data name="Google_Eq_TrebleBoost" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="Google_Eq_LightBass" xml:space="preserve"><value>Light bass</value></data>
+  <data name="Nothing_Eq_Balanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Nothing_Eq_Voice" xml:space="preserve"><value>Voice</value></data>
+  <data name="Nothing_Eq_MoreTreble" xml:space="preserve"><value>More treble</value></data>
+  <data name="Nothing_Eq_MoreBass" xml:space="preserve"><value>More bass</value></data>
+  <data name="Nothing_Eq_Rock" xml:space="preserve"><value>Rock</value></data>
+  <data name="Nothing_Eq_Electronic" xml:space="preserve"><value>Electronic</value></data>
+  <data name="Nothing_Eq_Pop" xml:space="preserve"><value>Pop</value></data>
+  <data name="Nothing_Eq_EnhanceVocals" xml:space="preserve"><value>Enhance vocals</value></data>
+  <data name="Nothing_Eq_Classical" xml:space="preserve"><value>Classical</value></data>
 </root>
