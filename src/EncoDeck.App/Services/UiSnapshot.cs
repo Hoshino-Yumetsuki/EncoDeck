@@ -124,11 +124,25 @@ internal static class UiSnapshot
             if (FindScrollViewer(main.Content) is { } labs) labs.ChangeView(null, labs.ScrollableHeight, null, disableAnimation: true);
             await Task.Delay(400);
             await CaptureAsync(main, Path.Combine(outDir, "Bridge-Labs.png"));
-            foreach (var expander in Descendants(main.Content).OfType<Expander>().Where(e => e.Name == "AdaptersPanel")) expander.IsExpanded = true;
+            foreach (var expander in Descendants(main.Content).OfType<Expander>().Where(e => e.Name is "AdaptersPanel" or "AddPanel")) expander.IsExpanded = true;
             await Task.Delay(600);
             if (FindScrollViewer(main.Content) is { } expanded) expanded.ChangeView(null, expanded.ScrollableHeight, null, disableAnimation: true);
             await Task.Delay(400);
             await CaptureAsync(main, Path.Combine(outDir, "Bridge-Labs-Adapters.png"));
+            // The test core keeps its profiles in its own settings folder: a profile for the sample earbuds must be accepted.
+            try
+            {
+                string saved = await host.Bridge.SaveProfileAsync(sample.Device!.Name, "AA:BB:CC:DD:EE:FF", "ldac");
+                await Task.Delay(800);
+                if (host.Bridge.Status.Snapshot?.Profiles.Any(p => p.Name == saved && p.Codec == "ldac") != true) errors.Add($"bridge: saved profile '{saved}' not reported back");
+                if (FindScrollViewer(main.Content) is { } top) top.ChangeView(null, 0, null, disableAnimation: true);
+                foreach (var expander in Descendants(main.Content).OfType<Expander>().Where(e => e.Name is "AdaptersPanel" or "AddPanel")) expander.IsExpanded = false;
+                await Task.Delay(600);
+                if (FindScrollViewer(main.Content) is { } labsAgain) labsAgain.ChangeView(null, labsAgain.ScrollableHeight, null, disableAnimation: true);
+                await Task.Delay(400);
+                await CaptureAsync(main, Path.Combine(outDir, "Bridge-Labs-Profile.png"));
+            }
+            catch (Exception ex) { errors.Add($"bridge: profile.save failed: {ex.Message}"); }
             await host.Bridge.DisposeAsync();
             var link = new BridgeAudioLink(true, "LDAC", 990, 96000, "X4");
             foreach (var (name, state) in new[]

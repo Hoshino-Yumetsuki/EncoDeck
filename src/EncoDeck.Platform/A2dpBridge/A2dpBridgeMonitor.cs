@@ -49,6 +49,10 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly object _gate = new();
     private TaskCompletionSource _wake = NewWake();
+    // After a wake (the core was just started), look every quarter second for a while: a new core takes a moment to
+    // create its mutex and pipe, and a single look would find nothing and wait a whole interval.
+    private long _fastUntil;
+    private long _wakes;
     private A2dpBridgeConnection? _connection;
     private Task _loop = Task.CompletedTask;
     private BridgeStatus _status = BridgeStatus.NotRunning;
@@ -107,7 +111,13 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
     public void Wake()
     {
         TaskCompletionSource wake;
-        lock (_gate) { wake = _wake; _wake = NewWake(); }
+        lock (_gate)
+        {
+            wake = _wake;
+            _wake = NewWake();
+            _fastUntil = Environment.TickCount64 + 15_000;
+            _wakes++;
+        }
         wake.TrySetResult();
     }
 
@@ -151,7 +161,9 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
                 if (!IsCoreRunning(_instance))
                 {
                     SetStatus(BridgeStatus.NotRunning);
-                    await IdleAsync(IdleInterval, token).ConfigureAwait(false);
+                    bool fast;
+                    lock (_gate) fast = Environment.TickCount64 < _fastUntil;
+                    await IdleAsync(fast ? TimeSpan.FromMilliseconds(250) : IdleInterval, token).ConfigureAwait(false);
                     continue;
                 }
                 SetStatus(new BridgeStatus(BridgeLink.Connecting));
@@ -167,8 +179,8 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
                 {
                     lock (_gate) _connection = connection;
                     _logger.LogInformation("A2DPWB connected ({Server})", connection.Server);
-                    connection.Changed += snapshot => SetStatus(new BridgeStatus(BridgeLink.Connected, snapshot, connection.Server));
-                    SetStatus(new BridgeStatus(BridgeLink.Connected, connection.Snapshot, connection.Server));
+                    connection.Changed += _ => SetConnected(connection);
+                    SetConnected(connection);
                     await Task.WhenAny(connection.Completion, stopped).ConfigureAwait(false);
                     lock (_gate) _connection = null;
                 }
@@ -211,12 +223,35 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
         return null;
     }
 
+    private long _seenWakes;
+
     private async Task IdleAsync(TimeSpan delay, CancellationToken token)
     {
         Task wake;
-        lock (_gate) wake = _wake.Task;
+        lock (_gate)
+        {
+            // A wake while the loop was busy (not waiting) is not lost: look again at once.
+            if (_wakes != _seenWakes)
+            {
+                _seenWakes = _wakes;
+                return;
+            }
+            wake = _wake.Task;
+        }
         await Task.WhenAny(wake, Task.Delay(delay, token)).ConfigureAwait(false);
+        lock (_gate) _seenWakes = _wakes;
         token.ThrowIfCancellationRequested();
+    }
+
+    /// <summary>
+    /// The connection's snapshot is read under the status lock, so whichever of the reader's change and the first
+    /// publication runs last sets the newest state (the reader replaces the snapshot before it raises Changed).
+    /// </summary>
+    private void SetConnected(A2dpBridgeConnection connection)
+    {
+        lock (_gate) _status = new BridgeStatus(BridgeLink.Connected, connection.Snapshot, connection.Server);
+        try { Changed?.Invoke(this, EventArgs.Empty); }
+        catch (Exception ex) { _logger.LogWarning(ex, "A2DPWB status handler failed"); }
     }
 
     private void SetStatus(BridgeStatus status)

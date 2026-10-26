@@ -38,6 +38,8 @@ internal sealed class A2dpBridgeConnection : IAsyncDisposable
     private long _revision;
     private List<JsonObject>? _resync;
     private long _resyncId;
+    // Set before the reader fails the pending requests: a request registered later sees it and fails at once.
+    private volatile bool _closed;
     private Task _reader = Task.CompletedTask;
 
     private A2dpBridgeConnection(Stream pipe, string server, BridgeSnapshot snapshot, long revision)
@@ -104,6 +106,7 @@ internal sealed class A2dpBridgeConnection : IAsyncDisposable
         _pending[id] = answer;
         try
         {
+            if (_closed) throw new IOException("A2DPWB closed the connection.");
             var request = new JsonObject { ["type"] = "request", ["id"] = id, ["method"] = method };
             if (parameters is not null) request["params"] = parameters;
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
@@ -112,8 +115,9 @@ internal sealed class A2dpBridgeConnection : IAsyncDisposable
             finally { _write.Release(); }
             linked.CancelAfter(timeout);
             try { return await answer.Task.WaitAsync(linked.Token).ConfigureAwait(false); }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested && !_stop.IsCancellationRequested)
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
+                if (_stop.IsCancellationRequested || _closed) throw new IOException("A2DPWB closed the connection.");
                 throw new TimeoutException($"A2DPWB did not answer {method}.");
             }
         }
@@ -177,6 +181,7 @@ internal sealed class A2dpBridgeConnection : IAsyncDisposable
         }
         finally
         {
+            _closed = true;
             var closed = failure ?? new IOException("A2DPWB closed the connection.");
             foreach (var pending in _pending.Values) pending.TrySetException(closed);
         }

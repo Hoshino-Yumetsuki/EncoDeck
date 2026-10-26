@@ -93,7 +93,8 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
             string downloads = Path.Combine(Root, DownloadsFolder);
             Directory.CreateDirectory(downloads);
             string zip = Path.Combine(downloads, package.File);
-            await DownloadAsync(http, Release.Sources(package), zip, package.Size, package.Sha256, progress, overall.Token, Backoff).ConfigureAwait(false);
+            try { await DownloadAsync(http, Release.Sources(package), zip, package.Size, package.Sha256, progress, overall.Token, Backoff).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new TimeoutException($"The {Release.Id} download took too long."); }
 
             string folder = $"{Release.Version}-{package.Sha256[..12]}";
             staging = Path.Combine(Root, ".install-" + Guid.NewGuid().ToString("N"));
@@ -181,7 +182,7 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
             ["folder"] = pointer.Folder,
             ["root"] = pointer.PackageRoot,
             ["previous"] = pointer.Previous,
-            ["installedAt"] = DateTimeOffset.UtcNow.ToString("o"),
+            ["installedAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
         };
         string temp = Path.Combine(Root, Guid.NewGuid().ToString("N") + ".tmp");
         File.WriteAllText(temp, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
@@ -206,11 +207,16 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
         TryDeleteFile(target);
         string partial = target + ".partial";
         Exception? last = null;
-        foreach (var source in sources)
+        for (int index = 0; index < sources.Count; index++)
         {
+            var source = sources[index];
+            // A partial file is resumed only from the source that wrote it (the first source may resume an earlier run).
+            if (index > 0) TryDeleteFile(partial);
+            bool restarted = false;
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 ct.ThrowIfCancellationRequested();
+                bool resuming = File.Exists(partial) && new FileInfo(partial).Length > 0;
                 try
                 {
                     await DownloadOnceAsync(http, source, partial, size, sha256, progress, ct).ConfigureAwait(false);
@@ -219,9 +225,15 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
                 }
                 catch (UpdateVerificationException ex)
                 {
-                    // Bytes from this source are wrong: never resume from them.
+                    // Wrong bytes are never resumed. If part came from earlier, this source gets one fresh try.
                     last = ex;
                     TryDeleteFile(partial);
+                    if (resuming && !restarted)
+                    {
+                        restarted = true;
+                        attempt--;
+                        continue;
+                    }
                     break;
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode is { } status && (int)status is >= 400 and < 500 and not 408 and not 429)

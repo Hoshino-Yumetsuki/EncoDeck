@@ -35,6 +35,7 @@ internal static class ProbeApp
                 "multipoint-off" => await LeAudioCommand.DisableMultipointCommandAsync(options, ct),
                 "render-model" => await RenderModelCommand.RunAsync(options, ct),
                 "bridge" => await BridgeCommand.RunAsync(options, ct),
+                "components" => await ComponentsCommand.RunAsync(options, ct),
                 _ => Unknown(options.Command),
             };
         }
@@ -103,6 +104,10 @@ internal static class ProbeApp
                      [--instance <name>]  A side-by-side test core (A2DPWB_INSTANCE).
                      [--start <folder> [--config-dir <dir>]]  Start that core first (--background).
                      [--quit]             Ask the core to exit afterwards.
+
+            Components:
+              components                  List the component pins of this build (LHDC, A2DP Bridge).
+                         [--install lhdc|a2dpwb --root <folder>]  Download and unpack one as the app does.
 
             Diagnostics:
               render-model --file <x.vfxms> --out <dir>  Render a HeyMelody 3D model off screen to PNG

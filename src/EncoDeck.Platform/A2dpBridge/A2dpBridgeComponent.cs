@@ -59,14 +59,21 @@ public static class A2dpBridgeComponent
             throw new InvalidDataException("The A2DPWB package is not the pinned upstream build.");
     }
 
-    /// <summary>A2DPWB's own per-user installation (NSIS, %LOCALAPPDATA%\A2DP Windows Bridge by default), if any.</summary>
-    public static BridgeInstallation? FindInstalled()
+    /// <summary>
+    /// A2DPWB's own per-user installation (NSIS, %LOCALAPPDATA%\A2DP Windows Bridge by default), if any. Folders under
+    /// <paramref name="managedRoot"/> (EncoDeck's copies, which A2DPWB's "start with Windows" may name) do not count.
+    /// </summary>
+    public static BridgeInstallation? FindInstalled(string? managedRoot = null)
     {
+        string? managed = managedRoot is null ? null : Path.GetFullPath(managedRoot).TrimEnd('\\') + "\\";
         foreach (string? candidate in InstallCandidates())
         {
             if (string.IsNullOrWhiteSpace(candidate)) continue;
             string directory = candidate.Trim().Trim('"');
-            if (IsBridgeFolder(directory)) return new BridgeInstallation(Path.GetFullPath(directory), BridgeOrigin.Installed, FileVersion(Path.Combine(directory, CoreExe)));
+            if (!IsBridgeFolder(directory)) continue;
+            string full = Path.GetFullPath(directory);
+            if (managed is not null && (full.TrimEnd('\\') + "\\").StartsWith(managed, StringComparison.OrdinalIgnoreCase)) continue;
+            return new BridgeInstallation(full, BridgeOrigin.Installed, FileVersion(Path.Combine(full, CoreExe)));
         }
         return null;
     }

@@ -228,6 +228,23 @@ public sealed class A2dpBridgeTests
         await Assert.ThrowsAsync<BridgeUnavailableException>(() => monitor.RequestAsync("stream.stop", ct: ct));
     }
 
+    [Fact]
+    public async Task ACoreStartedRightAfterAWakeIsFoundWithoutWaitingAnInterval()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        string instance = "encodeck-test-" + Guid.NewGuid().ToString("N")[..8];
+        await using var monitor = new A2dpBridgeMonitor(instance: instance) { IdleInterval = TimeSpan.FromMinutes(5) };
+        monitor.Start();
+        await Task.Delay(200, ct);
+        // As after "Start": the wait (and its wake) comes first, the core's mutex and pipe a moment later.
+        var wait = monitor.WaitForConnectionAsync(TimeSpan.FromSeconds(5), ct);
+        await Task.Delay(600, ct);
+        await using var core = new FakeCore(instance);
+        var accept = core.AcceptAsync(State(), rev: 1);
+        Assert.True(await wait);
+        await accept;
+    }
+
     private static JsonObject Event(string kind, JsonNode? value) => new() { ["kind"] = kind, ["value"] = value };
 
     private static JsonObject StreamEvent(long rev, int volume) => new()

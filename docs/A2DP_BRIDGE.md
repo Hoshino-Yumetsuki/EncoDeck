@@ -45,11 +45,14 @@ A2DPWB 通过它自己的适配器连接耳机，这条连接对 Windows 蓝牙�
 
 ## 二、首次设置
 
-点击 **“打开 A2DPWB”**，按它的首次设置完成：
+点击“启动后台”，然后在 EncoDeck 卡片中完成：
 
-1. 选择独立适配器，**分配 WinUSB**（Windows 会请求管理员授权）。也可以在 EncoDeck 卡片的“适配器”中分配。
-2. Realtek 适配器需要固件文件（如 `rtl8761bu_fw.bin`、`rtl8761bu_config.bin`），从 [linux-firmware](https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/tree/rtl_bt) 下载后放入设置文件夹（卡片中的“打开设置文件夹”），再点击“刷新”。
-3. 让耳机进入配对模式，扫描并配对，保存连接配置。
+1. 展开 **“适配器”**，为独立适配器点击 **“分配 WinUSB”**（Windows 会请求管理员授权）。Windows 正在使用的适配器不会提供这个按钮。
+2. Realtek 适配器需要固件文件（如 `rtl8761bu_fw.bin`、`rtl8761bu_config.bin`），从 [linux-firmware](https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/tree/rtl_bt) 下载**原始文件**后放入设置文件夹（“打开设置文件夹”），再点击“刷新”。
+3. 展开 **“添加耳机”**：可以直接选择 EncoDeck 当前的耳机（地址已知，无需扫描），或让耳机进入配对模式后点击“扫描”。选择编码（默认“自动”，按耳机支持的最佳编码），点击“保存为连接配置”。
+4. 让耳机进入配对模式，选择刚保存的配置并点击“连接”。首次连接会通过独立适配器完成配对。
+
+也可以点击 **“打开 A2DPWB”** 使用它自己的首次设置向导，效果相同；采集单个应用、虚拟声卡或调整码率等进阶设置也在那里修改。
 
 ## 三、日常使用
 

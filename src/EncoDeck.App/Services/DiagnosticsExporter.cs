@@ -49,7 +49,7 @@ internal static class DiagnosticsExporter
                 server = host.Bridge.Status.Server,
                 origin = host.Bridge.Installation?.Origin.ToString(),
                 stream = state.Bridge,
-                component = host.Bridge.Component.Installed?.Version,
+                component = host.Bridge.Managed?.Version,
             },
         };
         await WriteEntryAsync(zip, "summary.json", JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));

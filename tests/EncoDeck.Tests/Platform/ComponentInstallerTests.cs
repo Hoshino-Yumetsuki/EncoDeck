@@ -82,6 +82,18 @@ public sealed class ComponentInstallerTests : IDisposable
     }
 
     [Fact]
+    public async Task BytesOfABrokenSourceNeverReachTheNextOne()
+    {
+        byte[] zip = LhdcPackage("0.8.8-r1");
+        // The release sends wrong bytes and drops three times; the mirror must start from zero, not resume on them.
+        var http = new FakeHttp(zip) { Broken = uri => uri.Host == "github.com" };
+        var installer = Lhdc(http, zip, "0.8.8-r1", mirror: new Uri("https://mirror.example/lhdc.zip"));
+        await installer.InstallAsync(ct: TestContext.Current.CancellationToken);
+        Assert.NotNull(installer.Installed);
+        Assert.Contains(http.Hosts, h => h == "mirror.example");
+    }
+
+    [Fact]
     public async Task CorruptEverywhereLeavesNothingActive()
     {
         byte[] zip = LhdcPackage("0.8.8-r1");
@@ -294,6 +306,9 @@ public sealed class ComponentInstallerTests : IDisposable
 
         public int CutAfter { get; init; } = -1;
 
+        /// <summary>Sources that always send corrupt bytes and drop half way (a broken mirror).</summary>
+        public Func<Uri, bool> Broken { get; init; } = _ => false;
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -302,10 +317,16 @@ public sealed class ComponentInstallerTests : IDisposable
             Hosts.Add(uri.Host);
             var status = Status(uri);
             if (status != HttpStatusCode.OK) return Task.FromResult(new HttpResponseMessage(status));
-            byte[] bytes = Corrupt(uri) ? [.. body.Select(b => (byte)~b)] : body;
+            byte[] bytes = Corrupt(uri) || Broken(uri) ? [.. body.Select(b => (byte)~b)] : body;
             long from = request.Headers.Range?.Ranges.First().From ?? 0;
             if (from > 0) Ranges.Add(from);
             Stream content = new MemoryStream(bytes, (int)from, bytes.Length - (int)from);
+            if (Broken(uri))
+            {
+                if (from > 0) Ranges.Add(-from);
+                var broken = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new CutStream(new MemoryStream(bytes, 0, bytes.Length / 2))) };
+                return Task.FromResult(broken);
+            }
             if (CutAfter > 0 && !_cut)
             {
                 _cut = true;

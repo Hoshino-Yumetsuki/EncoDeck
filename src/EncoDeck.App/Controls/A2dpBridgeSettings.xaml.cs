@@ -19,11 +19,20 @@ public sealed partial class A2dpBridgeSettings : UserControl
 {
     private sealed record ProfileChoice(string Name, string Label);
 
+    private sealed record Candidate(string Address, string Name, string Label);
+
+    private sealed record CodecChoice(string Key, string Label);
+
+    /// <summary>A2DPWB's codec keys for a new profile; Auto picks the best one the earbuds offer.</summary>
+    private static readonly string[] Codecs = ["auto", "ldac", "lhdcv5", "aptxhd", "aptx", "aac", "sbcxq", "sbc"];
+
     private CancellationTokenSource? _download;
     private DispatcherQueueTimer? _volumeTimer;
     private bool _busy, _syncing, _refreshQueued;
     private string? _windowsAdapter;
     private string _profileSignature = "";
+    private string _candidateSignature = "";
+    private string? _selectProfile;
 
     public A2dpBridgeSettings()
     {
@@ -40,6 +49,12 @@ public sealed partial class A2dpBridgeSettings : UserControl
             Volume.Header = Loc.Get("Bridge_Volume");
             RefreshAdapters.Content = Loc.Get("Bridge_RefreshAdapters");
             OpenSettingsFolder.Content = Loc.Get("Bridge_OpenSettingsFolder");
+            Candidates.Header = Loc.Get("Bridge_Candidate");
+            Scan.Content = Loc.Get("Bridge_Scan");
+            Codec.Header = Loc.Get("Bridge_Codec");
+            SaveProfile.Content = Loc.Get("Bridge_SaveProfile");
+            Codec.ItemsSource = Codecs.Select(c => new CodecChoice(c, A2dpBridgeText.Codec(c))).ToArray();
+            Codec.SelectedIndex = 0;
             Bridge.Changed += OnBridgeChanged;
             Bridge.RefreshInstallations();
             Bridge.Monitor.Wake();
@@ -77,7 +92,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
         var component = Bridge.Component;
         bool manage = A2dpBridgeCompanion.CanManage;
         bool connected = status.IsConnected;
-        bool managedUpdate = component.Installed is not null && component.CanInstall && !component.IsCurrent;
+        bool managedUpdate = Bridge.ManagedUpdateAvailable;
         double megabytes = (component.Package?.Size ?? 0) / 1048576.0;
 
         string text = status.Link switch
@@ -118,10 +133,13 @@ public sealed partial class A2dpBridgeSettings : UserControl
         AdapterText.Text = DescribeAdapters(snapshot);
         StreamText.Text = DescribeStream(snapshot);
 
-        var choices = snapshot.Profiles.Select(p => new ProfileChoice(p.Name, Loc.Format("Bridge_ProfileLabel", p.Name,
-            p.DeviceName.Length > 0 ? p.DeviceName : p.DeviceAddress, A2dpBridgeText.Codec(p.Codec)))).ToArray();
+        var choices = snapshot.Profiles.Select(p => new ProfileChoice(p.Name, p.Name == p.DeviceName
+            ? $"{p.Name} · {A2dpBridgeText.Codec(p.Codec)}"
+            : Loc.Format("Bridge_ProfileLabel", p.Name, p.DeviceName.Length > 0 ? p.DeviceName : p.DeviceAddress, A2dpBridgeText.Codec(p.Codec)))).ToArray();
         string signature = string.Join('\n', choices.Select(c => c.Label));
-        string? wanted = snapshot.ActiveStreamProfile?.Name ?? (Profiles.SelectedItem as ProfileChoice)?.Name ?? snapshot.ActiveProfile;
+        // A profile just saved here is selected once it arrives; otherwise the streamed one, the chosen one, the core's active one.
+        string? wanted = _selectProfile is { } saved && choices.Any(c => c.Name == saved) ? saved
+            : snapshot.ActiveStreamProfile?.Name ?? (Profiles.SelectedItem as ProfileChoice)?.Name ?? snapshot.ActiveProfile;
         _syncing = true;
         try
         {
@@ -130,8 +148,9 @@ public sealed partial class A2dpBridgeSettings : UserControl
                 _profileSignature = signature;
                 Profiles.ItemsSource = choices;
             }
-            if (snapshot.ActiveStreamProfile is not null || Profiles.SelectedItem is null)
+            if (snapshot.ActiveStreamProfile is not null || Profiles.SelectedItem is null || wanted == _selectProfile)
                 Profiles.SelectedItem = choices.FirstOrDefault(c => c.Name == wanted) ?? choices.FirstOrDefault();
+            if (wanted == _selectProfile) _selectProfile = null;
         }
         finally { _syncing = false; }
         ProfileRow.Visibility = Show(choices.Length > 0);
@@ -151,6 +170,57 @@ public sealed partial class A2dpBridgeSettings : UserControl
             finally { _syncing = false; }
         }
         ShowAdapters(snapshot);
+        ShowCandidates(snapshot);
+    }
+
+    /// <summary>EncoDeck's current earbuds first (their address is known from Windows), then what A2DPWB found or saved.</summary>
+    private void ShowCandidates(BridgeSnapshot snapshot)
+    {
+        var list = new List<Candidate>();
+        if (App.Instance.Host.Store.Current.Device is { Transport: EncoDeck.Core.Devices.DeviceTransport.Bluetooth } current && current.Address.Value != 0)
+            list.Add(new Candidate(current.Address.ToFullString(), current.Name, Loc.Format("Bridge_CandidateCurrent", current.Name)));
+        foreach (var device in snapshot.Devices.Where(d => d.Audio && !d.LeAudio))
+        {
+            if (BridgeDeviceMatch.ParseAddress(device.Address) is not { } address || list.Any(c => BridgeDeviceMatch.ParseAddress(c.Address) == address)) continue;
+            string name = device.Name.Length > 0 ? device.Name : Loc.Get("Bridge_UnknownDevice");
+            string where = new EncoDeck.Core.Privacy.BluetoothAddress(address).ToRedactedString();
+            list.Add(new Candidate(device.Address, device.Name, device.Rssi is { } rssi ? $"{name} · {where} · {rssi} dBm" : $"{name} · {where}"));
+        }
+        string signature = string.Join('\n', list.Select(c => c.Label));
+        if (signature != _candidateSignature)
+        {
+            _candidateSignature = signature;
+            string? kept = (Candidates.SelectedItem as Candidate)?.Address;
+            Candidates.ItemsSource = list;
+            Candidates.SelectedItem = list.FirstOrDefault(c => c.Address == kept) ?? list.FirstOrDefault();
+        }
+        NoCandidates.Visibility = Show(list.Count == 0);
+        Scan.Content = Loc.Get(snapshot.Scanning ? "Bridge_Scanning" : "Bridge_Scan");
+        Scan.IsEnabled = !_busy && !snapshot.Scanning && snapshot.HasUsableAdapter;
+        SaveProfile.IsEnabled = !_busy && Candidates.SelectedItem is Candidate;
+        Candidates.IsEnabled = Codec.IsEnabled = !_busy;
+    }
+
+    private void OnCandidateChanged(object sender, SelectionChangedEventArgs e) =>
+        SaveProfile.IsEnabled = !_busy && Candidates.SelectedItem is Candidate;
+
+    private async void OnScan(object sender, RoutedEventArgs e) => await Operate(async () =>
+    {
+        Status.Text = Loc.Get("Bridge_ScanningLong");
+        await Bridge.ScanAsync();
+    });
+
+    private async void OnSaveProfile(object sender, RoutedEventArgs e)
+    {
+        if (Candidates.SelectedItem is not Candidate candidate) return;
+        string codec = (Codec.SelectedItem as CodecChoice)?.Key ?? "auto";
+        await Operate(async () =>
+        {
+            string name = await Bridge.SaveProfileAsync(candidate.Name, candidate.Address, codec);
+            _selectProfile = name;
+            AddPanel.IsExpanded = false;
+            ShowInfo(Loc.Format("Bridge_ProfileSaved", name));
+        });
     }
 
     private static string DescribeAdapters(BridgeSnapshot snapshot)
@@ -271,7 +341,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
         try { await action(); }
         catch (BridgeRequestException ex) { ShowError(ex.BridgeMessage.IsEmpty ? ex.Code : A2dpBridgeText.Format(ex.BridgeMessage)); }
         catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException or InvalidDataException
-            or UnauthorizedAccessException or HttpRequestException or System.ComponentModel.Win32Exception)
+            or UnauthorizedAccessException or HttpRequestException or System.ComponentModel.Win32Exception or OperationCanceledException)
         {
             ShowError(ex is BridgeUnavailableException ? Loc.Get("Bridge_NotConnected") : ex.Message);
         }
@@ -284,6 +354,14 @@ public sealed partial class A2dpBridgeSettings : UserControl
 
     private void ShowError(string message)
     {
+        ErrorBar.Severity = InfoBarSeverity.Error;
+        ErrorBar.Message = message;
+        ErrorBar.IsOpen = true;
+    }
+
+    private void ShowInfo(string message)
+    {
+        ErrorBar.Severity = InfoBarSeverity.Success;
         ErrorBar.Message = message;
         ErrorBar.IsOpen = true;
     }
