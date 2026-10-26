@@ -120,7 +120,7 @@ EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把常用�
 | **Google** | Pixel Buds Pro、Pixel Buds Pro 2：电量与充电、关闭 / 降噪 / 通透、预设 EQ、固件版本 | 协议移植，未真机验证 |
 | **Bose** | QuietComfort 45、QuietComfort Ultra Headphones (2nd Gen)：电量、固件版本、安静 / 感知模式 | 协议移植，未真机验证 |
 | **Nothing / CMF** | Nothing Ear (a)、Headphone (1)、CMF Buds 2、CMF Buds Pro 2：电量与充电、关闭 / 降噪 / 通透、预设 EQ、固件版本 | 协议移植，未真机验证 |
-| **USB 2.4G 游戏耳机** | 34 款识别（漫步者 HECATE、达尔优、雷柏、迈从、雷蛇）；迈从 X9、雷蛇 BlackShark V2 Pro、Barracuda X 可读电量 | 未真机验证 |
+| **USB 2.4G 游戏耳机** | 41 款识别（漫步者 HECATE、达尔优、雷柏、迈从、雷蛇、HyperX、SteelSeries、JBL、Logitech）；迈从 X9 / V9 PRO、雷蛇 BlackShark V2 Pro / Barracuda 系列、HyperX Cloud Alpha 2 / Cloud III S、Arctis Nova 7、G PRO X 2、HECATE G3 Max 等可读电量 | 社区项目真机确认的协议，EncoDeck 未真机验证；[范围说明](docs/COMPATIBILITY.md#usb-24g-专用查询) |
 
 更多型号、具体功能和验证记录见 **[设备兼容性列表](docs/COMPATIBILITY.md)**。如果你的耳机没在已测试列表里，但可以正常使用，欢迎提交型号、固件和测试结果。
 

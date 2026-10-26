@@ -42,6 +42,8 @@ public enum DeviceToggle
     Upscaling,
     /// <summary>Touch panel / touch sensor operation on or off (off = touch locked; Sony, Samsung).</summary>
     TouchControls,
+    /// <summary>Headset-side Bluetooth do-not-disturb while the 2.4 GHz link is in use.</summary>
+    DoNotDisturb,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

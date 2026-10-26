@@ -22,12 +22,37 @@ public sealed class BarracudaXTests
     }
 
     [Fact]
-    public void ReplacementEnvelopeMatchesOfficialSdkCrcAndReportId()
+    public void ReplacementEnvelopeUsesXmodemCrcOverTheWholeReport()
     {
-        Assert.Equal(Convert.FromHexString("028401DE520100000000000000000000"), BarracudaXProtocol.ReplacementHandshake()[..16]);
+        // Standard CRC-16/XMODEM check value, also asserted by nightdevx/barracuda-x-battery's self-test.
+        Assert.Equal(0x31C3, BarracudaXProtocol.Crc16Xmodem("123456789"u8));
         Assert.Equal(Convert.FromHexString("0280064B3450410E2101E30000000000"), BarracudaXProtocol.ReplacementQuery(0x21, 0xE3)[..16]);
         Assert.Equal(Convert.FromHexString("02800856175041082103210000000000"), BarracudaXProtocol.ReplacementQuery(0x21, 0x21)[..16]);
+        byte[] remote = BarracudaXProtocol.ReplacementQuery(4, 0xE1, true);
+        Assert.Equal(Convert.FromHexString("50410E0402E101"), remote[5..12]);
+        ushort crc = (ushort)(remote[3] | remote[4] << 8);
+        remote[3] = remote[4] = 0;
+        Assert.Equal(BarracudaXProtocol.Crc16Xmodem(remote), crc);
         Assert.Throws<ArgumentOutOfRangeException>(() => BarracudaXProtocol.ReplacementQuery(1, 0xF0));
+    }
+
+    // Reports captured from a real 1532:0550 receiver, replayed by nightdevx/barracuda-x-battery's self-test
+    // (MIT, Copyright (c) 2026 nightdijital).
+    [Fact]
+    public void CapturedReplacementReportsDecodeToAckAndBatteryButEventsAreNotReplies()
+    {
+        byte[] ack = Convert.FromHexString("504901C0593129010300" + "0E8400");
+        byte[] reply = Convert.FromHexString("504908FAB8CE17010400" + "21010126");
+        var frames = new BarracudaXDecoder().Feed([2, (byte)(ack.Length + reply.Length), .. ack, .. reply], replacement: true);
+        Assert.Equal(2, frames.Count);
+        Assert.True(BarracudaXProtocol.IsAck(frames[0], 4));
+        Assert.Equal(38, BarracudaXProtocol.Value(frames[1], 0x21));
+        // Cable plugged in: unsolicited battery 53 % and cable 01 (op 02) in one report.
+        byte[] plugged = Convert.FromHexString("021C504908FC042D6700040021020135504908FD042D670004002A020101");
+        var events = new BarracudaXDecoder().Feed(plugged, replacement: true);
+        Assert.Equal(2, events.Count);
+        Assert.All(events, e => Assert.Null(BarracudaXProtocol.Value(e, e[10])));
+        Assert.Empty(new BarracudaXDecoder().Feed(plugged));
     }
 
     [Theory]

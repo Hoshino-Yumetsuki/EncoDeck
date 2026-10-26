@@ -420,7 +420,8 @@ public sealed partial class SoundPage : Page
         AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null);
         AddCustomButton.IsEnabled = ready && !busy && f.CanAddCustomEqualizer;
         CustomEditor.Visibility = Show((spec is not null || band is not null) && selected is not null);
-        CustomNameBox.Visibility = RenameButton.Visibility = DeleteButton.Visibility = Show(spec is not null);
+        // A device's single fixed curve has no name to edit and cannot be deleted.
+        CustomNameRow.Visibility = CustomNameBox.Visibility = RenameButton.Visibility = DeleteButton.Visibility = Show(spec is not null);
         if (selected is null || (spec is null && band is null)) return;
 
         int min = spec?.MinGain ?? band!.MinGain, max = spec?.MaxGain ?? band!.MaxGain, scale = spec is null ? band!.GainScale : 1;
@@ -436,8 +437,8 @@ public sealed partial class SoundPage : Page
             _editorPresetId = selected.Id;
             CustomNameBox.Text = selected.Name;
         }
-        // Never move a slider the user is still dragging (its write is pending).
-        if (_bandTimer?.IsRunning != true)
+        // Never move a slider the user is still dragging, nor while its write and read-back are in flight.
+        if (_bandTimer?.IsRunning != true && !f.IsPending("custom-eq"))
         {
             for (int i = 0; i < _bands.Count && i < selected.Bands.Count; i++)
             {

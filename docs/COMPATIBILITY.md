@@ -342,26 +342,64 @@ EQ：LE Audio 下设备只上报预设 id，EncoDeck 按编号显示名称（Off
 
 依据 TW4 型号配置和第三方 TW4 真机协议记录实现，查找耳机命令参考 [smartcontrol-linux](https://github.com/gabors0/smartcontrol-linux/tree/786b3963a562c620067b87cf81dc01768ed8d217) 的协议记录，已覆盖模拟设备读写与异常回包测试、WinUI 页面截图检查。**尚未在本机 TW4 真机验证**（截图中的 5.19.1 为用户提供的信息），不宣称双设备连接切换、贴合度检测或固件更新已适配。其他真无线型号不继承 TW4 的控制命令。
 
-HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。
+HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；HECATE G3 Max 另有专用查询（见下节）。不代表完整厂商控制。接收器存在不证明耳机无线已连接。
 
-## 迈从 / 雷蛇 USB
+## USB 2.4G 专用查询
 
-X9 和 BlackShark V2 Pro 2020/2023 有精确 PID 的专用电量读取，其他新增 USB 型号只提供识别和条件性标准电量。尚无本机真机验证。
+下表型号按精确 VID/PID 和 HID 集合发送只读查询；其他 USB 型号只提供识别和条件性标准电量。“社区真机”表示参考项目在真实设备上读到过正确的电量或状态；**EncoDeck 本身尚未在这些耳机上真机验证**。
+
+| 型号 | 接收器 / HID 集合 | 读取内容 | 证据 |
+| --- | --- | --- | --- |
+| 迈从 X9 | `3837:6045`，`ff90:0001` | 电量 | 社区真机（[HeadsetControl #563](https://github.com/Sapd/HeadsetControl/pull/563)，Windows 下 20 / 50 / 60%）；充电时耳机退出 2.4G，读不到数据 |
+| 迈从 V9 PRO | `291D:385D`，`ff90:0001` | 电量 | 社区真机（[mchose-battery](https://github.com/Tensyd/mchose-battery)）；充电状态未确认，不显示 |
+| 雷蛇 BlackShark V2 Pro (2020) | `1532:0528`，`ff00:0001` | 电量（充电中的电量不可靠，不显示） | 社区真机（[HaloBattery](https://github.com/HeyOkay/HaloBattery)） |
+| 雷蛇 BlackShark V2 Pro (2023) | `1532:0555`，`ff00:0001` | 电量、充电线 | 社区真机（HaloBattery；[OpenRazer #2862](https://github.com/openrazer/openrazer/pull/2862) 多位测试者，固件 2.4–2.6） |
+| 雷蛇 Barracuda Pro | `1532:053A`，`ff00` | 电量、充电线 | 社区真机（HaloBattery） |
+| 雷蛇 Barracuda | `1532:053C`，`ff00` | 电量、充电线 | 社区真机（[razer-barracuda-2.4-linux](https://github.com/TarikTopalovic/razer-barracuda-2.4-linux)，Linux） |
+| 雷蛇 Barracuda X | `1532:0550` / `0552`，`ff00:0001` | 无线连接、电量、充电线；`0550` 另有 EQ 预设、自定义 EQ、勿扰、自动关机 | 见下节 |
+| HyperX Cloud Alpha 2 | `03F0:08BE`，`ff13:ff00` | 电量 | 社区真机（HaloBattery）；充电标志未确认，不显示 |
+| HyperX Cloud III S Wireless | `03F0:02CC` / `06BE`，厂商集合 | 电量、充电 | 社区真机（HaloBattery）；只发给描述符声明了输出报告 `0C` 的厂商集合，回答若出现在其他集合会读不到 |
+| SteelSeries Arctis Nova 7 | `1038:22A1`，`ffc0:0001` | 无线连接、电量、充电 | 社区真机（HaloBattery）；其他 Nova 7 PID 不读取 |
+| JBL Quantum 910 Wireless | `0ECB:2088`，`ff13:0001` | 耳机开关机、电量 | 社区真机（HaloBattery）；不发送任何命令，只在每次刷新的 1.5 秒内接收耳机主动上报，电量通常只在接上充电器时上报 |
+| Logitech G PRO X 2 LIGHTSPEED | `046D:0AF7`，`ffa0:0001` | 无线连接、电量、充电 | 社区真机（HaloBattery #103）；只调用功能列表与电量读取 |
+| 漫步者 HECATE G3 Max | `35BB:A226`，接口 3 集合 3（报告 `D0`） | 无线连接、电量 | 社区真机（[NPS.HecateBattery](https://github.com/SnowDreamXUE/NPS.HecateBattery)）；关机时接收器仍回包，按链路标志显示未连接而不是 0%；充电状态未确认 |
+| 雷蛇 BlackShark V3 / V3 Pro | `1532:057A` / `0577` | 仅识别 | 社区资料中的电量请求格式前后不一致，频繁查询还曾导致无线链路重置，暂不发送任何命令 |
+
+- 只向精确 VID/PID 和 usage page / usage 的 HID 集合发送；资料未给出 usage 的型号（Cloud III S、G3 Max）还要求该集合在描述符中声明对应的 64 字节输出报告，G3 Max 只用接口 3 集合 3。
+- 电量只显示设备直接报告的 0–100，不估算、不截断；无有效回答时清除旧数据。接收器插着不代表耳机已开机。
+- 雷蛇 PA 接收器（BlackShark V2 Pro 2023、Barracuda、Barracuda Pro）读数前进入远程模式（`E1 01`），结束后无论成败都发送 `E1 00` 释放。
 
 ### Razer Barracuda X
 
-Barracuda X 2022 接收器 `1532:0552` 与替换接收器 `1532:0550` 支持无线连接、电量及充电线状态查询，依据[公开协议记录](https://github.com/leag/razer-barracuda/blob/main/docs/PROTOCOL.md)实现，尚未真机验证。其他年份的 Barracuda X、Chroma、Pro 仅识别。
+Barracuda X 2022 有两种接收器，转发给耳机的命令相同，HID 封装不同：
 
-- 只向精确 VID/PID、usage page `ff00`、usage `1` 的 HID 集合发送查询；两种接收器查询流程相同，报文封装不同。
-- 流程：握手 → `E3` 查询无线连接 → `E0` 确认本地路由（不接管其他程序正在使用的路由）→ `E1` 暂选耳机路由 → 查询电量 `21` 与充电线 `2A`；结束后无论成败都恢复本地路由。
-- USB 枚举不算无线连接；电量只显示设备直接报告的 0–100，不估算；充电线已连接不代表充电完成。无有效回答时清除旧数据。
-- 不启用 EQ、游戏模式、配对或固件写入。
+- **替换接收器 `1532:0550`（YS-Tech）**：采用 [barracuda-x-battery](https://github.com/nightdevx/barracuda-x-battery) 在该接收器上真机测试的流程：`E1 01` 选择耳机路由 → 电量 `21` → 充电线 `2A` → `E1 00` 释放。不再发送未经真机确认的握手与 `E3` / `E0`；接收器报告忙时最多重发 5 次。耳机回答电量即视为已连接，没有回答时不判断连接状态。
+- **Macronix 接收器 `1532:0552`**：依据[公开协议记录](https://github.com/leag/razer-barracuda/blob/main/docs/PROTOCOL.md)：握手 → `E3` 查询无线连接 → `E0` 确认本地路由（不接管其他程序正在使用的路由）→ `E1` 暂选耳机路由 → `21` / `2A`；结束后无论成败都恢复本地路由。社区尚无 0552 的真机读数确认。
+- 只向精确 VID/PID、usage page `ff00`、usage `1` 的 HID 集合发送查询。USB 枚举不算无线连接；充电线已连接不代表充电完成。
+- 其他年份的 Barracuda X、Chroma 仅识别；不启用游戏模式（2.4G 下耳机接受但不生效）、配对或固件写入。
 
 查询失败时，日志会记录卡在哪一步（握手、`E3`、`E0`、`E1`、`21`、`2A`）以及 HID 集合信息，不记录个人数据。连接接收器后可运行：
 
 ```powershell
 dotnet run --project tools/EncoDeck.Probe -- usb-devices
 ```
+
+### 耳机设置
+
+下列写入已按社区真机记录实现，并有字节向量与模拟会话测试，均未经 EncoDeck 真机验证。界面只开放 Barracuda X `1532:0550`；BlackShark V2 Pro (2023) 的设置仍只在协议层实现，界面不提供。
+
+- **Barracuda X `0550` 的界面**：耳机无线连接（电量有应答）后读取设置，只显示读回有效的项：EQ 预设与 10 段自定义 EQ 在“声音”页（自定义为单一固定槽位，频段显示为 -5 至 +5），勿扰开关与自动关机在“控制”页的“更多设置”中，首页 EQ 行显示当前预设。耳机关机、离开范围或接收器拔出后这些设置随即隐藏。
+- 写入时先发送、再读回，读回一致才显示新值；不一致或失败时控件回到耳机实际报告的值，并显示错误提示。每次会话结束都会发送 `E1 00` 释放路由（出错或取消时也一样）。设置读写与电量轮询共用同一把锁，不会在同一 HID 句柄上交错；每次会话单独打开、关闭句柄。拖动 EQ 频段时停止 300 ms 后才写入，排队期间只发送最新的一组值。
+- 已显示的设置每 5 分钟、手动刷新或写入未确认后会重新读取，以反映在其他设备上做的更改；无法识别的预设值按原值显示，不猜测。
+
+| 型号 | 设置 | 证据 |
+| --- | --- | --- |
+| Barracuda X `1532:0550` | EQ 预设（默认 / 游戏 / 音乐 / 电影 / 自定义）、10 段自定义 EQ（0–10，5 为平直）、勿扰、自动关机（关 / 5 / 15 / 30 / 45 / 60 分钟） | 社区真机（barracuda-x-battery，全部设置读回确认） |
+| BlackShark V2 Pro (2023) `1532:0555` | EQ 预设（含 5 个电竞预设）、麦克风监听开关与 1–10 级、勿扰、自动关机（关或 15–60 分钟） | 社区真机（OpenRazer #2862、[blackshark-control](https://github.com/AbdullahSAhmad/blackshark-control)，固件 2.4–2.6） |
+
+- 写入前校验取值范围，超出范围的值不会发送；写入后必须读回相同的值才算成功，确认回答本身不算。
+- BlackShark 跨预设家族切换时第一次只切换家族，因此最多重复 4 次直到读回一致；自定义 EQ 频段需要多次锁存且各资料的范围不一致，暂不写入。
+- 0552 接收器、Barracuda（`053C`，设置无法读回）和 BlackShark V3 系列不写入，界面也不提供设置，仅读取电量与充电状态。
 
 ## 荣耀耳机
 

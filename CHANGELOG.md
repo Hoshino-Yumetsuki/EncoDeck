@@ -36,6 +36,10 @@
 - AKG N400NC / N200NC / N700NCM2 / Y600：改用 BLE 控制通道（经典蓝牙作为备用），新增 9 个预设 EQ、环境感知 / 对话模式、充电状态和固件版本。尚未真机验证。
 - AKG：耳机的 BLE 控制地址与经典蓝牙地址不同时，会短暂扫描名称相同（或带“-LE”后缀）的设备，仅在恰好找到一台时连接，并在本次运行期间记住该地址。
 - AKG N5 / N9 Hybrid：新增充电状态与充电盒电量；降噪改为实验性功能，需在设备页开启“AKG Hybrid 实验性功能”。
+- USB 2.4G 游戏耳机新增识别：HyperX Cloud Alpha 2、HyperX Cloud III S Wireless、SteelSeries Arctis Nova 7、JBL Quantum 910 Wireless、Logitech G PRO X 2 LIGHTSPEED、雷蛇 Barracuda 与 BlackShark V3（BlackShark V3 / V3 Pro 仅识别，不发送命令）。
+- 新增以下接收器的电量读取：迈从 V9 PRO、雷蛇 Barracuda Pro / Barracuda、HyperX Cloud Alpha 2 / Cloud III S、SteelSeries Arctis Nova 7、Logitech G PRO X 2、漫步者 HECATE G3 Max；Nova 7、G PRO X 2 与 G3 Max 同时显示耳机是否已无线连接，JBL Quantum 910 仅在耳机主动上报时显示。这些读取已由社区项目在真机上确认，EncoDeck 尚未真机验证，详见 [USB 2.4G 专用查询](docs/COMPATIBILITY.md#usb-24g-专用查询)。
+- 雷蛇 BlackShark V2 Pro (2023) 新增充电线状态。
+- 雷蛇 Barracuda X（`1532:0550` 接收器）新增耳机设置：“声音”页的 EQ 预设与 10 段自定义 EQ，“控制”页的勿扰与自动关机。耳机无线连接且设置读回有效后才显示，每次更改都读回确认，未确认时恢复为耳机实际的值。读写流程已由社区项目在真机上确认，EncoDeck 尚未真机验证；`0552` 接收器与 Barracuda（`053C`）仍只显示电量。
 
 ### 改进
 
@@ -51,6 +55,8 @@
 - 水月雨 NEKOCAKE 改用经典蓝牙 RFCOMM 通道 1，不再显示其不存在的降噪与电量通道；ROBIN 采用公开的降噪读写映射（实验性）。
 - 森海塞尔型号码去掉末尾的空字符；通知注册按型号覆盖电池、音频、EQ、已配对设备、降噪、通透与查找。
 - 索尼预设名称为空的固件（如 WF-LC900、WH-1000XM3）改为显示预设名称；WH-1000XM6 只显示固件实际应用的预设。
+- Barracuda X 替换接收器 `1532:0550` 改用社区真机测试过的读取流程，不再发送未经确认的握手与链路查询；接收器忙时自动重发。详见 [Barracuda X 适配说明](docs/COMPATIBILITY.md#razer-barracuda-x)。
+- USB 接收器的电量应答校验更严格：BlackShark V2 Pro (2023) 只采用带完整帧标记的应答，HECATE G3 Max 关机时显示未连接而不是 0%。
 
 ### 修复
 

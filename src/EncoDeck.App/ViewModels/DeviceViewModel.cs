@@ -11,6 +11,7 @@ using EncoDeck.Core.Resources;
 using EncoDeck.Core.State;
 using EncoDeck.Platform.Settings;
 using EncoDeck.Protocol.Brands;
+using EncoDeck.Protocol.Brands.Usb;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Oppo.Models;
 using Microsoft.UI.Dispatching;
@@ -372,8 +373,10 @@ public sealed partial class DeviceViewModel : ObservableObject
 
         RebuildOptionsIfNeeded(profile);
         ApplyNoise(state, profile);
-        ApplyEqualizer(state, profile);
-        ApplyToggles(state);
+        // A Barracuda X on its USB receiver has no control channel; its read-back settings make it controllable.
+        bool controlReady = IsReady || FeaturesViewModel.IsUsbSettingsReady(state);
+        ApplyEqualizer(state, profile, controlReady);
+        ApplyToggles(state, controlReady);
 
         FirmwareText = state.Firmware?.Value is { } fw ? DescribeFirmware(fw, profile) : string.Empty;
         var newest = new[] { state.Battery.Left?.Timestamp, state.Battery.Right?.Timestamp, state.NoiseControl?.Timestamp, state.LastResponseAt }.Max();
@@ -398,7 +401,12 @@ public sealed partial class DeviceViewModel : ObservableObject
         string.Concat(Enum.GetValues<DeviceCapability>().Select(c => (char)('0' + (int)profile.Capabilities.Get(c).Support))),
         string.Join(',', profile.NoiseControlOptions.Select(o => $"{o.Mode}/{o.LevelId}/{o.Support}")),
         string.Join(',', profile.EqualizerPresets.Select(p => $"{p.Id}/{p.Support}")),
-        profile is IControllableProfile controllable ? string.Join(',', controllable.Toggles.Order()) : string.Empty);
+        profile switch
+        {
+            IControllableProfile controllable => string.Join(',', controllable.Toggles.Order()),
+            UsbHeadsetProfile usb => $"{string.Join(',', usb.Toggles)}/{string.Join(',', usb.AutoPowerOffMinutes)}",
+            _ => string.Empty,
+        });
 
     private void RebuildOptionsIfNeeded(IDeviceProfile? profile)
     {
@@ -442,6 +450,7 @@ public sealed partial class DeviceViewModel : ObservableObject
         AddToggle(profile, DeviceToggle.SpeakToChat);
         AddToggle(profile, DeviceToggle.Upscaling);
         AddToggle(profile, DeviceToggle.TouchControls);
+        AddToggle(profile, DeviceToggle.DoNotDisturb);
         if (profile is EncoDeck.Protocol.Brands.Moondrop.MoondropProfile)
         {
             AddToggle(profile, DeviceToggle.HiRes);
@@ -462,9 +471,10 @@ public sealed partial class DeviceViewModel : ObservableObject
     {
         bool offered = profile is OppoDeviceProfile { Definition: var model }
             ? model.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported)
-            : profile is IControllableProfile other && other.Toggles.Contains(toggle)
+            : profile is IControllableProfile other ? other.Toggles.Contains(toggle)
                 && (other is not EncoDeck.Protocol.Brands.Moondrop.MoondropProfile moondrop
-                    || moondrop.Capabilities.IsAvailable(EncoDeck.Protocol.Brands.Moondrop.MoondropProfile.ToggleCapability(toggle), _settings.Current.EnableExperimentalFeatures));
+                    || moondrop.Capabilities.IsAvailable(EncoDeck.Protocol.Brands.Moondrop.MoondropProfile.ToggleCapability(toggle), _settings.Current.EnableExperimentalFeatures))
+            : profile is UsbHeadsetProfile usb && usb.Toggles.Contains(toggle);
         if (!offered) return;
         Toggles.Add(new DeviceToggleViewModel(toggle, Loc.Get($"Toggle_{toggle}"), Loc.Get($"Toggle_{toggle}_Description")));
     }
@@ -503,9 +513,9 @@ public sealed partial class DeviceViewModel : ObservableObject
         return option.LevelId is null ? mode : $"{mode} · {Text(option.ResourceKey, option.DisplayName)}";
     }
 
-    private void ApplyEqualizer(DeviceState state, IDeviceProfile? profile)
+    private void ApplyEqualizer(DeviceState state, IDeviceProfile? profile, bool controlReady)
     {
-        IsEqualizerAvailable = IsReady && EqualizerPresets.Count > 0;
+        IsEqualizerAvailable = controlReady && EqualizerPresets.Count > 0;
         var eq = state.Equalizer?.Value;
         foreach (var preset in EqualizerPresets) preset.IsSelected = eq?.ActivePresetId == preset.Id;
         if (state.CustomEqualizers?.Value.FirstOrDefault(p => p.IsSelected) is { } custom)
@@ -530,12 +540,12 @@ public sealed partial class DeviceViewModel : ObservableObject
             && profile?.EqualizerPresets.FirstOrDefault(p => p.Id == eq?.ActivePresetId)?.EditableBands == true;
     }
 
-    private void ApplyToggles(DeviceState state)
+    private void ApplyToggles(DeviceState state, bool controlReady)
     {
         foreach (var toggle in Toggles)
         {
             bool known = state.Toggles.TryGetValue(toggle.Toggle, out var value);
-            toggle.IsKnown = known && IsReady;
+            toggle.IsKnown = known && controlReady;
             toggle.IsOn = known && value!.Value;
             toggle.IsPending = state.IsPending("toggle:" + toggle.Toggle);
         }

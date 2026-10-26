@@ -120,7 +120,7 @@ Each brand is implemented from its protocol and model configuration data, some p
 | **Google** | Pixel Buds Pro, Pixel Buds Pro 2: battery and charging, off / ANC / transparency, preset EQ, firmware version | Protocol port; not verified on hardware |
 | **Bose** | QuietComfort 45, QuietComfort Ultra Headphones (2nd Gen): battery, firmware version, Quiet / Aware modes | Protocol port; not verified on hardware |
 | **Nothing / CMF** | Nothing Ear (a), Headphone (1), CMF Buds 2, CMF Buds Pro 2: battery and charging, off / ANC / transparency, preset EQ, firmware version | Protocol port; not verified on hardware |
-| **USB 2.4G gaming headsets** | 34 models recognized (EDIFIER HECATE, Dareu, Rapoo, MCHOSE, Razer); battery on MCHOSE X9, Razer BlackShark V2 Pro and Barracuda X | Not verified on hardware |
+| **USB 2.4G gaming headsets** | 41 models recognized (EDIFIER HECATE, Dareu, Rapoo, MCHOSE, Razer, HyperX, SteelSeries, JBL, Logitech); battery on MCHOSE X9 / V9 PRO, Razer BlackShark V2 Pro / Barracuda family, HyperX Cloud Alpha 2 / Cloud III S, Arctis Nova 7, G PRO X 2, HECATE G3 Max and more | Protocols confirmed on hardware by community projects; not verified by EncoDeck |
 
 For more models, per-feature details and verification records, see the **[device compatibility list](docs/COMPATIBILITY.md)**. If your earbuds aren't on the tested list but work fine, please share the model, firmware and your results.
 

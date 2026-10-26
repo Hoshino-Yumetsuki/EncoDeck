@@ -820,7 +820,6 @@
   <data name="AutoOff_Title" xml:space="preserve"><value>自动关机</value></data>
   <data name="AutoOff_Off" xml:space="preserve"><value>关闭</value></data>
   <data name="AutoOff_WhenRemoved" xml:space="preserve"><value>摘下时关机</value></data>
-  <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分钟后</value></data>
   <data name="SonyKey_Left" xml:space="preserve"><value>左耳触控</value></data>
   <data name="SonyKey_Right" xml:space="preserve"><value>右耳触控</value></data>
   <data name="SonyKey_Custom" xml:space="preserve"><value>自定义按钮</value></data>
@@ -879,4 +878,13 @@
   <data name="PowerOff_Timer_Description" xml:space="preserve"><value>到达所选时间后自动关闭耳机</value></data>
   <data name="Settings_BrandExperimental.Header" xml:space="preserve"><value>实验性功能</value></data>
   <data name="Settings_BrandExperimental.Description" xml:space="preserve"><value>启用尚无真机记录的设置（如手势、佩戴检测或游戏模式）。默认关闭，风险自负。开启后请重新连接以读取新功能。</value></data>
+  <data name="Toggle_DoNotDisturb" xml:space="preserve"><value>勿扰模式</value></data>
+  <data name="Toggle_DoNotDisturb_Description" xml:space="preserve"><value>使用 2.4 GHz 无线连接时，不让已连接蓝牙设备的声音打扰</value></data>
+  <data name="UsbEq_Default" xml:space="preserve"><value>默认</value></data>
+  <data name="UsbEq_Game" xml:space="preserve"><value>游戏</value></data>
+  <data name="UsbEq_Music" xml:space="preserve"><value>音乐</value></data>
+  <data name="UsbEq_Movie" xml:space="preserve"><value>电影</value></data>
+  <data name="UsbEq_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分钟后</value></data>
+  <data name="AutoOff_IdleDescription" xml:space="preserve"><value>耳机闲置达到所选时长后自动关机</value></data>
 </root>

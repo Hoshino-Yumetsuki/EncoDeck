@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.App.Services;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
+using EncoDeck.Protocol.Brands.Usb;
 using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Platform.Settings;
 using Microsoft.UI.Dispatching;
@@ -70,7 +72,16 @@ public sealed class FeaturesViewModel
 
     public bool AllowExperimental => OffersExperimental(State.Profile) && _settings.Current.EnableExperimentalFeatures;
 
-    public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
+    public bool IsReady => State.Connection == DeviceConnectionState.ControlReady || IsUsbSettingsReady(State);
+
+    /// <summary>
+    /// A USB headset (Barracuda X 1532:0550) is linked and at least one of its settings was read back. Other USB
+    /// receivers never get settings, so they stay read-only.
+    /// </summary>
+    public static bool IsUsbSettingsReady(DeviceState state) =>
+        state.Connection == DeviceConnectionState.UsbHeadsetConnected && state.Profile is UsbHeadsetProfile { Settings.Count: > 0 };
+
+    public bool IsUsbHeadset => State.Profile is UsbHeadsetProfile;
 
     /// <summary>Sets the earbuds' LE/BR mode switch (0x0433) through the active controller.</summary>
     public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) =>
@@ -93,6 +104,7 @@ public sealed class FeaturesViewModel
     {
         OppoDeviceProfile => Model?.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported) == true,
         IControllableProfile profile => profile.Toggles.Contains(toggle),
+        UsbHeadsetProfile usb => usb.Toggles.Contains(toggle),
         _ => false,
     };
 
@@ -327,6 +339,8 @@ public sealed class FeaturesViewModel
         : State.Profile is EncoDeck.Core.Profiles.IBandEqualizerProfile { BandEqualizer: { } spec } ? spec
         // Xiaomi earbuds keep one custom curve in whole dB; its bands and range come from the earbuds' own readback.
         : IsXiaomi && State.CustomEqualizers?.Value is [var curve] ? new(curve.MinGain, curve.MaxGain, GainScale: 1)
+        // The Barracuda X has one fixed custom slot in whole dB.
+        : IsUsbHeadset ? new(BarracudaXSettingValues.BandMin, BarracudaXSettingValues.BandMax, GainScale: 1)
         : null;
 
     public IReadOnlyList<CustomEqualizer> CustomEqualizers => State.CustomEqualizers?.Value ?? [];
