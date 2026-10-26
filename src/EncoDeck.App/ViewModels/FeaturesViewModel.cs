@@ -55,6 +55,8 @@ public sealed class FeaturesViewModel
 
     public bool IsSennheiserTw4 => State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { IsTw4: true };
 
+    public bool IsXiaomi => State.Profile is EncoDeck.Protocol.Brands.Xiaomi.XiaomiDeviceProfile;
+
     public bool AllowExperimental => IsMoondrop && _settings.Current.EnableExperimentalFeatures;
 
     public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
@@ -219,6 +221,13 @@ public sealed class FeaturesViewModel
     public Task<CommandResult> SetSennheiserGestureAsync(EarSide side, GestureAction action, int function) =>
         Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
 
+    /// <summary>The function the Xiaomi earbuds report for a gesture on one earbud; null when that gesture is not reported.</summary>
+    public int? XiaomiFunction(EarSide side, GestureAction action) => IsXiaomi ? State.KeyFunctions?.Value
+        .FirstOrDefault(k => k.Side == side && k.Button == 0 && k.Action == action)?.Function : null;
+
+    public Task<CommandResult> SetXiaomiGestureAsync(EarSide side, GestureAction action, int function) =>
+        Run(() => _commands.SetKeyFunctionAsync(new KeyFunction(side, 0, action, function)));
+
     /// <summary>
     /// Whether the long-press noise cycle applies: always for models whose hold gesture only cycles
     /// noise modes, otherwise while the hold gesture is set to noise control.
@@ -270,7 +279,12 @@ public sealed class FeaturesViewModel
 
     // ---- custom EQ -------------------------------------------------------------------------------
 
-    public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer : null;
+    public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer ?? XiaomiCustomEqualizerSpec : null;
+
+    /// <summary>Xiaomi earbuds have one custom curve whose bands and range come from the earbuds' own readback.</summary>
+    private OppoCustomEqualizerSpec? XiaomiCustomEqualizerSpec => IsXiaomi && State.CustomEqualizers?.Value is [var curve]
+        ? new OppoCustomEqualizerSpec(curve.Bands.Select(b => b.FrequencyHz).ToArray(), curve.MinGain, curve.MaxGain, MaxPresets: 1)
+        : null;
 
     public IReadOnlyList<CustomEqualizer> CustomEqualizers => State.CustomEqualizers?.Value ?? [];
 

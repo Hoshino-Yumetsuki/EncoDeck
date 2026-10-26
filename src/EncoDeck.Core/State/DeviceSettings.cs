@@ -28,6 +28,8 @@ public enum DeviceToggle
     PromptTone,
     /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
     AutoVolume,
+    /// <summary>Earbud-side automatic answering of incoming calls (Xiaomi config 3).</summary>
+    AutoAnswerCalls,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>
