@@ -755,4 +755,5 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Eq_Sony_Manual" xml:space="preserve"><value>Manual</value></data>
   <data name="Eq_Sony_Custom1" xml:space="preserve"><value>Custom 1</value></data>
   <data name="Eq_Sony_Custom2" xml:space="preserve"><value>Custom 2</value></data>
+  <data name="Update_BadgeHint" xml:space="preserve"><value>A new version is available</value></data>
 </root>

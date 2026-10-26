@@ -46,6 +46,24 @@ public sealed partial class MainWindow : Window
         };
 
         Navigate("Home");
+
+        var settings = App.Instance.Settings;
+        settings.PropertyChanged += OnSettingsChanged;
+        Closed += (_, _) => settings.PropertyChanged -= OnSettingsChanged;
+        ShowUpdateBadge();
+    }
+
+    private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ViewModels.SettingsViewModel.IsUpdateAvailable)) ShowUpdateBadge();
+    }
+
+    private void ShowUpdateBadge()
+    {
+        bool available = App.Instance.Settings.IsUpdateAvailable;
+        UpdateBadge.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
+        ToolTipService.SetToolTip(AboutItem, available ? Loc.Get("Update_BadgeHint") : null);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(AboutItem, available ? Loc.Get("Update_BadgeHint") : string.Empty);
     }
 
     /// <summary>

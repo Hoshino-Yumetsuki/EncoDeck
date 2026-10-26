@@ -755,4 +755,5 @@
   <data name="Eq_Sony_Manual" xml:space="preserve"><value>手动</value></data>
   <data name="Eq_Sony_Custom1" xml:space="preserve"><value>自定义 1</value></data>
   <data name="Eq_Sony_Custom2" xml:space="preserve"><value>自定义 2</value></data>
+  <data name="Update_BadgeHint" xml:space="preserve"><value>有新版本可用</value></data>
 </root>
