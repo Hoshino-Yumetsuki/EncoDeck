@@ -176,7 +176,8 @@ public static class LeAudioPairing
         if (!multipoint.IsSuccess) return new(LeAudioPairingOutcome.MultipointDisableFailed, multipoint.Status.ToString());
 
         // Official clients set the headset-side LE/BR switch before switching. The firmware syncs it
-        // to both earbuds and persists it in NV, which keeps reconnect and dual-ear mode consistent.
+        // to both earbuds and persists it in NV, which keeps reconnect and dual-ear mode consistent
+        // (X4: with it off the earbuds keep falling back to Classic).
         if (setLeBrSwitch is not null)
         {
             try

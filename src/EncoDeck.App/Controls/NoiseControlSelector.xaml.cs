@@ -105,7 +105,7 @@ public sealed partial class NoiseControlSelector : UserControl
         var vm = ViewModel;
         if (vm is null) return;
         LayoutModes(vm);
-        bool enabled = vm.IsNoiseAvailable && !vm.IsNoisePending;
+        bool enabled = vm.CanSetNoise && !vm.IsNoisePending;
 
         AncButton.IsChecked = vm.IsAncSelected;
         AdaptiveButton.IsChecked = vm.IsAdaptiveSelected;
@@ -158,7 +158,7 @@ public sealed partial class NoiseControlSelector : UserControl
     {
         var vm = ViewModel;
         if (vm is null) return;
-        bool enabled = vm.IsNoiseAvailable && !vm.IsNoisePending;
+        bool enabled = vm.CanSetNoise && !vm.IsNoisePending;
         foreach (var (level, button) in _levelButtons)
         {
             button.IsChecked = level.IsSelected;

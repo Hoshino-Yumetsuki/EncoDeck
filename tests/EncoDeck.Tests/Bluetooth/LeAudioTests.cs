@@ -63,9 +63,9 @@ public class LeAudioTests
         var calls = new List<string>();
         await Assert.ThrowsAsync<OperationCanceledException>(() => LeAudioPairing.SwitchToLeAudioAsync(Primary, null,
             TestContext.Current.CancellationToken,
-            setLeBrSwitch: (_, _) => { calls.Add("mode"); throw new OperationCanceledException(); },
+            setLeBrSwitch: (on, _) => { calls.Add(on ? "mode-on" : "mode-off"); throw new OperationCanceledException(); },
             disableMultipoint: _ => { calls.Add("multipoint-off-confirmed"); return Task.FromResult(CommandResult.Ok); }));
-        Assert.Equal(["multipoint-off-confirmed", "mode"], calls);
+        Assert.Equal(["multipoint-off-confirmed", "mode-on"], calls);
     }
 
     [Fact]

@@ -7,6 +7,7 @@
   <StackPanel Spacing="10">
    <TextBlock x:Uid="LeAudio_Title" Style="{StaticResource BodyStrongTextBlockStyle}" />
    <TextBlock x:Uid="LeAudio_Summary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+   <TextBlock x:Uid="LeAudio_NoiseNote" TextWrapping="Wrap" />
    <TextBlock x:Name="Status" TextWrapping="Wrap" />
    <TextBlock x:Name="Message" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" Visibility="Collapsed" />
    <ProgressBar x:Name="Progress" IsIndeterminate="True" Visibility="Collapsed" />

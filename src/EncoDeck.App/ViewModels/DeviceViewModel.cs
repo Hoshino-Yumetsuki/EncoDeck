@@ -138,6 +138,11 @@ public sealed partial class DeviceViewModel : ObservableObject
     public DeviceResourceKey? ResourceKey { get; private set; }
 
     [ObservableProperty] public partial bool IsNoiseAvailable { get; set; }
+    /// <summary>
+    /// Noise control is shown but cannot be changed: over LE Audio the X4 refuses every noise-mode
+    /// change (status 0x01) once it settled in LE mode, so the controls stay greyed out.
+    /// </summary>
+    [ObservableProperty] public partial bool CanSetNoise { get; set; }
     [ObservableProperty] public partial bool IsNoisePending { get; set; }
     [ObservableProperty] public partial bool IsOffSelected { get; set; }
     [ObservableProperty] public partial bool IsAncSelected { get; set; }
@@ -445,6 +450,7 @@ public sealed partial class DeviceViewModel : ObservableObject
     private void ApplyNoise(DeviceState state, IDeviceProfile? profile)
     {
         IsNoiseAvailable = IsReady && profile is not null && profile.Capabilities.IsAvailable(DeviceCapability.NoiseCancellation, allowExperimental: false);
+        CanSetNoise = IsNoiseAvailable && !state.IsLeAudio;
         IsNoisePending = state.IsPending("noise-control");
         var noise = state.NoiseControl?.Value;
         IsOffSelected = noise?.Mode == NoiseControlMode.Off;
