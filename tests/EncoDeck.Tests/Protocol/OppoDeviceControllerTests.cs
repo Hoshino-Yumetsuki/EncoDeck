@@ -288,6 +288,53 @@ public class OppoDeviceControllerTests
         Assert.False(OppoParsers.TryParseCodec(new OppoFrame(OppoCommand.ResponseOf(OppoCommand.QueryCodec), 0, Convert.FromHexString(hex)), out _));
 
     [Fact]
+    public async Task SetNoiseControl_StaleNotWorn_RereadsWearBeforeRefusing()
+    {
+        await using var h = new Harness();
+        await h.Controller.InitializeAsync(Ct);
+        // Missed wear events (a silent GATT earbud) left the earbuds "in the case".
+        h.Store.TryUpdate(X4.DeviceId, s => s with { Wear = Observed.From(new WearStatus(false, false, true, true, true), DateTimeOffset.UtcNow, StateSource.QueryResponse) });
+
+        var result = await h.Controller.SetNoiseControlAsync(new NoiseControlState(NoiseControlMode.Transparency), Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(h.Store.Current.Wear!.Value.LeftInEar);
+        Assert.Single(h.Device.Received, f => f.Command == OppoCommand.SetNoiseControl);
+    }
+
+    [Fact]
+    public async Task SetNoiseControl_NotWorn_IsRefusedWithoutSending()
+    {
+        await using var h = new Harness();
+        h.Device.Wear = [0x04, 0x04, 0x04];
+        await h.Controller.InitializeAsync(Ct);
+
+        var result = await h.Controller.SetNoiseControlAsync(new NoiseControlState(NoiseControlMode.Transparency), Ct);
+
+        Assert.Equal(CommandStatus.Rejected, result.Status);
+        Assert.Equal(OppoDeviceController.WearRequiredDetail, result.Detail);
+        Assert.DoesNotContain(h.Device.Received, f => f.Command == OppoCommand.SetNoiseControl);
+    }
+
+    [Fact]
+    public async Task KeepAlive_RereadsBatteryWhileIdle()
+    {
+        var device = new FakeOppoDevice();
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = X4 });
+        await using var session = new OppoSession(device.Channel);
+        session.Start();
+        await using var controller = new OppoDeviceController(session, new OppoDeviceProfile(OppoModels.EncoX4), X4, store)
+        {
+            KeepAliveInterval = TimeSpan.FromMilliseconds(50),
+        };
+        await controller.InitializeAsync(Ct);
+
+        device.Battery = [0x01, 0x32, 0x02, 0x32];
+        await WaitUntil(() => store.Current.Battery.Left?.Value.Level == 50);
+    }
+
+    [Fact]
     public async Task MissingCaseEntry_KeepsLastReadingWithOriginalTimestamp()
     {
         var time = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-20T10:00:00Z"));

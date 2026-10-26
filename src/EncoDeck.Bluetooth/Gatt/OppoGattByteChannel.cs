@@ -74,6 +74,12 @@ internal sealed class OppoGattByteChannel : IDuplexByteChannel
         _shutdownToken = _shutdown.Token;
     }
 
+    /// <summary>
+    /// The subscribed earbud stops sending events once the other one takes the control role (X4:
+    /// taken out of the case); only a write finds that out, so idle state would go stale.
+    /// </summary>
+    public TimeSpan? KeepAliveInterval => TimeSpan.FromSeconds(30);
+
     public string Description => $"OPPO GATT 079A ({_endpoints.Length} earbud(s); joined {string.Join(", ", _endpoints.Select(e => e.Device.BluetoothAddress == _primaryAddress ? "primary" : "secondary"))})";
 
     /// <summary>

@@ -289,10 +289,11 @@ public sealed partial class OppoDeviceController : IAdvancedDeviceCommands
     public async Task<CommandResult> RunFitTestAsync(CancellationToken cancellationToken = default)
     {
         if (!IsAvailable(DeviceCapability.FitTest)) return CommandResult.Unsupported("Fit test is not available on this model.");
-        var wear = _store.Current.Wear?.Value;
-        if (wear is not null && (wear.LeftInEar != true || wear.RightInEar != true))
+        static bool NotWorn(WearStatus? wear) => wear is not null && (wear.LeftInEar != true || wear.RightInEar != true);
+        if (NotWorn(_store.Current.Wear?.Value))
         {
-            return new CommandResult(CommandStatus.Rejected, WearRequiredDetail);
+            if (await RefreshWearAsync(cancellationToken).ConfigureAwait(false) is { } failure) return ToCommandResult(failure, "Fit test");
+            if (NotWorn(_store.Current.Wear?.Value)) return new CommandResult(CommandStatus.Rejected, WearRequiredDetail);
         }
 
         _fitTest = new TaskCompletionSource<FitTestResult>(TaskCreationOptions.RunContinuationsAsynchronously);

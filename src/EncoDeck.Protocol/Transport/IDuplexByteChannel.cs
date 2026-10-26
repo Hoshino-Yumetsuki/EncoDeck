@@ -10,6 +10,12 @@ public interface IDuplexByteChannel : IAsyncDisposable
     /// <summary>Human-readable description for logs (must not contain a full device address).</summary>
     string Description { get; }
 
+    /// <summary>
+    /// Set when the peer can go silent without closing the channel (e.g. a GATT earbud that lost
+    /// the control role): the controller should query this often so a write notices.
+    /// </summary>
+    TimeSpan? KeepAliveInterval => null;
+
     ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken);
 
     /// <summary>Reads at least one byte, or returns 0 when the remote side closed the channel.</summary>

@@ -41,6 +41,8 @@ public sealed partial class OppoDeviceController : IDeviceController
     private int? _firmware;
     private int _unknownFrames;
     private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly CancellationTokenSource _keepAliveStop = new();
+    private Task? _keepAliveTask;
 
     public OppoDeviceController(
         OppoSession session,
@@ -70,6 +72,9 @@ public sealed partial class OppoDeviceController : IDeviceController
 
     /// <summary>When set, <see cref="DisposeAsync"/> also disposes the session (and its channel).</summary>
     internal bool OwnsSession { get; init; }
+
+    /// <summary>When set, the battery is queried this often (see <see cref="Transport.IDuplexByteChannel.KeepAliveInterval"/>).</summary>
+    internal TimeSpan? KeepAliveInterval { get; init; }
 
     public Task Closed => _closed.Task;
 
@@ -110,7 +115,57 @@ public sealed partial class OppoDeviceController : IDeviceController
 
         // HeyMelody advertises its translation support here; a PC has none.
         await RequestIfAllowedAsync(new OppoRequest(OppoCommand.SetHostCapabilities, [0x00], SequenceMode.FixedSet), cancellationToken).ConfigureAwait(false);
+        if (KeepAliveInterval is { } interval)
+            _keepAliveTask ??= Task.Run(() => KeepAliveAsync(interval, _keepAliveStop.Token), CancellationToken.None);
         return true;
+    }
+
+    /// <summary>Queries the battery periodically, so a silent control earbud is noticed while idle.</summary>
+    private async Task KeepAliveAsync(TimeSpan interval, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(interval, _time);
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false) && _session.IsOpen)
+            {
+                if (_store.Current.PendingCommands.Count > 0) continue;
+                await QueryAsync(new OppoRequest(OppoCommand.QueryBattery, [], SequenceMode.FixedSet), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "OPPO keep-alive stopped");
+        }
+    }
+
+    /// <summary>
+    /// Sends a query and applies the answer; an unanswered query is sent once more. The GATT channel
+    /// takes that second write to a silent earbud as a lost control role and closes, so the
+    /// supervisor reconnects through the other earbud.
+    /// </summary>
+    private async Task<RequestResult?> QueryAsync(OppoRequest request, CancellationToken cancellationToken)
+    {
+        RequestResult? result = null;
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            result = await RequestIfAllowedAsync(request, cancellationToken).ConfigureAwait(false);
+            if (result?.Response is { } frame) ApplyResponse(frame, StateSource.QueryResponse);
+            if (result?.Status != RequestStatus.Timeout) break;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Re-reads the wear state before a command is refused for it: a missed event (e.g. from a GATT
+    /// earbud that lost the control role) leaves the cached state stale. Returns a transport failure.
+    /// </summary>
+    private async Task<RequestStatus?> RefreshWearAsync(CancellationToken cancellationToken)
+    {
+        var result = await QueryAsync(new OppoRequest(OppoCommand.QueryWearState, []), cancellationToken).ConfigureAwait(false);
+        return result?.Status is RequestStatus.TransportError or RequestStatus.Closed ? result.Status : null;
     }
 
     /// <summary>Re-reads all state the UI shows.</summary>
@@ -268,7 +323,11 @@ public sealed partial class OppoDeviceController : IDeviceController
     {
         if (!IsAvailable(DeviceCapability.NoiseCancellation)) return CommandResult.Unsupported("Noise control is not available on this model.");
         // Official pre-check: noise control needs at least one earbud in an ear.
-        if (_store.Current.Wear?.Value is { LeftInEar: false, RightInEar: false }) return new CommandResult(CommandStatus.Rejected, WearRequiredDetail);
+        if (_store.Current.Wear?.Value is { LeftInEar: false, RightInEar: false })
+        {
+            if (await RefreshWearAsync(cancellationToken).ConfigureAwait(false) is { } failure) return ToCommandResult(failure, "Noise control");
+            if (_store.Current.Wear?.Value is { LeftInEar: false, RightInEar: false }) return new CommandResult(CommandStatus.Rejected, WearRequiredDetail);
+        }
 
         int setIndex;
         if (target.LevelId is null && Model.NoiseModeParents.TryGetValue(target.Mode, out var parent) && !IsAllowed(parent.Support) && parent.DefaultLevelId is { } fallback)
@@ -856,6 +915,18 @@ public sealed partial class OppoDeviceController : IDeviceController
     {
         _session.UnsolicitedFrame -= OnUnsolicitedFrame;
         _session.Closed -= OnSessionClosed;
+        await _keepAliveStop.CancelAsync().ConfigureAwait(false);
+        if (_keepAliveTask is { } keepAlive)
+        {
+            try
+            {
+                await keepAlive.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+            }
+        }
+        _keepAliveStop.Dispose();
         if (OwnsSession) await _session.DisposeAsync().ConfigureAwait(false);
     }
 }
