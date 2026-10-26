@@ -710,4 +710,14 @@
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>智能音量调节</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>根据环境噪声变化自动调整耳机播放音量</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>此耳机固件支持查看设备列表，但不支持远程连接、断开或移除。请在对应设备的蓝牙设置中操作。</value></data>
+  <data name="Eq_DeviceCustom" xml:space="preserve"><value>自定义 EQ</value></data>
+  <data name="Eq_DevicePreset1" xml:space="preserve"><value>预设 1</value></data>
+  <data name="Eq_DevicePreset2" xml:space="preserve"><value>预设 2</value></data>
+  <data name="Eq_DevicePreset3" xml:space="preserve"><value>预设 3</value></data>
+  <data name="Eq_DevicePreset4" xml:space="preserve"><value>预设 4</value></data>
+  <data name="Eq_DevicePreset5" xml:space="preserve"><value>预设 5</value></data>
+  <data name="Sennheiser_EqOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="Sennheiser_EqPodcast" xml:space="preserve"><value>播客</value></data>
+  <data name="Dual_ConnectOnly" xml:space="preserve"><value>可在这里连接列表中的设备；断开或移除设备请在对应设备的蓝牙设置中操作。</value></data>
+  <data name="Find_Loud_Message" xml:space="preserve"><value>提示音非常响亮。请先确认耳机不在任何人耳中，否则可能会损伤听力。</value></data>
 </root>

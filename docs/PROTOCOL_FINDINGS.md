@@ -235,6 +235,19 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 - [PuddingPods `f527afe`](https://github.com/lingbai-rong/PuddingPods/tree/f527afe503749d7d2ceadbf5529c0639d7de1f7f) 的公开树只有文档 / 构建包装文件，没有应用源码可追踪完整读写路径。参考项目致谢的 `MegaSuite/moondrop-link-desktop` 在本次核查时不可公开访问，无法核实实现或许可证。
 - EDGE 应用版本已通过真实 BASIC 命令 5 回包读取；详细双设备管理、详细固件信息、佩戴 / 充电状态、查找耳机、贴合度检测、硬件降噪循环和 OTA 仍不受支持。型号档案和 feature 常量不替代实际回包证据。
 
+### 9.2 Music Processing（feature 5）EQ 与新增型号
+
+来源：[moondrop-control `1ec9c77`](https://github.com/FEAKEuser/moondrop-control/tree/1ec9c77a2387c698d77fb2bf25d2c62ec7ae3d5e)（EDGE 固件 1.4.0、NEKOCAKE 固件 1.0.0 实测）、[FxxkMoondrop `5f4342e`](https://github.com/bqj6666/FxxkMoondrop/tree/5f4342ebcd3cbd45975a1b593967b80493972887)（`MoondropSpp.kt` / `MoondropEq.kt`、型号表）、[moondrop-pc `4198d9a`](https://github.com/herikk04/moondrop-pc/tree/4198d9a719d563fa65f6205ef6e7e94b1a67ae4e)（太空漫游2，Windows 10）、[Edge2Pods `ab3f799`](https://github.com/Konakonai/Edge2Pods/tree/ab3f799d2d899d78efdd922bc7201e2fef4994ea)（EDGE 2 固件 1.2.5）、[puddingpods-battery-fix `31a5071`](https://github.com/cvbyisme/puddingpods-battery-fix/tree/31a50716dca3025fc9eb1ed38fcc07b343f5e29a)，并对照 [moondrop-gaia-protocol](https://github.com/Luoning77/moondrop-gaia-protocol) 的公开记录（仅核对事实）。
+
+- **[社区]** feature 5 命令：1 = 预设列表 `[count][id...]`（EDGE / NEKOCAKE / 太空漫游2 均为 `06 00 01 02 03 04 3f`，`0x3f` 为用户 PEQ）；2 = 当前预设 `[id]`；3 = 选择预设 `[id]`（部分固件不应答，以命令 2 回读为准）；4 = 用户 EQ 段数；5 = 读用户曲线 `[起始段][结束段]`；6 = 写用户曲线。RFCOMM 帧中即 `0A 05` 读 / `0A 06` 写，应答命令字为 `0B xx`。
+- **[社区]** 用户曲线：`[起始段][结束段][前级增益 i16]` + 每段 `[频率 u16][Q×4096 u16][滤波器类型 u8][增益×60 i16]`，全部大端；EDGE 五段共 39 字节，滤波器类型恒为 0，前级增益 EDGE 恒为 0、太空漫游2 上为非零值（随曲线峰值变化）。写入格式与读回逐字节相同；写入无 ACK，偶尔丢失一次，重写即可。
+- **[协议实现]** EncoDeck 只在读到完整预设列表、当前预设及（用户曲线存在时）完整单包曲线后开放 EQ。界面增益以 0.1 dB 显示；未改动的段按原始字节写回，改动的段换算为 ×60；频率、Q、类型和前级增益不改。写后逐字节回读，不一致重写一次，仍不一致返回失败。滤波器类型非 0、段数超过 7 或长度不自洽的曲线视为未知布局，只读不改。增益范围取 −12…+3 dB（社区编辑器范围），耳机已有值超出时放宽到该值，不夹断。
+- **[社区]** EDGE、太空漫游2 有真机读写证据，EQ 标为已支持；其他型号即使申报 feature 5 也只作为实验性功能。NEKOCAKE 的用户配置读回 `00 01 00 00 00 00 00 00 00`，不是 PEQ 布局，故只开放预设选择（实验性）。
+- **[社区]** EDGE 2：只走 RFCOMM 通道 1；ANC V2（feature 32）命令 3 / 4，0 关闭 / 1 降噪 / 2 通透 / 3 抗风噪 / 4 自适应（5 不是真实模式）；写入无应答。固件会保存并读回任何 0–5 的值，回读一致不代表模式有效，因此仍为实验性。
+- **[社区]** NEKOCAKE：RFCOMM 通道 1，能力只有 0 / 1 / 3 / 5 / 6，电量（feature 13）与所有 ANC 命令都无应答。U.C.T.S：识别与左右耳电量已由用户确认，硬件无降噪。ROBIN：公开记录为 EDGE 同款读写映射，社区日志只出现两种状态 **[推测]**。
+- **[社区]** PUDDING 带帧长度字段只计 payload，整帧 = 4 字节头 + 4 字节 PDU 头 + length（例：`FF 04 00 06 00 1D 1B 01 01 64 02 64 03 5E`，电量左 / 右 100、盒 94）。EncoDeck 的 RFCOMM 解码本来就按此计算，无需修改。
+- 9ECA 私有服务仍未实现；没有可靠证据的型号不切换到 9ECA。
+
 ## 10. 森海塞尔 MOMENTUM TW 4（GAIA v3）
 
 2026-10-24 独立实现，命令定义与动作约束按协议实现并有单元测试覆盖。降噪状态机核对了 [TW4 真机抓包记录](https://github.com/sandrolucy/Sennheiser-MOMENTUM-TW4-widget-gaia-protocol)，帧结构参考 [GAIA v3 协议记录](https://github.com/xndbogdan/sennheiser-control/blob/main/PROTOCOL.md)。
@@ -247,3 +260,15 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 - TW4 允许的动作：0 无、1 播放暂停、2 下一首、3 上一首、4/5 音量增减、6 通透切换、7 语音助手、9 ANC 切换、13 触控锁定切换。播放/切歌仅用于单/双/三击，音量仅长按，锁定仅三击/长按；其余可用于所有四种动作。不改通话映射，未知功能值只显示并保留。
 - 已通过 TW4 模拟设备读写、拒绝/超时/回读不一致、通知缺失/格式错误、版本 4 分片、动作约束和其他森海型号隔离测试，以及真实 WinUI 截图检查。用户截图固件为 5.19.1；本机无已连接 TW4，未将模拟测试标为真机验证。
 
+### 10.1 头戴型号与 TW4 新增功能
+
+来源：[momentum4-control `17aeea9`](https://github.com/Ariazonaa/momentum4-control/tree/17aeea90ce12ffbb4521df1832b22de0bc08c666)（MOMENTUM 4 固件 3.37.3 / 3.38.3、MOMENTUM 5 固件 6.21.5 抓包）、[momentum-menu `4dbe1c4`](https://github.com/andr3-santos/momentum-menu/tree/4dbe1c445198ea9b706934c90e75bc4a4bc69fe9)、[m4-companion `a112469`](https://github.com/Zhengyang-Liu/m4-companion/tree/a112469044103bf26fe7eea51905a974bbd44f78)、[sennheiser-control `e6d795c`](https://github.com/xndbogdan/sennheiser-control/tree/e6d795c9cefad154ed1bb92e11cd09f15018dd3f)；仅核对事实：[smartcontrol-linux](https://github.com/gabors0/smartcontrol-linux)、[sennheiser-desktop-client](https://github.com/Oein/sennheiser-desktop-client)、[SennheiserControl](https://github.com/Mefgner/SennheiserControl)、[hdb630-control-macos](https://github.com/hatemosphere/hdb630-control-macos)。
+
+- **[社区]** 通知注册 `0x0007 [feature]`：注册后耳机会主动推送该功能的当前值。EncoDeck 按型号注册 3 电池、4 音频、8 用户 EQ、10 已配对设备、12 通透、13 ANC、22 查找。
+- **[社区]** 固件 `0x1201` → 三个 u16（如 3.37.3）；HDB 630 用 `0x1202` → 三个字节。型号 `0x1206` 为以 NUL 结尾的 ASCII（如 `M4AEBT Black`）。
+- **[社区]** 用户 EQ（固件 3.x 起，2.x 不查询）：`0x1000` → `[段数][最小 i8][最大 i8]...`（MOMENTUM 4 `05 C4 3C 00 00`，即 5 段 −6…+6 dB；MOMENTUM 5 为 8 段）；`0x100B [段]` → `[段][Hz u16]`（MOMENTUM 4：90 / 325 / 1500 / 6500 / 6500 Hz）；`0x1003 [00]` 一次读全部增益（i8，0.1 dB）；`0x1001 [段][增益]` 写一段，随后有整条曲线通知 `0x1082`。声音模式 `0x0804` → `[00][模式]`，`0x0803 [00][模式]` 设置，0 关闭 / 1 用户 EQ / 2 播客；切换异步生效，EncoDeck 短时轮询回读。
+- **[协议实现]** EncoDeck 只写改动的段，写后用 `0x1003` 回读整条曲线比对；耳机已有的越界值保留不夹断。未知声音模式只显示原始值。
+- **[社区]** ANC 强度：头戴 `0x1A02` / `0x1A03` 为 0–100 等级，与通透等级相互影响；EncoDeck 在有独立状态读数的型号上不把它当作模式，也暂未提供强度调节。ACCENTUM 的 ANC 模式表读回全零且忽略写入。
+- **[社区]** 已配对设备（feature 10）：`0x1400` → 数量 u16，`0x1401 [序号]` → `[序号][优先级][已连接][名称\0]`，`0x1407` → 本机序号，`0x1409` → 最大连接数（MOMENTUM 4 为 2），`0x1402 [序号]` 连接（ACK 先于连接建立，约 3 秒后 `0x1404 [序号]` → `[序号][1]`），通知 `0x1484`。`0x1403`（断开）在部分固件上会清除该设备的配对，`0x1405` / `0x1406` 为删除，EncoDeck 永不发送。
+- **[协议实现]** 连接只在 MOMENTUM 4 开放：发送前重新读取列表，要求同一序号与名称、名称唯一、非本机、本机仍连接且有空闲连接位；连接后再次读列表确认。
+- **[社区]** TW4 查找耳机：feature 22，`0x2C02 [侧]` 开始、`0x2C01 [侧]` 停止（侧 0 右 / 1 左），状态 `0x2C03 [侧]` 以通知 `0x2C83 [响铃][侧]` 回报。EncoDeck 以回报的响铃状态为准，50 秒后自动停止。

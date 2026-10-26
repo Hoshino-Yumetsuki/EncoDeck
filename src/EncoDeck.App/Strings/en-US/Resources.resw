@@ -710,4 +710,14 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>Smart volume</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>Automatically adjust playback volume as ambient noise changes</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>This firmware can list devices but cannot remotely connect, disconnect, or remove them. Use Bluetooth settings on the corresponding device.</value></data>
+  <data name="Eq_DeviceCustom" xml:space="preserve"><value>Custom EQ</value></data>
+  <data name="Eq_DevicePreset1" xml:space="preserve"><value>Preset 1</value></data>
+  <data name="Eq_DevicePreset2" xml:space="preserve"><value>Preset 2</value></data>
+  <data name="Eq_DevicePreset3" xml:space="preserve"><value>Preset 3</value></data>
+  <data name="Eq_DevicePreset4" xml:space="preserve"><value>Preset 4</value></data>
+  <data name="Eq_DevicePreset5" xml:space="preserve"><value>Preset 5</value></data>
+  <data name="Sennheiser_EqOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Sennheiser_EqPodcast" xml:space="preserve"><value>Podcast</value></data>
+  <data name="Dual_ConnectOnly" xml:space="preserve"><value>You can connect a listed device here. To disconnect or remove a device, use Bluetooth settings on that device.</value></data>
+  <data name="Find_Loud_Message" xml:space="preserve"><value>The tone is very loud. Make sure the earbuds are not in anyone's ears, or it may damage hearing.</value></data>
 </root>

@@ -237,6 +237,16 @@ public sealed partial class MoondropTests
         public int SettingWrites { get; private set; }
         public int FramedProbes { get; private set; }
         public int RawProbes { get; private set; }
+        /// <summary>Feature list override (e.g. NEKOCAKE's 0/1/3/5/6); null uses the default settings set.</summary>
+        public int[]? FeatureList { get; init; }
+        public bool Peq { get; init; }
+        public byte[] Presets { get; init; } = [6, 0, 1, 2, 3, 4, 0x3F];
+        public byte ActivePreset { get; private set; } = 4;
+        public byte PeqBands { get; init; } = 5;
+        public byte[] PeqCurve { get; set; } = [];
+        public List<byte[]> PeqWrites { get; } = [];
+        public int DropPeqWrites { get; set; }
+        public bool CorruptPeq { get; set; }
 
         public ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
         {
@@ -271,6 +281,12 @@ public sealed partial class MoondropTests
                 (16, 6) => SetLhdc(request.Payload),
                 (20, 1) => [Dual ? (byte)1 : (byte)0],
                 (20, 2) => SetDual(request.Payload),
+                (5, 1) => Presets,
+                (5, 2) => [ActivePreset],
+                (5, 3) => SetPreset(request.Payload),
+                (5, 4) => [PeqBands],
+                (5, 5) => PeqCurve,
+                (5, 6) => SetPeq(request.Payload),
                 _ => [],
             };
             byte[] reply = Reply(request.Feature, request.Command, payload, rfcomm && !rawRfcomm);
@@ -297,7 +313,20 @@ public sealed partial class MoondropTests
         private byte[] SetVoice(byte[] payload) { Voice = (byte[])payload.Clone(); if (RejectVoiceIndex) Voice[2]++; return Voice; }
         private byte[] SetLhdc(byte[] payload) { Lhdc = payload[0] == 1; return payload; }
         private byte[] SetDual(byte[] payload) { Dual = payload[0] == 1; return payload; }
-        private byte[] Features() => [0, .. new[] { 0, 13, 14, 15, 16, 19, 20, 22, (int)AncFeature }.Where(f => !OmittedFeatures.Contains(f)).SelectMany(f => new byte[] { (byte)f, 1 })];
+        private byte[] Features() => [0, .. (FeatureList ?? [0, 13, 14, 15, 16, 19, 20, 22, AncFeature, .. Peq ? new[] { 5 } : []])
+            .Where(f => !OmittedFeatures.Contains(f)).SelectMany(f => new byte[] { (byte)f, 1 })];
+        private byte[] SetPreset(byte[] payload) { if (Presets[1..].Contains(payload[0])) ActivePreset = payload[0]; return []; }
+        private byte[] SetPeq(byte[] payload)
+        {
+            PeqWrites.Add((byte[])payload.Clone());
+            if (DropPeqWrites > 0) DropPeqWrites--;
+            else
+            {
+                PeqCurve = (byte[])payload.Clone();
+                if (CorruptPeq) PeqCurve[^1] ^= 1;
+            }
+            return [];
+        }
         private byte[] SetGain(byte[] payload) { LastGainWrite = payload[0]; if (!RejectGain) Gain = payload[0]; return []; }
         private byte[] SetLed(byte[] payload) { Led = payload[0] == 1; return []; }
         private byte[] SetTouch(byte[] payload) { LastTouchWrite = (byte[])payload.Clone(); Touch = (byte[])payload.Clone(); if (RejectTouchOtherSlot) Touch[0] ^= 1; return Touch; }

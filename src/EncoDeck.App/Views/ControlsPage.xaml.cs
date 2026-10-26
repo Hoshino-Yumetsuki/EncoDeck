@@ -310,23 +310,26 @@ public sealed partial class ControlsPage : Page
 
     private void SyncDual(FeaturesViewModel f, bool ready)
     {
-        bool available = f.Has(DeviceCapability.DualDeviceConnection) && f.HasSwitch(DeviceToggle.DualDeviceConnection);
+        bool hasSwitch = f.HasSwitch(DeviceToggle.DualDeviceConnection);
+        // Sennheiser reports its paired hosts without a dual-connection switch.
+        bool available = f.Has(DeviceCapability.DualDeviceConnection) && (hasSwitch || f.HasSourceListWithoutSwitch);
         DualCard.Visibility = Show(available);
         if (!available) return;
+        DualSwitch.Visibility = Show(hasSwitch);
         bool? enabled = f.Toggle(DeviceToggle.DualDeviceConnection);
         DualSwitch.IsOn = enabled == true;
         DualSwitch.IsEnabled = ready && enabled is not null && !f.IsPending("toggle:DualDeviceConnection");
 
         var devices = f.SourceDevices;
         string signature = string.Join('|', devices.Select(d => $"{d.AddressText}/{d.State}/{d.IsThisDevice}/{d.IsAudioActive}/{d.Name}"))
-            + $"#{ready}#{f.AreSourceDevicesCached}#{f.CanManageSourceDevices}#{f.IsPending("multi-connect")}#{f.IsPending("preferred-device")}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
+            + $"#{ready}#{f.AreSourceDevicesCached}#{f.CanManageSourceDevices}#{f.CanConnectSourceDevices}#{f.IsPending("multi-connect")}#{f.IsPending("preferred-device")}#{Convert.ToHexString(f.PreferredAddress ?? [])}#{f.IsPreferredKnown}";
         if (signature == _sourceSignature) return;
         _sourceSignature = signature;
 
         SourceHost.Children.Clear();
         foreach (var device in devices) SourceHost.Children.Add(SourceRow(device, ready && !f.IsPending("multi-connect") && !f.AreSourceDevicesCached));
         if (!f.CanManageSourceDevices)
-            SourceHost.Children.Add(new TextBlock { Text = Loc.Get("Dual_ManagementUnavailable"), TextWrapping = TextWrapping.Wrap,
+            SourceHost.Children.Add(new TextBlock { Text = Loc.Get(f.CanConnectSourceDevices ? "Dual_ConnectOnly" : "Dual_ManagementUnavailable"), TextWrapping = TextWrapping.Wrap,
                 Style = (Style)Application.Current.Resources["SecondaryTextStyle"] });
 
         // Official options: auto select, the connected devices, and the current preferred device.
@@ -361,7 +364,8 @@ public sealed partial class ControlsPage : Page
         text.Children.Add(new TextBlock
         {
             // A list restored from last session carries no addresses.
-            Text = string.IsNullOrWhiteSpace(device.Name) || device.Address.Length == 0 ? DescribeSource(device) : $"{DescribeSource(device)} · {device.AddressText}",
+            // Index-only lists (Sennheiser) carry a one-byte key, not an address.
+            Text = string.IsNullOrWhiteSpace(device.Name) || device.Address.Length != 6 ? DescribeSource(device) : $"{DescribeSource(device)} · {device.AddressText}",
             Style = (Style)Application.Current.Resources["SecondaryTextStyle"],
             IsTextSelectionEnabled = true,
         });
@@ -370,10 +374,10 @@ public sealed partial class ControlsPage : Page
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         bool busy = device.State is 1 or 4;
-        if (Features.CanManageSourceDevices && !device.IsConnected && !busy)
+        if (Features.CanConnectSourceDevices && !device.IsConnected && !busy)
         {
             actions.Children.Add(ActionButton("Dual_Connect", device, ready, OnConnectSourceClick));
-            actions.Children.Add(ActionButton("Dual_Remove", device, ready, OnRemoveSourceClick));
+            if (Features.CanManageSourceDevices) actions.Children.Add(ActionButton("Dual_Remove", device, ready, OnRemoveSourceClick));
         }
         else if (Features.CanManageSourceDevices && device.IsConnected && !device.IsThisDevice)
         {
@@ -547,7 +551,8 @@ public sealed partial class ControlsPage : Page
     {
         if (sender is not Button { Tag: SourceDevice device }) return;
         // Official: with two devices already connected, connecting a third drops one of them.
-        if (Features.SourceDevices.Count(d => d.IsConnected) >= 2
+        // Connect-only lists (Sennheiser) refuse instead of dropping a device, so there is nothing to confirm.
+        if (Features.CanManageSourceDevices && Features.SourceDevices.Count(d => d.IsConnected) >= 2
             && !await ConfirmAsync("Dual_ConnectNew_Title", Loc.Format("Dual_ConnectNew_Message", DisplayName(device)), "Dual_Connect"))
         {
             return;
@@ -672,6 +677,11 @@ public sealed partial class ControlsPage : Page
         bool ring = !Features.State.IsFindingEarbuds;
         // Official in-ear safety check: playing the tone while worn can damage hearing.
         if (ring && Features.IsAnyEarbudInEar && !await ConfirmAsync("Find_InEar_Title", Loc.Get("Find_InEar_Message"), "Find_Play"))
+        {
+            return;
+        }
+        // TW4 reports no wear state and its ring is very loud: always ask first.
+        if (ring && Features.IsSennheiserTw4 && !Features.IsAnyEarbudInEar && !await ConfirmAsync("Find_InEar_Title", Loc.Get("Find_Loud_Message"), "Find_Play"))
         {
             return;
         }

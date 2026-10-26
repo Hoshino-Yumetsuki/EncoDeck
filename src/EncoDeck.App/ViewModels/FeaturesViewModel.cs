@@ -263,6 +263,13 @@ public sealed class FeaturesViewModel
 
     public bool CanManageSourceDevices => Model?.SupportsMultiConnectOperations == true;
 
+    /// <summary>Sennheiser: listed hosts can be connected from here; disconnect / remove are never offered (they can clear pairings).</summary>
+    public bool CanConnectSourceDevices => CanManageSourceDevices
+        || State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { CanConnectPairedDevices: true };
+
+    /// <summary>A paired-host list the device reports without a dual-connection switch (Sennheiser).</summary>
+    public bool HasSourceListWithoutSwitch => State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile && State.SourceDevices is not null;
+
     public Task<CommandResult> MultiConnectAsync(MultiConnectOperation operation, SourceDevice device) =>
         Run(() => _commands.MultiConnectAsync(operation, device.Address));
 
@@ -271,6 +278,11 @@ public sealed class FeaturesViewModel
     // ---- custom EQ -------------------------------------------------------------------------------
 
     public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer : null;
+
+    /// <summary>Other brands' single fixed user curve (gains in 0.1 dB); never added, renamed or deleted.</summary>
+    public EncoDeck.Core.Profiles.BandEqualizerSpec? BandEqualizer =>
+        State.Profile is not OppoDeviceProfile && Has(DeviceCapability.CustomEqualizer)
+        && State.Profile is EncoDeck.Core.Profiles.IBandEqualizerProfile { BandEqualizer: { } spec } ? spec : null;
 
     public IReadOnlyList<CustomEqualizer> CustomEqualizers => State.CustomEqualizers?.Value ?? [];
 

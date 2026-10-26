@@ -467,7 +467,8 @@ public sealed partial class DeviceViewModel : ObservableObject
         foreach (var preset in EqualizerPresets) preset.IsSelected = eq?.ActivePresetId == preset.Id;
         if (state.CustomEqualizers?.Value.FirstOrDefault(p => p.IsSelected) is { } custom)
         {
-            EqualizerText = custom.Name;
+            // A fixed device curve (non-OPPO brands) carries no name of its own.
+            EqualizerText = custom.Name.Length == 0 ? Loc.Get("Eq_DeviceCustom") : custom.Name;
         }
         else if (eq is null)
         {

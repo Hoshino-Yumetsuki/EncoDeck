@@ -29,7 +29,8 @@ public sealed partial class SoundPage : Page
     private DispatcherQueueTimer? _bassTimer;
     private string _customSignature = string.Empty;
     private int? _editorPresetId;
-    private int _bandCount = -1;
+    private string _bandLayout = string.Empty;
+    private int _gainScale = 1;
     private bool _syncing;
     private bool _dialogOpen;
     private string _spatialSignature = string.Empty;
@@ -93,7 +94,7 @@ public sealed partial class SoundPage : Page
         {
             var selectedCustom = f.SelectedCustomEqualizer;
             bool eqBusy = f.IsPending("custom-eq") || f.IsPending("equalizer");
-            EqCard.Visibility = Show(ViewModel.EqualizerPresets.Count > 0 || f.CustomEqualizerSpec is not null);
+            EqCard.Visibility = Show(ViewModel.EqualizerPresets.Count > 0 || f.CustomEqualizerSpec is not null || f.BandEqualizer is not null);
             foreach (var (preset, button) in _buttons)
             {
                 // A selected custom preset replaces the built-in selection.
@@ -114,8 +115,10 @@ public sealed partial class SoundPage : Page
     private void SyncCustom(FeaturesViewModel f, bool ready, bool busy, CustomEqualizer? selected)
     {
         var spec = f.CustomEqualizerSpec;
+        // Other brands: one fixed device curve in 0.1 dB steps, without add / rename / delete.
+        var band = f.BandEqualizer;
         var presets = f.CustomEqualizers;
-        string signature = string.Join('|', presets.Select(p => $"{p.Id}/{p.Name}"));
+        string signature = string.Join('|', presets.Select(p => $"{p.Id}/{p.Name}")) + $"#{band is not null}";
         if (signature != _customSignature)
         {
             _customSignature = signature;
@@ -123,7 +126,8 @@ public sealed partial class SoundPage : Page
             CustomHost.Children.Clear();
             foreach (var preset in presets)
             {
-                var button = new RadioButton { Content = preset.Name, Tag = preset.Id, GroupName = "DeviceEq" };
+                string name = band is not null && preset.Name.Length == 0 ? Loc.Get("Eq_DeviceCustom") : preset.Name;
+                var button = new RadioButton { Content = name, Tag = preset.Id, GroupName = "DeviceEq" };
                 button.Click += OnCustomClick;
                 _customButtons.Add((preset.Id, button));
                 CustomHost.Children.Add(button);
@@ -137,10 +141,18 @@ public sealed partial class SoundPage : Page
 
         AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null);
         AddCustomButton.IsEnabled = ready && !busy && f.CanAddCustomEqualizer;
-        CustomEditor.Visibility = Show(spec is not null && selected is not null);
-        if (selected is null) return;
+        CustomEditor.Visibility = Show((spec is not null || band is not null) && selected is not null);
+        CustomNameBox.Visibility = RenameButton.Visibility = DeleteButton.Visibility = Show(spec is not null);
+        if (selected is null || (spec is null && band is null)) return;
 
-        if (_bandCount != selected.Bands.Count) BuildBands(selected, spec!.MinGain, spec.MaxGain);
+        int min = spec?.MinGain ?? band!.MinGain, max = spec?.MaxGain ?? band!.MaxGain, scale = spec is null ? 10 : 1;
+        string layout = $"{string.Join(',', selected.Bands.Select(b => b.FrequencyHz))}/{min}/{max}/{scale}";
+        if (_bandLayout != layout)
+        {
+            _bandLayout = layout;
+            _gainScale = scale;
+            BuildBands(selected, min, max);
+        }
         if (_editorPresetId != selected.Id)
         {
             _editorPresetId = selected.Id;
@@ -152,7 +164,7 @@ public sealed partial class SoundPage : Page
             for (int i = 0; i < _bands.Count && i < selected.Bands.Count; i++)
             {
                 _bands[i].Slider.Value = selected.Bands[i].Gain;
-                _bands[i].Value.Text = FormatGain(selected.Bands[i].Gain);
+                _bands[i].Value.Text = FormatGain(selected.Bands[i].Gain, _gainScale);
             }
         }
         foreach (var (slider, _) in _bands) slider.IsEnabled = ready;
@@ -162,7 +174,6 @@ public sealed partial class SoundPage : Page
 
     private void BuildBands(CustomEqualizer preset, int min, int max)
     {
-        _bandCount = preset.Bands.Count;
         _bands.Clear();
         BandHost.Children.Clear();
         BandHost.ColumnDefinitions.Clear();
@@ -177,7 +188,7 @@ public sealed partial class SoundPage : Page
                 Minimum = min,
                 Maximum = max,
                 StepFrequency = 1,
-                TickFrequency = 1,
+                TickFrequency = _gainScale,
                 TickPlacement = TickPlacement.Outside,
                 Height = 160,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -326,7 +337,7 @@ public sealed partial class SoundPage : Page
     private void OnBandChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (_syncing || !IsLoaded || sender is not Slider { Tag: int index }) return;
-        _bands[index].Value.Text = FormatGain((int)Math.Round(e.NewValue));
+        _bands[index].Value.Text = FormatGain((int)Math.Round(e.NewValue), _gainScale);
         _bandTimer ??= CreateTimer(BandDebounce, SaveBandsAsync);
         _bandTimer.Stop();
         _bandTimer.Start();
@@ -451,7 +462,10 @@ public sealed partial class SoundPage : Page
         return timer;
     }
 
-    private static string FormatGain(int gain) => gain > 0 ? $"+{gain}" : gain.ToString();
+    /// <summary>Gain in steps of 1 / <paramref name="scale"/> dB (OPPO whole dB, other brands 0.1 dB).</summary>
+    private static string FormatGain(int gain, int scale) => scale == 1
+        ? gain > 0 ? $"+{gain}" : gain.ToString()
+        : (gain / (double)scale).ToString("+0.0;-0.0;0", System.Globalization.CultureInfo.CurrentCulture);
 
     private static string FormatFrequency(int hz) => hz >= 1000 ? $"{hz / 1000.0:0.#}k" : hz.ToString();
 
