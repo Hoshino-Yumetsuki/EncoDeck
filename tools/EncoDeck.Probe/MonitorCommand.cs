@@ -29,7 +29,8 @@ internal static class MonitorCommand
             new RfcommChannelConnector(registry, loggers.CreateLogger<RfcommChannelConnector>()),
             preferredDeviceId: () => null,
             allowExperimental: static () => false,
-            loggers);
+            loggers,
+            trace: options.Has("trace") ? new ConsoleTrace(printRaw: false) : null);
 
         var ready = new TaskCompletionSource();
         store.StateChanged += (_, e) =>
