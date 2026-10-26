@@ -287,9 +287,9 @@ public sealed class FeaturesViewModel
     /// <summary>Only the OPPO protocol has a preferred-device setting.</summary>
     public bool HasPreferredDevice => Model?.SupportsMultiConnectOperations == true;
 
-    /// <summary>The dual connection card: a device switch (OPPO family) or a vivo list without one.</summary>
+    /// <summary>The dual connection card: a device switch (OPPO family) or a source list reported without one.</summary>
     public bool HasDualConnectionCard => Has(DeviceCapability.DualDeviceConnection)
-        && (HasSwitch(DeviceToggle.DualDeviceConnection) || (IsVivo && State.SourceDevices is not null));
+        && (HasSwitch(DeviceToggle.DualDeviceConnection) || HasSourceListWithoutSwitch);
 
     // ---- power-off timer -------------------------------------------------------------------------
 
@@ -300,6 +300,14 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetPowerOffTimerAsync(int minutes) => Run(() => _commands.SetPowerOffTimerAsync(minutes));
 
+    /// <summary>Sennheiser: listed hosts can be connected from here; disconnect / remove are never offered (they can clear pairings).</summary>
+    public bool CanConnectSourceDevices => CanManageSourceDevices
+        || State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile { CanConnectPairedDevices: true };
+
+    /// <summary>A paired-host list the device reports without a dual-connection switch (vivo, Sennheiser).</summary>
+    public bool HasSourceListWithoutSwitch => (IsVivo || State.Profile is EncoDeck.Protocol.Brands.Sennheiser.SennheiserProfile)
+        && State.SourceDevices is not null;
+
     public Task<CommandResult> MultiConnectAsync(MultiConnectOperation operation, SourceDevice device) =>
         Run(() => _commands.MultiConnectAsync(operation, device.Address));
 
@@ -307,11 +315,14 @@ public sealed class FeaturesViewModel
 
     // ---- custom EQ -------------------------------------------------------------------------------
 
-    public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer ?? XiaomiCustomEqualizerSpec : null;
+    public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer : null;
 
-    /// <summary>Xiaomi earbuds have one custom curve whose bands and range come from the earbuds' own readback.</summary>
-    private OppoCustomEqualizerSpec? XiaomiCustomEqualizerSpec => IsXiaomi && State.CustomEqualizers?.Value is [var curve]
-        ? new OppoCustomEqualizerSpec(curve.Bands.Select(b => b.FrequencyHz).ToArray(), curve.MinGain, curve.MaxGain, MaxPresets: 1)
+    /// <summary>Other brands' single fixed user curve (gains in 0.1 dB); never added, renamed or deleted.</summary>
+    public EncoDeck.Core.Profiles.BandEqualizerSpec? BandEqualizer =>
+        State.Profile is OppoDeviceProfile || !Has(DeviceCapability.CustomEqualizer) ? null
+        : State.Profile is EncoDeck.Core.Profiles.IBandEqualizerProfile { BandEqualizer: { } spec } ? spec
+        // Xiaomi earbuds keep one custom curve in whole dB; its bands and range come from the earbuds' own readback.
+        : IsXiaomi && State.CustomEqualizers?.Value is [var curve] ? new(curve.MinGain, curve.MaxGain, GainScale: 1)
         : null;
 
     public IReadOnlyList<CustomEqualizer> CustomEqualizers => State.CustomEqualizers?.Value ?? [];

@@ -148,15 +148,19 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 
 ## 水月雨 MOONDROP
 
-依据 [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop/tree/2f78f6740b2f30d1c28d75ba05badb98b2eeb687) 移植，并参考 [moondrop-control](https://github.com/FEAKEuser/moondrop-control/tree/1ec9c77a2387c698d77fb2bf25d2c62ec7ae3d5e) 的 EDGE RFCOMM 记录。**EDGE 固件 1.3.0 已在 Windows 真机验证连接与状态读取**；其他型号的“上游验证”仍不代表本项目 Windows 真机验证。
+依据 [MiuixMoondrop](https://github.com/huime180/MiuixMoondrop/tree/2f78f6740b2f30d1c28d75ba05badb98b2eeb687) 移植，并参考 [moondrop-control](https://github.com/FEAKEuser/moondrop-control/tree/1ec9c77a2387c698d77fb2bf25d2c62ec7ae3d5e) 的 EDGE RFCOMM 与 PEQ 记录、[FxxkMoondrop](https://github.com/bqj6666/FxxkMoondrop/tree/5f4342ebcd3cbd45975a1b593967b80493972887) 的型号表与 PEQ 读写流程、[moondrop-pc](https://github.com/herikk04/moondrop-pc/tree/4198d9a719d563fa65f6205ef6e7e94b1a67ae4e) 的太空漫游2 Windows 记录和 [Edge2Pods](https://github.com/Konakonai/Edge2Pods/tree/ab3f799d2d899d78efdd922bc7201e2fef4994ea) 的 EDGE 2 记录。**EDGE 固件 1.3.0 已在 Windows 真机验证连接与状态读取**；下表中的“社区真机”指参考项目作者在自己设备上的验证，不代表本项目 Windows 真机验证。
 
 | 型号 | 当前范围 |
 | --- | --- |
 | PUDDING / 布丁 / MD-TWS-056 | RFCOMM GAIA；左右耳 / 盒电量（无数据的组件保持未知），关闭 / 降噪 / 通透 / 抗风噪 / 自适应，提示音量 0–100、提示音开关、增益、LED、双耳 TOUCHV2 手势，LHDC 与双设备连接开关；均需实际能力与状态回包 |
-| EDGE / 羽翼 | Windows 优先使用经典蓝牙 RFCOMM 通道 1，BLE 作为原有路径保留；固件 1.3.0 真机已验证控制握手、固件版本、单设备电量、降噪、增益、双设备状态读取；设置写入由回读确认，其他功能仍按能力与实验性策略开放 |
+| EDGE / 羽翼 | Windows 优先使用经典蓝牙 RFCOMM 通道 1，BLE 作为原有路径保留；固件 1.3.0 真机已验证控制握手、固件版本、单设备电量、降噪、增益、双设备状态读取；设置写入由回读确认，其他功能仍按能力与实验性策略开放。5 个出厂 EQ 预设与五段用户 PEQ（社区真机：固件 1.4.0 写入并逐字节回读一致；本项目按协议实现，未在真机发送） |
 | GOLDEN AGES 2 / 梦回2 | BLE GAIA；电量，关闭 / 降噪 / 通透 / 抗风噪，独立的读写模式映射；增益仅在固件实际提供 feature 15 且读回状态时开放，不保证 GA2 固件具备；TOUCHV2 等非确认功能须实验性开关 |
-| SPACE TRAVEL 2 / 太空漫游2 | 识别及 GAIA 兼容路径；仅当固件实际提供 GAIA 服务与能力回包时可读电量和控制降噪 / 抗风噪、增益；只有 9ECA 服务的固件不可控制 |
-| GOLDEN AGES、MOCA、NEKOCAKE、MUSIC PILL、ULTRASONIC、ROBIN、ALICE、SPARKS、VOYAGER、BLOCK、SPACE TRAVEL、EDGE2、SPACE TRAVEL 2 ULTRA | 识别和探测；型号表主要来自芯片级推断，发现的推断功能须显式开启实验性功能，不代表整机支持 |
+| SPACE TRAVEL 2 / 太空漫游2 | 识别及 GAIA 兼容路径；仅当固件实际提供 GAIA 服务与能力回包时可读电量和控制降噪 / 抗风噪、增益；只有 9ECA 服务的固件不可控制。EQ 预设与五段用户 PEQ（社区真机：Windows 10 读写；本项目按协议实现） |
+| EDGE 2 | 经典蓝牙 RFCOMM 通道 1（社区真机：固件 1.2.5）；关闭 / 降噪 / 通透 / 抗风噪 / 自适应（ANC V2 设备值 0 / 1 / 2 / 3 / 4），整机电量、提示音、LHDC 与双设备开关。固件会原样保存任何 0–5 的值，回读一致不能证明模式真实生效，因此降噪写入仍须实验性开关 |
+| NEKOCAKE / 猫饼 | 经典蓝牙 RFCOMM 通道 1（社区真机：固件 1.0.0 只回应 GAIA 子集）；无 GAIA 电量和降噪通道（降噪由耳机柄长按切换）；EQ 预设须实验性开关，其用户配置不是 PEQ 布局，不提供编辑 |
+| U.C.T.S（MD-OWS-014，开放式） | 社区真机确认识别与左右耳电量；硬件无降噪，不提供降噪控制 |
+| ROBIN / 知更鸟 | BLE GAIA 探测；降噪按公开的 EDGE 同款读写映射（写 1 / 2 / 4、读 0 / 1 / 2），社区日志只出现降噪 / 通透两种状态，写入须实验性开关 |
+| GOLDEN AGES、MOCA、MUSIC PILL、ULTRASONIC、ALICE、SPARKS、VOYAGER、BLOCK、SPACE TRAVEL、SPACE TRAVEL 2 ULTRA | 识别和探测；型号表主要来自芯片级推断，发现的推断功能须显式开启实验性功能，不代表整机支持 |
 | 名称含 MOONDROP / 水月雨但未匹配型号 | 默认通用 GAIA 只读探测，不默认开放推断的降噪写入 |
 
 - 特有选项不作为全局功能显示：抗风噪仅在当前型号提供该档位、控制通道就绪且已选中降噪时出现；切换型号、失去连接或设备能力排除 ANC 后隐藏。
@@ -166,7 +170,8 @@ X4（固件 116/116/100）是唯一完成真机验证的 OPPO 型号。“读取
 - TOUCHV2 为五字节双耳半字节配置；支持单击、双击、三击、长按 1 秒 / 3 秒，同耳两种长按互斥。动作 4 / 5（音量）明确标为推断且需实验性开关；未知动作 8–15 仅显示 / 保留读回值，不可选择写入。
 - EDGE 直接打开已知 RFCOMM 通道，以带帧 BASIC 应用版本查询确认连接；其他 RFCOMM 型号保留带帧 / 裸 CSR API 探测。固定长度回包增量解析，裸可变长度回包依赖 40ms 静默分段；任意粘包 / payload 内长停顿仍不可靠。BLE 端点仅按已知地址绑定，不按同名自动选择。
 - 设备报告 feature 17 / 27 / 30 且状态回读有效时，实验性开放入耳检测、动态低音（仅开关）和左右声道交换；feature 16 的 LDAC / LC3 / LHDC 按各自有效回包独立开放。feature 18 提供空间音频关闭 / 固定 / 头部跟踪，写入后分别确认总开关与头部跟踪。上述新增设置只有协议模拟验证，尚无真机验证。
-- 低延迟（仅见 HyperOS 设置）、EQ / 9ECA、双设备详细管理、详细固件信息，以及佩戴 / 充电 / 查找 / 贴合度 / 降噪循环 / OTA 均未支持；EDGE 可读取应用版本，不含固件升级。
+- EQ（GAIA Music Processing，feature 5）：读取预设列表、当前预设和用户曲线后才开放；选择预设以回读当前预设确认。用户曲线只改各段增益（0.1 dB 步进），频率、Q、滤波器类型与前级增益按读回值原样写回，写入后逐字节回读，不一致时重写一次，仍不一致即报告失败。只有 EDGE、太空漫游2 有社区真机读写证据，其他型号的 EQ 须实验性开关；曲线布局不认识（如 NEKOCAKE）时只读不改。
+- 低延迟（仅见 HyperOS 设置）、9ECA 私有服务、双设备详细管理、详细固件信息，以及佩戴 / 充电 / 查找 / 贴合度 / 降噪循环 / OTA 均未支持；EDGE 可读取应用版本，不含固件升级。
 - EDGE 固件 1.3.0 在 Windows 上进入 `ControlReady`，可读到电量、降噪、增益及双设备状态；设置写入尚未在真机上发送。其他型号仅有模拟测试。
 
 ## 索尼
@@ -294,7 +299,21 @@ EQ：LE Audio 下设备只上报预设 id，已知预设显示为 Off / Game / H
 
 ## 森海塞尔与 USB 2.4G 接收器
 
-森海塞尔内置 11 个 GAIA v3 配置，支持电量、固件和型号读取；MOMENTUM 4、ACCENTUM、ACCENTUM Plus 按回读开放 ANC/通透端点，含 RFCOMM / BLE 回退。
+森海塞尔内置 13 个 GAIA v3 配置，支持电量、固件和型号读取，含 RFCOMM / BLE 回退。连接后先按型号注册通知（`0x0007`），每项功能都要有效回读后才开放，写入以 ACK 加回读一致为准。
+
+**头戴耳机（MOMENTUM 4 / MOMENTUM 5 / ACCENTUM / ACCENTUM Plus / HDB 630）** 依据 [momentum4-control](https://github.com/Ariazonaa/momentum4-control/tree/17aeea90ce12ffbb4521df1832b22de0bc08c666)（社区真机：MOMENTUM 4 固件 3.37.3 / 3.38.3、MOMENTUM 5 固件 6.21.5）、[momentum-menu](https://github.com/andr3-santos/momentum-menu/tree/4dbe1c445198ea9b706934c90e75bc4a4bc69fe9) 与 [m4-companion](https://github.com/Zhengyang-Liu/m4-companion/tree/a112469044103bf26fe7eea51905a974bbd44f78) 实现，**本项目未在真机验证**：
+
+| 型号 | 当前范围 |
+| --- | --- |
+| MOMENTUM 4 | 关闭 / 降噪 / 自适应降噪 / 通透、标准 / 抗风噪；Smart Pause；声音模式（关闭 / 播客 / 用户 EQ）与五段用户 EQ（固件 3.x 起；2.x 不查询也不显示）；已配对设备列表，可连接列表中未连接的设备 |
+| MOMENTUM 5 | 同上（八段用户 EQ，段数与频点以耳机回读为准）；已配对设备列表只读 |
+| ACCENTUM Plus | 降噪 / 自适应 / 通透、抗风噪、Smart Pause、用户 EQ；已配对设备列表只读 |
+| ACCENTUM | 降噪 / 通透；ANC 模式表读回全零且不接受写入，故无抗风噪 / 自适应，也无用户 EQ；已配对设备列表只读 |
+| HDB 630 | 降噪 / 通透 / 抗风噪 / 自适应、Smart Pause、用户 EQ；固件版本读取 `0x1202`（社区真机：[hdb630-control-macos](https://github.com/hatemosphere/hdb630-control-macos) 在固件 3.33.3 上写入并回读；本项目按协议实现） |
+
+- 头戴耳机的通透需在降噪开启时才生效，关闭降噪后通透标志可能仍保留，界面按“降噪关 = 关闭”显示。
+- 已配对设备只以序号标识（无蓝牙地址）。连接前重新读取列表，确认序号、名称唯一不变、本机仍是控制端且尚有空闲连接位，否则不发送；连接后轮询该设备状态并再次读取列表确认。**断开与删除配对永远不发送**：部分固件上的“断开”会清除该设备的配对。断开或移除请在对应设备的蓝牙设置中操作。
+- 未知声音模式（个性化、参数 EQ 等）只显示原始值，不会改写。BTD 700 接收器与 HDB 630 的参数 EQ 尚未适配。
 
 **MOMENTUM TW 4** 新增独立控制适配：
 
@@ -302,8 +321,9 @@ EQ：LE Audio 下设备只上报预设 id，已知预设显示为 Off / Game / H
 - Smart Pause（佩戴检测 / 摘下自动暂停）、耳机低延迟模式。
 - 左右耳单击、双击、三击和长按自定义；按型号动作约束提供播放、切歌、音量、语音助手、降噪 / 通透与触控锁定切换。通话手势不开放改写，未知动作保留显示。
 - 各项功能分别在有效回读后开放；写入要求 ACK 与实际状态回读一致。注册 ANC 与通透两个通知域，跟随手机 / 耳机端操作；保存的通透等级不会误判成已开启通透。
+- 按协议实现（未真机验证）：用户 EQ 与声音模式（与头戴同一套命令）、已配对设备列表（只读）、查找耳机（左右耳分别响铃，以耳机回报的响铃状态为准，50 秒后自动停止；TW4 不回报佩戴状态，响铃前总是先确认）。
 
-依据 TW4 型号配置和第三方 TW4 真机协议记录实现，已覆盖模拟设备读写与异常回包测试、WinUI 页面截图检查。**尚未在本机 TW4 真机验证**（截图中的 5.19.1 为用户提供的信息），不宣称 EQ、双设备管理、贴合度检测、查找耳机或固件更新已适配。其他真无线型号不继承 TW4 的控制命令。
+依据 TW4 型号配置和第三方 TW4 真机协议记录实现，查找耳机命令参考 [smartcontrol-linux](https://github.com/gabors0/smartcontrol-linux/tree/786b3963a562c620067b87cf81dc01768ed8d217) 的协议记录，已覆盖模拟设备读写与异常回包测试、WinUI 页面截图检查。**尚未在本机 TW4 真机验证**（截图中的 5.19.1 为用户提供的信息），不宣称双设备连接切换、贴合度检测或固件更新已适配。其他真无线型号不继承 TW4 的控制命令。
 
 HECATE、DAREU、RAPOO 共 18 个 USB 型号记录，支持接收器识别、标准 HID 百分比电量（仅设备实际声明时）；不代表完整厂商控制。接收器存在不证明耳机无线已连接。
 

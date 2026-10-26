@@ -28,7 +28,7 @@ public static class DemoDiscovery
 
     public static IDeviceProfile AfterSession(IDeviceProfile profile, string deviceName) => profile switch
     {
-        SennheiserProfile { IsTw4: true } tw4 => tw4.WithControls(true, true, true, true, true),
+        SennheiserProfile { IsTw4: true } tw4 => tw4.WithLive(new(Noise: true, StatusNoise: true, Wind: true, SmartPause: true, LowLatency: true, Gestures: true)),
         SonyAkgProfile sony => sony.WithNoiseSupport(true).WithWearDetection(sony.Form == DeviceForm.Earbuds)
             .WithEqualizers(sony.Brand == "sony" ? SonyPresets : []),
         XiaomiDeviceProfile xiaomi => new[]

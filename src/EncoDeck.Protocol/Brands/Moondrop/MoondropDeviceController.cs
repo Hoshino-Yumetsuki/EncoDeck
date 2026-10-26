@@ -197,6 +197,7 @@ public sealed partial class MoondropDeviceController : BrandControllerBase
             var voice = await RequestAsync(14, 1, [], ct).ConfigureAwait(false);
             if (voice is not null) answered |= Apply(voice, StateSource.QueryResponse);
         }
+        answered |= await RefreshEqualizerAsync(ct).ConfigureAwait(false);
         return answered ? CommandResult.Ok : new(CommandStatus.Timeout, "No valid GAIA state response.");
     }
 

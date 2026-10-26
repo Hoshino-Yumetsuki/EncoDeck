@@ -75,7 +75,7 @@ public sealed partial class DevicesPage : Page
                 DeviceCapability.BassEngine or DeviceCapability.ChannelSwap or DeviceCapability.HiResCodec or
                 DeviceCapability.Ldac or DeviceCapability.Lc3 or
                 DeviceCapability.Gain or DeviceCapability.IndicatorLight or DeviceCapability.PromptTone or
-                DeviceCapability.TouchCustomization)) continue;
+                DeviceCapability.TouchCustomization or DeviceCapability.Equalizer or DeviceCapability.CustomEqualizer)) continue;
             // Experimental features read as supported once opted in, never as unsupported before.
             string support = entry.Support switch
             {
