@@ -2,19 +2,22 @@
 
 本文件记录 EncoDeck 每个版本的用户可见变化，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本按“新增 / 改进 / 修复 / 移除”分类。
 
-## [1.11.0-beta.1] - 2026-10-27
+## [1.11.0] - 2026-10-27
 
 ### 新增
 
 - “实验室”页新增 A2DP Bridge 卡片（位于 LHDC 下方），接入 [A2DP Windows Bridge](https://github.com/SeiyaFunaokaJP/A2DP-Windows-Bridge)：它接管一个独立的 USB 蓝牙适配器，以 LDAC、LHDC V5、aptX HD 等编码向耳机发送声音，不需要测试签名驱动。卡片可下载组件、启动和退出后台，为独立适配器分配 WinUSB 或恢复驱动（Windows 正在使用的蓝牙适配器不提供分配操作），提示缺少的固件；可以直接为 EncoDeck 当前的耳机或扫描到的耳机创建连接配置（首次连接时完成配对），之后连接或断开，显示编码、码率、采样率和音源，调节耳机音量。已自行安装 A2DP Windows Bridge 时直接使用它。可选“EncoDeck 启动时同时启动 A2DPWB 后台”。
 - 耳机通过 A2DP Bridge 连接时，主页、快捷面板和托盘显示“已通过 A2DP Bridge 连接”和实际编码，不再显示为未连接（[#9](https://github.com/TIANLI0/EncoDeck/issues/9)）。只经 Bridge 连接时 Windows 看不到耳机，主页会说明电量和耳机设置暂不可用；支持双设备连接的耳机同时连接电脑蓝牙时，EncoDeck 照常控制。
+- 实验室的 LHDC 与 A2DP Bridge 组件可以卸载。LHDC 只有在所有耳机都恢复 Windows 音频后才能卸载；A2DP Bridge 卸载时可以一并把它占用的适配器交还给 Windows（一次管理员授权），并移除指向它的开机启动项，A2DPWB 的设置文件夹（配对、固件）保留。
+- 组件可以独立于应用更新：有新的组件版本时，实验室页会提示“更新组件”（每天最多自动检查一次，也可以点击“检查更新”）。只接受与当前应用兼容、且大小和 SHA-256 与发布文件一致的组件；更新完成后旧版本即被删除。A2DP Bridge 后台空闲时会自动从新版本重新启动。
+- 实验室卡片标题下用与主页相同的编码标记列出支持的编码：A2DP Bridge 为 LDAC、LHDC V5、aptX、AAC、SBC XQ、SBC，上游仍为实验性的 aptX HD、aptX LL、Opus 以描边样式区分；LHDC 卡片标出 LHDC V5，LE Audio 卡片标出 LC3。
 - 商店版不下载或启动组件，但会连接自行启动的 A2DP Windows Bridge 并显示状态。
-- 导出诊断时附带 A2DP Bridge 的诊断信息（蓝牙地址已遮盖）。EncoDeck.Probe 新增 `bridge`（只读查看 A2DP Bridge 后台）和 `components`（查看并按应用相同方式下载组件）命令。
+- 导出诊断时附带 A2DP Bridge 的诊断信息（蓝牙地址已遮盖）。EncoDeck.Probe 新增 `bridge`（只读查看 A2DP Bridge 后台）和 `components`（查看、检查更新并按应用相同方式下载组件）命令。
 
 ### 改进
 
-- LHDC 与 A2DP Bridge 组件改为各自独立发布，不再随每个应用版本重新构建：更新 EncoDeck 后不必重新下载约 120 MB 的 LHDC 组件；只有新版本固定了新组件时才提示更新，更新前已安装的组件继续可用。预览版也可以使用 LHDC 组件。
-- 组件下载不再经过 GitHub API，不受匿名访问频率限制；按应用内固定的大小和 SHA-256 校验，中断后从断点续传。A2DP Bridge 组件在 EncoDeck 的发布不可用时自动改用上游官方发布。新版本安装后保留上一版本，更早的版本和旧版按应用版本存放的 LHDC 组件会自动清理。
+- LHDC 与 A2DP Bridge 组件改为各自独立发布，不再随每个应用版本重新构建：更新 EncoDeck 后不必重新下载约 120 MB 的 LHDC 组件，更新前已安装的组件继续可用。预览版也可以使用 LHDC 组件。
+- 组件下载不再经过 GitHub API，不受匿名访问频率限制；按固定的大小和 SHA-256 校验，中断后从断点续传。A2DP Bridge 组件在 EncoDeck 的发布不可用时自动改用上游官方发布。旧版按应用版本存放的 LHDC 组件会在安装新组件时清理。
 - LHDC 组件固定从 LHDC-Win 0.8.8 的指定提交编译，同一组件版本始终对应同一份源码。
 - README 和商店版提示中的下载链接改为指向最新正式版。
 
