@@ -349,11 +349,9 @@ public sealed partial class SoundPage : Page
         PresetHost.Children.Clear();
         foreach (var preset in ViewModel.EqualizerPresets)
         {
-            var button = new RadioButton { Content = preset.Label, Tag = preset.Id, GroupName = "DeviceEq", MinWidth = 0 };
+            var button = new RadioButton { Content = preset.Label, Tag = preset.Id, GroupName = "DeviceEq" };
             button.Click += OnPresetClick;
             preset.PropertyChanged += OnPresetChanged;
-            Grid.SetColumn(button, _buttons.Count % 5);
-            Grid.SetRow(button, _buttons.Count / 5);
             _buttons.Add((preset, button));
             PresetHost.Children.Add(button);
         }
@@ -534,17 +532,14 @@ public sealed partial class SoundPage : Page
     {
         bool sideVisible = BassCard.Visibility == Visibility.Visible || SpatialCard.Visibility == Visibility.Visible;
         bool eqVisible = EqCard.Visibility == Visibility.Visible;
-        // The EQ card owns a full-width row: the response curve and its faders need the space, so the
-        // side cards always sit underneath instead of taking the other column.
-        RightColumn.Width = new GridLength(0);
-        Grid.SetColumn(EqCard, 0);
-        Grid.SetColumnSpan(EqCard, 2);
-        Grid.SetRow(EqCard, 0);
-        Grid.SetColumn(SideCards, 0);
-        Grid.SetColumnSpan(SideCards, 2);
-        Grid.SetRow(SideCards, eqVisible ? 1 : 0);
+        bool twoColumns = SoundColumns.ActualWidth >= 720 && sideVisible && eqVisible;
+        RightColumn.Width = twoColumns ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        Grid.SetColumn(SideCards, twoColumns ? 1 : 0);
+        Grid.SetRow(SideCards, twoColumns || !eqVisible ? 0 : 1);
+        Grid.SetColumnSpan(EqCard, twoColumns ? 1 : 2);
+        Grid.SetColumnSpan(SideCards, twoColumns ? 1 : 2);
+        // Side by side the EQ card keeps its own height instead of stretching to the side column.
         EqCard.VerticalAlignment = VerticalAlignment.Top;
-        SideCards.Visibility = sideVisible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---- handlers ------------------------------------------------------------------------------
