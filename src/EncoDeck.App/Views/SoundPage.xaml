@@ -33,7 +33,7 @@
                     <Button x:Name="AddCustomButton" x:Uid="Eq_AddCustom" Content="Add custom EQ" Click="OnAddCustomClick" />
 
                     <StackPanel x:Name="CustomEditor" Spacing="10" Margin="0,6,0,0">
-                        <Grid ColumnSpacing="8">
+                        <Grid x:Name="CustomNameRow" ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

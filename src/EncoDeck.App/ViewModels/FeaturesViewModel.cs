@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using EncoDeck.App.Services;
 using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
 using EncoDeck.Protocol.Brands;
+using EncoDeck.Protocol.Brands.Usb;
 using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Platform.Settings;
 using Microsoft.UI.Dispatching;
@@ -57,7 +59,16 @@ public sealed class FeaturesViewModel
 
     public bool AllowExperimental => IsMoondrop && _settings.Current.EnableExperimentalFeatures;
 
-    public bool IsReady => State.Connection == DeviceConnectionState.ControlReady;
+    public bool IsReady => State.Connection == DeviceConnectionState.ControlReady || IsUsbSettingsReady(State);
+
+    /// <summary>
+    /// A USB headset (Barracuda X 1532:0550) is linked and at least one of its settings was read back. Other USB
+    /// receivers never get settings, so they stay read-only.
+    /// </summary>
+    public static bool IsUsbSettingsReady(DeviceState state) =>
+        state.Connection == DeviceConnectionState.UsbHeadsetConnected && state.Profile is UsbHeadsetProfile { Settings.Count: > 0 };
+
+    public bool IsUsbHeadset => State.Profile is UsbHeadsetProfile;
 
     /// <summary>Sets the earbuds' LE/BR mode switch (0x0433) through the active controller.</summary>
     public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) =>
@@ -80,6 +91,7 @@ public sealed class FeaturesViewModel
     {
         OppoDeviceProfile => Model?.FeatureSwitches.Any(f => f.Toggle == toggle && f.Support == CapabilitySupport.Supported) == true,
         IControllableProfile profile => profile.Toggles.Contains(toggle),
+        UsbHeadsetProfile usb => usb.Toggles.Contains(toggle),
         _ => false,
     };
 
@@ -179,6 +191,13 @@ public sealed class FeaturesViewModel
 
     public Task<CommandResult> SetBassEngineLevelAsync(int level) => Run(() => _commands.SetBassEngineLevelAsync(level));
 
+    // ---- auto power-off (USB headsets) -----------------------------------------------------------
+
+    /// <summary>Idle times offered, in minutes (0 = never); empty until the headset reported its setting.</summary>
+    public IReadOnlyList<int> AutoPowerOffOptions => State.Profile is UsbHeadsetProfile usb && State.AutoPowerOff is not null ? usb.AutoPowerOffMinutes : [];
+
+    public Task<CommandResult> SetAutoPowerOffAsync(int minutes) => Run(() => _commands.SetAutoPowerOffAsync(minutes));
+
     // ---- gestures --------------------------------------------------------------------------------
 
     /// <summary>Gesture rows with a function choice (rows that only open the noise cycle are left out).</summary>
@@ -270,7 +289,20 @@ public sealed class FeaturesViewModel
 
     // ---- custom EQ -------------------------------------------------------------------------------
 
-    public OppoCustomEqualizerSpec? CustomEqualizerSpec => Has(DeviceCapability.CustomEqualizer) ? Model?.CustomEqualizer : null;
+    public OppoCustomEqualizerSpec? CustomEqualizerSpec => !Has(DeviceCapability.CustomEqualizer) ? null : State.Profile switch
+    {
+        // The Barracuda X has one fixed custom slot: no adding, renaming or deleting.
+        UsbHeadsetProfile => new OppoCustomEqualizerSpec(BarracudaXSettingValues.BandFrequencies, BarracudaXSettingValues.BandMin, BarracudaXSettingValues.BandMax, MaxPresets: 1),
+        _ => Model?.CustomEqualizer,
+    };
+
+    /// <summary>Custom presets the user can add, rename and delete (not a headset's single fixed slot).</summary>
+    public bool CanManageCustomEqualizers => !IsUsbHeadset;
+
+    public string CustomEqualizerName(CustomEqualizer preset) => CustomEqualizerName(State.Profile, preset);
+
+    public static string CustomEqualizerName(EncoDeck.Core.Profiles.IDeviceProfile? profile, CustomEqualizer preset) =>
+        profile is UsbHeadsetProfile ? Loc.Get("UsbEq_Custom") : preset.Name;
 
     public IReadOnlyList<CustomEqualizer> CustomEqualizers => State.CustomEqualizers?.Value ?? [];
 

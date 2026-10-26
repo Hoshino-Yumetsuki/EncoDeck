@@ -2,6 +2,20 @@
 
 本文件记录 EncoDeck 每个版本的用户可见变化，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本按“新增 / 改进 / 修复 / 移除”分类。
 
+## [Unreleased]
+
+### 新增
+
+- USB 2.4G 游戏耳机新增识别：HyperX Cloud Alpha 2、HyperX Cloud III S Wireless、SteelSeries Arctis Nova 7、JBL Quantum 910 Wireless、Logitech G PRO X 2 LIGHTSPEED、雷蛇 Barracuda 与 BlackShark V3（BlackShark V3 / V3 Pro 仅识别，不发送命令）。
+- 新增以下接收器的电量读取：迈从 V9 PRO、雷蛇 Barracuda Pro / Barracuda、HyperX Cloud Alpha 2 / Cloud III S、SteelSeries Arctis Nova 7、Logitech G PRO X 2、漫步者 HECATE G3 Max；Nova 7、G PRO X 2 与 G3 Max 同时显示耳机是否已无线连接，JBL Quantum 910 仅在耳机主动上报时显示。这些读取已由社区项目在真机上确认，EncoDeck 尚未真机验证，详见 [USB 2.4G 专用查询](docs/COMPATIBILITY.md#usb-24g-专用查询)。
+- 雷蛇 BlackShark V2 Pro (2023) 新增充电线状态。
+- 雷蛇 Barracuda X（`1532:0550` 接收器）新增耳机设置：“声音”页的 EQ 预设与 10 段自定义 EQ，“控制”页的勿扰与自动关机。耳机无线连接且设置读回有效后才显示，每次更改都读回确认，未确认时恢复为耳机实际的值。读写流程已由社区项目在真机上确认，EncoDeck 尚未真机验证；`0552` 接收器与 Barracuda（`053C`）仍只显示电量。
+
+### 改进
+
+- Barracuda X 替换接收器 `1532:0550` 改用社区真机测试过的读取流程，不再发送未经确认的握手与链路查询；接收器忙时自动重发。详见 [Barracuda X 适配说明](docs/COMPATIBILITY.md#razer-barracuda-x)。
+- USB 接收器的电量应答校验更严格：BlackShark V2 Pro (2023) 只采用带完整帧标记的应答，HECATE G3 Max 关机时显示未连接而不是 0%。
+
 ## [1.9.0] - 2026-10-26
 
 ### 新增

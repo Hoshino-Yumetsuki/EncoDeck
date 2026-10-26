@@ -115,7 +115,7 @@ public sealed partial class SoundPage : Page
     {
         var spec = f.CustomEqualizerSpec;
         var presets = f.CustomEqualizers;
-        string signature = string.Join('|', presets.Select(p => $"{p.Id}/{p.Name}"));
+        string signature = string.Join('|', presets.Select(p => $"{p.Id}/{f.CustomEqualizerName(p)}"));
         if (signature != _customSignature)
         {
             _customSignature = signature;
@@ -123,7 +123,7 @@ public sealed partial class SoundPage : Page
             CustomHost.Children.Clear();
             foreach (var preset in presets)
             {
-                var button = new RadioButton { Content = preset.Name, Tag = preset.Id, GroupName = "DeviceEq" };
+                var button = new RadioButton { Content = f.CustomEqualizerName(preset), Tag = preset.Id, GroupName = "DeviceEq" };
                 button.Click += OnCustomClick;
                 _customButtons.Add((preset.Id, button));
                 CustomHost.Children.Add(button);
@@ -135,9 +135,11 @@ public sealed partial class SoundPage : Page
             button.IsEnabled = ready && !busy;
         }
 
-        AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null);
+        AddCustomButton.Visibility = Show(spec is not null && f.State.CustomEqualizers is not null && f.CanManageCustomEqualizers);
         AddCustomButton.IsEnabled = ready && !busy && f.CanAddCustomEqualizer;
         CustomEditor.Visibility = Show(spec is not null && selected is not null);
+        // A headset's single custom slot has no name to edit and cannot be deleted.
+        CustomNameRow.Visibility = Show(f.CanManageCustomEqualizers);
         if (selected is null) return;
 
         if (_bandCount != selected.Bands.Count) BuildBands(selected, spec!.MinGain, spec.MaxGain);
@@ -146,8 +148,8 @@ public sealed partial class SoundPage : Page
             _editorPresetId = selected.Id;
             CustomNameBox.Text = selected.Name;
         }
-        // Never move a slider the user is still dragging (its write is pending).
-        if (_bandTimer?.IsRunning != true)
+        // Never move a slider the user is still dragging, nor while its write and read-back are in flight.
+        if (_bandTimer?.IsRunning != true && !f.IsPending("custom-eq"))
         {
             for (int i = 0; i < _bands.Count && i < selected.Bands.Count; i++)
             {

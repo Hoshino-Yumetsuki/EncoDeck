@@ -83,6 +83,9 @@ public sealed record DeviceState
     /// <summary>Head gestures for calls: 0 = nod answers / shake declines, 1 = the reverse.</summary>
     public Observed<int>? HeadMotionType { get; init; }
 
+    /// <summary>Minutes idle before the headset powers off; 0 = never.</summary>
+    public Observed<int>? AutoPowerOff { get; init; }
+
     /// <summary>Present when the earbuds answer the LE/BR switch query, i.e. their firmware can run LE Audio.</summary>
     public Observed<LeAudioSwitchState>? LeAudioSwitch { get; init; }
 

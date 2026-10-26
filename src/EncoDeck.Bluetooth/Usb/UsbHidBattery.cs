@@ -15,12 +15,17 @@ public static class UsbHidBattery
     public static async Task<int?> ReadAsync(Guid container, CancellationToken ct) =>
         (await ReadStatusAsync(container, ct).ConfigureAwait(false)).Level;
 
-    public static async Task<UsbHeadsetStatus> ReadStatusAsync(Guid container, CancellationToken ct, ILogger? logger = null)
+    internal static async Task<IReadOnlyList<DeviceInformation>> CollectionsAsync(Guid container, CancellationToken ct)
     {
         var interfaces = await DeviceInformation.FindAllAsync("System.Devices.InterfaceClassGuid:=\"{4d1e55b2-f16f-11cf-88cb-001111000030}\"",
             [UsbHeadsetWatcher.ContainerKey], DeviceInformationKind.DeviceInterface).AsTask(ct).ConfigureAwait(false);
+        return interfaces.Where(i => i.Properties.TryGetValue(UsbHeadsetWatcher.ContainerKey, out var value) && value is Guid id && id == container).ToList();
+    }
+
+    public static async Task<UsbHeadsetStatus> ReadStatusAsync(Guid container, CancellationToken ct, ILogger? logger = null)
+    {
         int collections = 0;
-        foreach (var info in interfaces.Where(i => i.Properties.TryGetValue(UsbHeadsetWatcher.ContainerKey, out var value) && value is Guid id && id == container))
+        foreach (var info in await CollectionsAsync(container, ct).ConfigureAwait(false))
         {
             collections++;
             ct.ThrowIfCancellationRequested();
@@ -28,8 +33,7 @@ public static class UsbHidBattery
             {
                 // Read-write access is requested only after exact hardware ID filtering.
                 // Unrelated collections in the same container still receive no vendor command.
-                if (System.Text.RegularExpressions.Regex.IsMatch(info.Id,
-                    @"VID_3837&PID_6045(?:&|#)|VID_1532&PID_(?:0528|0555|0552|0550)(?:&|#)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                if (UsbVendorBatteryProtocol.IsInterface(info.Id))
                 {
                     using var vendorDevice = await HidDevice.FromIdAsync(info.Id, FileAccessMode.ReadWrite).AsTask(ct).ConfigureAwait(false);
                     if (vendorDevice is null)
@@ -41,7 +45,7 @@ public static class UsbHidBattery
                     if (vendorDevice is not null && BarracudaXProtocol.IsCollection(vendorDevice.VendorId, vendorDevice.ProductId, vendorDevice.UsagePage, vendorDevice.UsageId))
                         return await BarracudaXBattery.ReadAsync(vendorDevice, ct, logger).ConfigureAwait(false);
                     if (vendorDevice is not null && UsbVendorBatteryProtocol.IsCollection(vendorDevice.VendorId, vendorDevice.ProductId, vendorDevice.UsagePage, vendorDevice.UsageId))
-                        if (await UsbVendorBattery.ReadAsync(vendorDevice, ct).ConfigureAwait(false) is { } level) return new(level);
+                        if (await UsbVendorBattery.ReadAsync(vendorDevice, info.Id, ct).ConfigureAwait(false) is { } status) return status;
                 }
                 using var device = await HidDevice.FromIdAsync(info.Id, FileAccessMode.Read).AsTask(ct).ConfigureAwait(false);
                 if (device is null) continue;

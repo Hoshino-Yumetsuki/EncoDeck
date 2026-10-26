@@ -158,6 +158,10 @@
                             <TextBlock x:Name="PromptVolumeValue" MinWidth="20" VerticalAlignment="Center" />
                         </StackPanel>
                     </controls:SettingRow>
+                    <controls:SettingRow x:Name="AutoOffSection" x:Uid="AutoOff_Title" Header="Auto power-off"
+                                         Description="Turn the headset off after it has been idle for this long.">
+                        <ComboBox x:Name="AutoOffBox" MinWidth="200" SelectionChanged="OnAutoOffChanged" />
+                    </controls:SettingRow>
                 </StackPanel>
             </Border>
         </StackPanel>

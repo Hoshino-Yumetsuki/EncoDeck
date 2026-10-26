@@ -61,4 +61,8 @@ public interface IAdvancedDeviceCommands
     Task<CommandResult> AddCustomEqualizerAsync(CancellationToken cancellationToken = default);
 
     Task<CommandResult> DeleteCustomEqualizerAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>Idle minutes before power-off (0 = never). Only USB headsets with a confirmed setting implement it.</summary>
+    Task<CommandResult> SetAutoPowerOffAsync(int minutes, CancellationToken cancellationToken = default) =>
+        Task.FromResult(CommandResult.Unsupported("Auto power-off is not available on this device."));
 }

@@ -28,6 +28,8 @@ public enum DeviceToggle
     PromptTone,
     /// <summary>Adjust playback volume as ambient noise changes (OPPO feature 28).</summary>
     AutoVolume,
+    /// <summary>Headset-side Bluetooth do-not-disturb while the 2.4 GHz link is in use.</summary>
+    DoNotDisturb,
 }
 
 /// <summary>Firmware / model information read from the device.</summary>

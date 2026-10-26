@@ -116,7 +116,7 @@ EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把常用�
 | **水月雨 MOONDROP** | 17 个型号档案及通用识别（非完整型号支持）；GAIA BLE / RFCOMM、电量、按型号降噪 / 抗风噪、增益；能力发现后开放 LED、提示音开关 / 音量、双耳 TOUCHV2、LHDC / 双设备互斥 | EDGE 固件 1.3.0 已在 Windows 真机验证 RFCOMM 控制连接与状态读取；其他型号仍以协议移植与模拟验证为主；推断功能须实验性启用，空间音频 / 头部跟踪不支持 |
 | **荣耀** | 7 款；电量、降噪 / 通透及档位、佩戴检测、双设备连接、耳机返回预设后的 EQ（按型号） | 协议实现，未真机验证 |
 | **森海塞尔** | 11 款电量与固件；MOMENTUM 4 / ACCENTUM 系列降噪 / 通透；MOMENTUM TW 4 降噪、抗风噪、佩戴检测、低延迟与触控自定义 | 协议实现与模拟设备测试，未真机验证 |
-| **USB 2.4G 游戏耳机** | 34 款识别（漫步者 HECATE、达尔优、雷柏、迈从、雷蛇）；迈从 X9、雷蛇 BlackShark V2 Pro、Barracuda X 可读电量 | 未真机验证 |
+| **USB 2.4G 游戏耳机** | 41 款识别（漫步者 HECATE、达尔优、雷柏、迈从、雷蛇、HyperX、SteelSeries、JBL、Logitech）；迈从 X9 / V9 PRO、雷蛇 BlackShark V2 Pro / Barracuda 系列、HyperX Cloud Alpha 2 / Cloud III S、Arctis Nova 7、G PRO X 2、HECATE G3 Max 等可读电量 | 社区项目真机确认的协议，EncoDeck 未真机验证；[范围说明](docs/COMPATIBILITY.md#usb-24g-专用查询) |
 
 更多型号、具体功能和验证记录见 **[设备兼容性列表](docs/COMPATIBILITY.md)**。如果你的耳机没在已测试列表里，但可以正常使用，欢迎提交型号、固件和测试结果。
 

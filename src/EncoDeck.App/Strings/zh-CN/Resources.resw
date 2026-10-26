@@ -710,4 +710,15 @@
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>智能音量调节</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>根据环境噪声变化自动调整耳机播放音量</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>此耳机固件支持查看设备列表，但不支持远程连接、断开或移除。请在对应设备的蓝牙设置中操作。</value></data>
+  <data name="Toggle_DoNotDisturb" xml:space="preserve"><value>勿扰模式</value></data>
+  <data name="Toggle_DoNotDisturb_Description" xml:space="preserve"><value>使用 2.4 GHz 无线连接时，不让已连接蓝牙设备的声音打扰</value></data>
+  <data name="UsbEq_Default" xml:space="preserve"><value>默认</value></data>
+  <data name="UsbEq_Game" xml:space="preserve"><value>游戏</value></data>
+  <data name="UsbEq_Music" xml:space="preserve"><value>音乐</value></data>
+  <data name="UsbEq_Movie" xml:space="preserve"><value>电影</value></data>
+  <data name="UsbEq_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="AutoOff_Title.Header" xml:space="preserve"><value>自动关机</value></data>
+  <data name="AutoOff_Title.Description" xml:space="preserve"><value>耳机闲置达到所选时长后自动关机</value></data>
+  <data name="AutoOff_Never" xml:space="preserve"><value>从不</value></data>
+  <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分钟</value></data>
 </root>

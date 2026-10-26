@@ -33,6 +33,8 @@ public sealed partial class ControlsPage : Page
     private readonly List<(uint Bit, CheckBox Box)> _cycleBoxes = [];
     private readonly List<byte[]?> _preferredItems = [];
     private DispatcherQueueTimer? _promptVolumeTimer;
+    private readonly List<int> _autoOffItems = [];
+    private bool _autoOffWriting;
     private string? _builtFor;
     private string _sourceSignature = string.Empty;
     private bool _syncing;
@@ -268,6 +270,7 @@ public sealed partial class ControlsPage : Page
             SyncHead(f, ready);
             SyncFind(f, ready);
             SyncFit(f, ready);
+            SyncAutoOff(f, ready);
 
             PromptVolumeSection.Visibility = Show(f.Has(DeviceCapability.PromptVolume) && f.State.PromptVolume is not null);
             // Don't fight the user: hold the slider while they drag and while the write is in flight.
@@ -592,6 +595,40 @@ public sealed partial class ControlsPage : Page
         Sync();
         await Features.SetGestureAsync(row, side, function);
         Sync();
+    }
+
+    /// <summary>USB headset idle power-off; shown only while the headset is linked and reported its value.</summary>
+    private void SyncAutoOff(FeaturesViewModel f, bool ready)
+    {
+        var options = f.AutoPowerOffOptions;
+        bool available = ready && options.Count > 0;
+        AutoOffSection.Visibility = Show(available);
+        if (!options.SequenceEqual(_autoOffItems))
+        {
+            _autoOffItems.Clear();
+            _autoOffItems.AddRange(options);
+            AutoOffBox.Items.Clear();
+            foreach (int minutes in options) AutoOffBox.Items.Add(minutes == 0 ? Loc.Get("AutoOff_Never") : Loc.Format("AutoOff_Minutes", minutes));
+        }
+        int? current = f.State.AutoPowerOff?.Value;
+        int index = current is int value ? _autoOffItems.IndexOf(value) : -1;
+        AutoOffBox.SelectedIndex = available ? index : -1;
+        // A value outside the offered list is shown as reported, never mapped to the nearest choice.
+        AutoOffBox.PlaceholderText = available && index < 0 && current is int unknown ? Loc.Format("AutoOff_Minutes", unknown) : string.Empty;
+        AutoOffBox.IsEnabled = available && !f.IsPending("auto-power-off") && !_autoOffWriting;
+    }
+
+    private async void OnAutoOffChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var f = Features;
+        int index = AutoOffBox.SelectedIndex;
+        if (_syncing || !IsLoaded || !AutoOffBox.IsEnabled || !f.IsReady || index < 0 || index >= _autoOffItems.Count) return;
+        int minutes = _autoOffItems[index];
+        if (minutes == f.State.AutoPowerOff?.Value) return;
+        _autoOffWriting = true;
+        Sync(); // the headset decides; snap back until its read-back confirms
+        try { await f.SetAutoPowerOffAsync(minutes); }
+        finally { _autoOffWriting = false; Sync(); }
     }
 
     private async void OnGainChanged(object sender, SelectionChangedEventArgs e)
