@@ -5,6 +5,8 @@
       "id": "lhdc",
       "version": "0.8.8-r1",
       "tag": "lhdc-v0.8.8-r1",
+      "interface": 1,
+      "minApp": "1.11.0",
       "source": {
         "repository": "https://github.com/Wayne-u/LHDC-Win",
         "commit": "b3da30e72f5a43c634383f81b95b8ab0dd1f8f88",
@@ -23,6 +25,8 @@
       "id": "a2dpwb",
       "version": "2.0.1-r1",
       "tag": "a2dpwb-v2.0.1-r1",
+      "interface": 1,
+      "minApp": "1.11.0",
       "source": {
         "repository": "https://github.com/SeiyaFunaokaJP/A2DP-Windows-Bridge",
         "commit": "3a094af733c830a2f4f5bd7418e6c7ba1db94749",

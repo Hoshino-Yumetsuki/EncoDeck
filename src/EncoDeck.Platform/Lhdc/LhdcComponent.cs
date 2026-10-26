@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using EncoDeck.Platform.Components;
+using Microsoft.Win32;
 
 namespace EncoDeck.Platform.Lhdc;
 
@@ -12,6 +13,9 @@ namespace EncoDeck.Platform.Lhdc;
 public static class LhdcComponent
 {
     public const string Repository = "https://github.com/Wayne-u/LHDC-Win";
+
+    /// <summary>The backend contract this app drives (lhdc-host queries and Set-AudioMode.ps1 parameters).</summary>
+    public const int Interface = 1;
 
     /// <summary>Results of the deployment script live next to the versions and survive clean-ups.</summary>
     public const string ResultsFolder = "results";
@@ -27,6 +31,20 @@ public static class LhdcComponent
     {
         release ??= ComponentCatalog.Lhdc;
         return new ComponentInstaller(http, root, release, release.PackageFor(Architecture.X64), Layout) { KeepFolders = [ResultsFolder] };
+    }
+
+    /// <summary>
+    /// Whether the deployment left the LHDC service set to start: "Restore Windows audio" stops it and sets it to
+    /// Disabled, so anything else means LHDC may still be in use. Read from the registry, no administrator rights.
+    /// </summary>
+    public static bool ServiceEnabled()
+    {
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\LHDC-Win");
+            return key?.GetValue("Start") is int start && start != 4;
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return false; }
     }
 
     /// <summary>A runtime folder built by build/build-lhdc.ps1 (downloaded, or bundled by an offline installer).</summary>

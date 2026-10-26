@@ -5,9 +5,26 @@
  <Border Style="{StaticResource CardStyle}">
   <StackPanel Spacing="10">
    <TextBlock x:Uid="Bridge_Title" Style="{StaticResource BodyStrongTextBlockStyle}" />
+   <!-- Codecs, as the home page tags them; outlined ones are experimental upstream. -->
+   <StackPanel Orientation="Horizontal" Spacing="6" x:Uid="Bridge_Codecs">
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="LDAC" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="LHDC V5" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="aptX" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="AAC" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="SBC XQ" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="SBC" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeSubtleStyle}" x:Uid="Codec_Experimental"><TextBlock Text="aptX HD" Style="{StaticResource CodecBadgeSubtleTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeSubtleStyle}" x:Uid="Codec_Experimental"><TextBlock Text="aptX LL" Style="{StaticResource CodecBadgeSubtleTextStyle}" /></Border>
+    <Border Style="{StaticResource CodecBadgeSubtleStyle}" x:Uid="Codec_Experimental"><TextBlock Text="Opus" Style="{StaticResource CodecBadgeSubtleTextStyle}" /></Border>
+   </StackPanel>
    <TextBlock x:Uid="Bridge_Summary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    <TextBlock x:Name="Status" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
    <InfoBar x:Name="ErrorBar" Severity="Error" IsOpen="False" />
+   <!-- A2DPWB's own installation updates and uninstalls itself. -->
+   <StackPanel x:Name="OwnInstallNote" Spacing="2" Visibility="Collapsed">
+    <TextBlock x:Uid="Bridge_OwnInstallNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+    <HyperlinkButton x:Uid="Bridge_OpenAppsSettings" NavigateUri="ms-settings:appsfeatures" Padding="0" />
+   </StackPanel>
    <HyperlinkButton x:Name="StandaloneLink" x:Uid="Bridge_StandaloneLink" NavigateUri="https://github.com/TIANLI0/EncoDeck/releases/latest" Visibility="Collapsed" Padding="0" />
    <ProgressBar x:Name="Progress" Visibility="Collapsed" Maximum="100" />
    <StackPanel Orientation="Horizontal" Spacing="8">
@@ -16,6 +33,8 @@
     <Button x:Name="StartCore" Click="OnStartCore" Visibility="Collapsed" />
     <Button x:Name="QuitCore" Click="OnQuitCore" Visibility="Collapsed" />
     <Button x:Name="OpenWindow" Click="OnOpenWindow" Visibility="Collapsed" />
+    <Button x:Name="CheckUpdates" Click="OnCheckUpdates" Visibility="Collapsed" />
+    <Button x:Name="Uninstall" Click="OnUninstall" Visibility="Collapsed" />
    </StackPanel>
 
    <!-- While EncoDeck is connected to the core: adapter, stream, profiles and volume. -->

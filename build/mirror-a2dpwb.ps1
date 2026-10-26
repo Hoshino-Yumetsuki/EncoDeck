@@ -31,6 +31,8 @@ $files = foreach ($package in $pin.packages) {
     $target
     $target + '.sha256'
 }
+# What apps released earlier read to find this component without an app update.
+$files = @($files) + @(& (Join-Path $PSScriptRoot 'component-manifest.ps1') -Id a2dpwb -OutputDirectory $output)
 if ($Publish) {
     & gh release view $tag --repo TIANLI0/EncoDeck *> $null
     if ($LASTEXITCODE -eq 0) { throw "Component release $tag exists already." }

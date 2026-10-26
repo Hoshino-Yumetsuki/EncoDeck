@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using EncoDeck.App.Services;
 using EncoDeck.Platform.A2dpBridge;
+using EncoDeck.Platform.Components;
 using EncoDeck.Platform.Updates;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -40,6 +41,8 @@ public sealed partial class A2dpBridgeSettings : UserControl
         Loaded += (_, _) =>
         {
             Cancel.Content = Loc.Get("Common_Cancel");
+            CheckUpdates.Content = Loc.Get("Component_CheckUpdates");
+            Uninstall.Content = Loc.Get("Component_Uninstall");
             StartCore.Content = Loc.Get("Bridge_Start");
             QuitCore.Content = Loc.Get("Bridge_Quit");
             OpenWindow.Content = Loc.Get("Bridge_OpenWindow");
@@ -60,6 +63,8 @@ public sealed partial class A2dpBridgeSettings : UserControl
             Bridge.Monitor.Wake();
             _ = LoadWindowsAdapterAsync();
             Refresh();
+            // At most once a day, quietly: a later component release can arrive without an app update.
+            _ = Bridge.CheckForUpdateAsync(force: false);
         };
         Unloaded += (_, _) =>
         {
@@ -93,7 +98,8 @@ public sealed partial class A2dpBridgeSettings : UserControl
         bool manage = A2dpBridgeCompanion.CanManage;
         bool connected = status.IsConnected;
         bool managedUpdate = Bridge.ManagedUpdateAvailable;
-        double megabytes = (component.Package?.Size ?? 0) / 1048576.0;
+        var target = Bridge.DownloadTarget;
+        double megabytes = (target is null ? 0 : component.PackageOf(target)?.Size ?? 0) / 1048576.0;
 
         string text = status.Link switch
         {
@@ -102,9 +108,10 @@ public sealed partial class A2dpBridgeSettings : UserControl
             BridgeLink.Connecting => Loc.Get("Bridge_Connecting"),
             _ when installation is not null => Loc.Format("Bridge_Stopped", installation.Version ?? "?", Origin(installation.Origin)),
             _ when !manage => Loc.Get("Bridge_StoreMissing"),
-            _ => component.CanInstall ? Loc.Format("Bridge_Missing", megabytes) : Loc.Get("Bridge_Unpublished"),
+            _ => target is not null ? Loc.Format("Bridge_Missing", megabytes) : Loc.Get("Bridge_Unpublished"),
         };
-        if (managedUpdate) text += Environment.NewLine + Loc.Format("Bridge_UpdateAvailable", component.Release.Version);
+        if (Bridge.Managed is { } managed) text += Environment.NewLine + Loc.Format("Bridge_ManagedVersion", managed.Version);
+        if (Bridge.UpdateTarget is { } update) text += Environment.NewLine + Loc.Format("Bridge_UpdateAvailable", update.Version);
         if (!manage && installation is not null && !connected) text += Environment.NewLine + Loc.Get("Bridge_StoreStart");
         // An operation in progress keeps its own status line until it ends.
         if (_download is null && !_busy) Status.Text = text;
@@ -112,13 +119,18 @@ public sealed partial class A2dpBridgeSettings : UserControl
         bool downloading = _download is not null;
         StandaloneLink.Visibility = Show(!manage && installation is null);
         // A2DPWB's own installation updates itself; EncoDeck's copy is only offered without one.
-        Download.Visibility = Show(manage && component.CanInstall && (installation is null || managedUpdate) && !downloading);
+        Download.Visibility = Show(manage && target is not null && (installation is null || managedUpdate) && !downloading);
         Download.Content = managedUpdate ? Loc.Format("Bridge_Update", megabytes) : Loc.Format("Bridge_Download", megabytes);
         Download.IsEnabled = !_busy;
         StartCore.Visibility = Show(manage && installation is not null && status.Link == BridgeLink.NotRunning);
         QuitCore.Visibility = Show(connected);
         OpenWindow.Visibility = Show(manage && installation is not null);
         StartCore.IsEnabled = QuitCore.IsEnabled = OpenWindow.IsEnabled = !_busy;
+        bool ownOnly = installation is { Origin: BridgeOrigin.Installed } && Bridge.Managed is null;
+        CheckUpdates.Visibility = Show(manage && !ownOnly && !downloading);
+        Uninstall.Visibility = Show(manage && Bridge.Managed is not null && !downloading);
+        CheckUpdates.IsEnabled = Uninstall.IsEnabled = !_busy;
+        OwnInstallNote.Visibility = Show(manage && installation is { Origin: BridgeOrigin.Installed });
         AutoStart.Visibility = Show(manage && installation is not null);
         _syncing = true;
         try { AutoStart.IsOn = App.Instance.Host.Settings.Current.A2dpBridgeAutoStart; }
@@ -438,6 +450,48 @@ public sealed partial class A2dpBridgeSettings : UserControl
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException) { ShowError(ex.Message); }
     }
 
+    private async void OnCheckUpdates(object sender, RoutedEventArgs e) => await Operate(async () =>
+    {
+        Status.Text = Loc.Get("Component_Checking");
+        var outcome = await Bridge.CheckForUpdateAsync(force: true);
+        ShowInfo(outcome switch
+        {
+            ComponentUpdateOutcome.Available => Loc.Format("Component_UpdateFound", Bridge.UpdateTarget?.Version ?? Bridge.OnlineRelease?.Version),
+            ComponentUpdateOutcome.UpToDate => Loc.Get("Component_UpToDate"),
+            ComponentUpdateOutcome.RateLimited => Loc.Get("Component_RateLimited"),
+            ComponentUpdateOutcome.Offline => Loc.Get("Component_Offline"),
+            _ => Loc.Get("Component_CheckFailed"),
+        });
+    });
+
+    private async void OnUninstall(object sender, RoutedEventArgs e)
+    {
+        int assigned = Bridge.AssignedAdapterCount;
+        bool own = Bridge.Installation is { Origin: BridgeOrigin.Installed } || A2dpBridgeComponent.FindInstalled(Bridge.Component.Root) is not null;
+        var panel = new StackPanel { Spacing = 10 };
+        panel.Children.Add(new TextBlock { Text = Loc.Get("Bridge_UninstallBody"), TextWrapping = TextWrapping.Wrap });
+        // Adapters still on WinUSB stay unusable for Windows unless given back; A2DPWB's own installation may still use them.
+        var restore = new CheckBox { Content = Loc.Format("Bridge_UninstallRestore", assigned), IsChecked = !own };
+        if (assigned > 0) panel.Children.Add(restore);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Bridge_UninstallTitle"),
+            Content = panel,
+            PrimaryButtonText = Loc.Get("Component_Uninstall"),
+            CloseButtonText = Loc.Get("Common_Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        bool restoreDrivers = assigned > 0 && restore.IsChecked == true;
+        await Operate(async () =>
+        {
+            Status.Text = Loc.Get(restoreDrivers ? "Bridge_UninstallingRestore" : "Bridge_Uninstalling");
+            await Bridge.UninstallAsync(restoreDrivers);
+            ShowInfo(Loc.Get("Bridge_Uninstalled"));
+        });
+    }
+
     private void OnCancel(object sender, RoutedEventArgs e) => _download?.Cancel();
 
     private async void OnDownload(object sender, RoutedEventArgs e) => await Operate(async () =>
@@ -456,7 +510,8 @@ public sealed partial class A2dpBridgeSettings : UserControl
                 Progress.Value = p.Total > 0 ? 100.0 * p.Received / p.Total : 0;
                 Status.Text = Loc.Format("Bridge_DownloadProgress", p.Received / 1048576.0, p.Total / 1048576.0);
             });
-            await Bridge.InstallAsync(progress, cancellation.Token);
+            // A managed core of an older version is restarted from the new one unless it streams (then at its next start).
+            if (await Bridge.InstallAsync(progress, cancellation.Token)) ShowInfo(Loc.Get("Bridge_UpdateAfterRestart"));
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { ShowError(Loc.Get("Bridge_Cancelled")); }
         finally

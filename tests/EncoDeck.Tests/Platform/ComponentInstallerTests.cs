@@ -38,9 +38,12 @@ public sealed class ComponentInstallerTests : IDisposable
 
     [Theory]
     [InlineData("""{"schema":2,"components":[]}""")]
-    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1","tag":"x-v1","source":{"repository":"r","commit":"abc","release":"1"},"packages":[]}]}""")]
-    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1","tag":"x-v1","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[{"architecture":"x64","file":"../a.zip","size":1,"sha256":""}]}]}""")]
-    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1","tag":"x-v1","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[{"architecture":"x64","file":"a.zip","size":1,"sha256":"","mirrors":["http://example.com/a.zip"]}]}]}""")]
+    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1.0.0-r1","tag":"x-v1.0.0-r1","source":{"repository":"r","commit":"abc","release":"1"},"packages":[]}]}""")]
+    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1.0.0-r1","tag":"x-v1.0.0-r1","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[{"architecture":"x64","file":"../a.zip","size":1,"sha256":""}]}]}""")]
+    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1.0.0-r1","tag":"x-v1.0.0-r1","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[{"architecture":"x64","file":"a.zip","size":1,"sha256":"","mirrors":["http://example.com/a.zip"]}]}]}""")]
+    // A version without the build revision, and a tag that is not <id>-v<version>.
+    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1.0.0","tag":"x-v1.0.0","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[]}]}""")]
+    [InlineData("""{"schema":1,"components":[{"id":"x","version":"1.0.0-r1","tag":"y-v1.0.0-r1","source":{"repository":"r","commit":"b3da30e72f5a43c634383f81b95b8ab0dd1f8f88","release":"1"},"packages":[]}]}""")]
     public void RejectsMalformedManifests(string json) => Assert.Throws<InvalidDataException>(() => ComponentCatalog.Parse(json));
 
     [Fact]
@@ -136,7 +139,7 @@ public sealed class ComponentInstallerTests : IDisposable
     }
 
     [Fact]
-    public async Task NewPinReplacesTheOldVersionButKeepsItAsPreviousAndLegacyLayoutsGo()
+    public async Task AnUpdateReplacesTheInstalledVersionAndLegacyLayoutsGo()
     {
         // 1.10.0's layout (Components\LHDC\<app version>\<digest>) and the deployment results.
         Directory.CreateDirectory(Path.Combine(_root, "1.10.0", new string('a', 64)));
@@ -155,11 +158,67 @@ public sealed class ComponentInstallerTests : IDisposable
         byte[] third = LhdcPackage("0.9.0-r1");
         await Lhdc(new FakeHttp(second), second, "0.8.9-r1").InstallAsync(ct: TestContext.Current.CancellationToken);
         await Lhdc(new FakeHttp(third), third, "0.9.0-r1").InstallAsync(ct: TestContext.Current.CancellationToken);
-        var versions = Directory.GetDirectories(_root).Select(Path.GetFileName).Where(n => n!.Contains("-r1-")).Order().ToArray();
-        Assert.Equal(2, versions.Length);
-        Assert.StartsWith("0.8.9-r1-", versions[0]);
-        Assert.StartsWith("0.9.0-r1-", versions[1]);
+        // No older version is kept once an update is in place.
+        var versions = Directory.GetDirectories(_root).Select(Path.GetFileName).Where(n => n!.Contains("-r1-")).ToArray();
+        Assert.Equal(["0.9.0-r1-"], versions.Select(v => v![..9]));
+        Assert.True(Directory.Exists(Path.Combine(_root, LhdcComponent.ResultsFolder)));
     }
+
+    [Fact]
+    public async Task AnUpdateFoundOnlineInstallsWithItsOwnDigestAndOutranksAnOlderPin()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        byte[] pinned = LhdcPackage("0.8.8-r1");
+        byte[] newer = LhdcPackage("0.8.8-r2");
+        var installer = Lhdc(new FakeHttp(pinned), pinned, "0.8.8-r1");
+        await installer.InstallAsync(ct: ct);
+        var online = installer.Release with
+        {
+            Version = "0.8.8-r2", Tag = "lhdc-v0.8.8-r2",
+            Packages = [Package(newer, "EncoDeck-LHDC-0.8.8-r2-win-x64.zip")],
+        };
+        Assert.Same(online, installer.Newest(online));
+        Assert.Same(online, installer.UpdateTarget(online));
+        var updater = new ComponentInstaller(new HttpClient(new FakeHttp(newer)), _root, installer.Release, installer.Package, LhdcComponent.Layout)
+        {
+            KeepFolders = [LhdcComponent.ResultsFolder],
+        };
+        await updater.InstallAsync(online, null, ct);
+        Assert.Equal("0.8.8-r2", updater.Installed?.Version);
+        // Installed beyond the pin: nothing to update, and the older pin is never offered as a downgrade.
+        Assert.True(updater.IsCurrent);
+        Assert.Null(updater.UpdateTarget(null));
+        Assert.Null(updater.UpdateTarget(online));
+        Assert.Single(Directory.GetDirectories(_root), d => Path.GetFileName(d).StartsWith("0.8.8-", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task UninstallRemovesEverythingButNotWhileInUse()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        byte[] zip = LhdcPackage("0.8.8-r1");
+        var installer = Lhdc(new FakeHttp(zip), zip, "0.8.8-r1");
+        var installed = await installer.InstallAsync(ct: ct);
+        using (File.Open(Path.Combine(installed.Directory, "backend", "lhdc-host.exe"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.False(installer.Uninstall());
+            Assert.NotNull(installer.Installed);
+        }
+        Assert.True(installer.Uninstall());
+        Assert.False(Directory.Exists(_root));
+        Assert.Null(installer.Installed);
+    }
+
+    [Theory]
+    [InlineData("0.8.8-r2", "0.8.8-r1", true)]
+    [InlineData("0.8.8-r10", "0.8.8-r9", true)]
+    [InlineData("0.8.10-r1", "0.8.9-r4", true)]
+    [InlineData("0.8.8-r1", "0.8.8-r1", false)]
+    [InlineData("0.8.8-r1", "0.9.0-r1", false)]
+    [InlineData("0.8.8", null, false)]
+    [InlineData("1.0.0-r1", null, true)]
+    public void ComparesComponentVersionsWithNumericRevisions(string candidate, string? current, bool newer) =>
+        Assert.Equal(newer, ComponentVersion.IsNewer(candidate, current));
 
     [Fact]
     public void AFolderInUseIsNotHalfDeleted()

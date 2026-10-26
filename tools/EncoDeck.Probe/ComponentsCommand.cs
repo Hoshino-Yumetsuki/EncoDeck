@@ -20,6 +20,17 @@ internal static class ComponentsCommand
             foreach (var package in component.Packages)
                 Console.WriteLine($"  {package.Architecture}: {package.File} {(package.IsPublished ? $"{package.Size} bytes sha256 {package.Sha256}" : "not pinned yet")}");
         }
+        if (options.Has("check"))
+        {
+            // As the Labs page does, from a floor version (default: below everything, so the current releases show up).
+            using var client = new HttpClient();
+            var updates = new ComponentUpdateClient(client, SemanticVersion.FromAssembly(typeof(ComponentsCommand).Assembly));
+            foreach (var (component, contract) in new[] { (ComponentCatalog.Lhdc, LhdcComponent.Interface), (ComponentCatalog.A2dpBridge, A2dpBridgeComponent.Interface) })
+            {
+                var result = await updates.CheckAsync(component.Id, contract, options.Get("floor") ?? "0.0.0-r0", options.Has("prerelease"), ct).ConfigureAwait(false);
+                Console.WriteLine($"{component.Id}: {result.Outcome} {result.Release?.Version} {string.Join(", ", result.Release?.Packages.Select(p => $"{p.Architecture} {p.Size}") ?? [])}");
+            }
+        }
         if (options.Get("install") is not { } id) return 0;
         if (options.Get("root") is not { } root)
         {

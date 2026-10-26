@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
+using EncoDeck.Platform.Updates;
 
 namespace EncoDeck.Platform.Components;
 
@@ -30,6 +33,37 @@ public sealed record ComponentPackage
 public sealed record ComponentSource(string Repository, string Commit, string Release);
 
 /// <summary>
+/// A component version: the upstream version and EncoDeck's build revision of it ("0.8.8-r1"). Revisions compare
+/// as numbers, so r10 follows r9.
+/// </summary>
+public sealed record ComponentVersion(int Major, int Minor, int Patch, int Revision) : IComparable<ComponentVersion>
+{
+    public static bool TryParse(string? text, [NotNullWhen(true)] out ComponentVersion? version)
+    {
+        version = null;
+        if (text is null) return false;
+        int dash = text.LastIndexOf("-r", StringComparison.Ordinal);
+        if (dash <= 0 || !int.TryParse(text[(dash + 2)..], NumberStyles.None, CultureInfo.InvariantCulture, out int revision)) return false;
+        string[] parts = text[..dash].Split('.');
+        if (parts.Length != 3) return false;
+        var numbers = new int[3];
+        for (int i = 0; i < 3; i++)
+            if (!int.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out numbers[i])) return false;
+        version = new ComponentVersion(numbers[0], numbers[1], numbers[2], revision);
+        return true;
+    }
+
+    public int CompareTo(ComponentVersion? other) => other is null ? 1
+        : (Major, Minor, Patch, Revision).CompareTo((other.Major, other.Minor, other.Patch, other.Revision));
+
+    /// <summary>Whether <paramref name="candidate"/> is a later version than <paramref name="current"/> (unparsable ones never are).</summary>
+    public static bool IsNewer(string candidate, string? current) =>
+        TryParse(candidate, out var a) && (current is null || !TryParse(current, out var b) || a.CompareTo(b) > 0);
+
+    public override string ToString() => $"{Major}.{Minor}.{Patch}-r{Revision}";
+}
+
+/// <summary>
 /// A component release: its own tag in the EncoDeck repository, independent of app releases, so an app
 /// update neither rebuilds nor re-downloads a component whose pin did not change.
 /// </summary>
@@ -42,6 +76,12 @@ public sealed record ComponentRelease
     public required string Tag { get; init; }
 
     public required ComponentSource Source { get; init; }
+
+    /// <summary>The contract between app and component (LHDC backend commands, A2DPWB pipe protocol); an app takes only its own.</summary>
+    public int Interface { get; init; } = 1;
+
+    /// <summary>The oldest app version the component works with (component releases found online are checked against it).</summary>
+    public string? MinApp { get; init; }
 
     public IReadOnlyList<ComponentPackage> Packages { get; init; } = [];
 
@@ -57,12 +97,15 @@ public sealed record ComponentRelease
         [new Uri($"https://github.com/{ComponentCatalog.Repository}/releases/download/{Uri.EscapeDataString(Tag)}/{Uri.EscapeDataString(package.File)}"), .. package.Mirrors];
 }
 
-/// <summary>The component pins built into this app (<c>components.json</c>); no network lookup decides what is installed.</summary>
+/// <summary>The component pins built into this app (<c>components.json</c>); online releases are only offered on top of them.</summary>
 public static class ComponentCatalog
 {
     public const string Repository = "TIANLI0/EncoDeck";
     public const string LhdcId = "lhdc";
     public const string A2dpBridgeId = "a2dpwb";
+
+    /// <summary>The asset of every component release that describes it (the same shape as an entry of components.json).</summary>
+    public const string ManifestAsset = "component.json";
 
     private static readonly Lazy<IReadOnlyList<ComponentRelease>> All = new(() =>
     {
@@ -81,53 +124,69 @@ public static class ComponentCatalog
     public static ComponentRelease Get(string id) => Components.FirstOrDefault(c => c.Id == id)
         ?? throw new KeyNotFoundException($"No component '{id}'.");
 
-    /// <summary>Reads and validates a manifest; anything malformed is rejected rather than half-used.</summary>
+    /// <summary>Reads and validates the built-in manifest; anything malformed is rejected rather than half-used.</summary>
     internal static IReadOnlyList<ComponentRelease> Parse(string json)
     {
         var root = JsonNode.Parse(json)?.AsObject() ?? throw new InvalidDataException("Empty component manifest.");
         if (root["schema"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported component manifest schema.");
-        var result = new List<ComponentRelease>();
-        foreach (var node in root["components"]?.AsArray() ?? throw new InvalidDataException("No components."))
-        {
-            var c = node?.AsObject() ?? throw new InvalidDataException("Invalid component.");
-            string id = Text(c, "id"), version = Text(c, "version"), tag = Text(c, "tag");
-            if (!IsName(id) || !IsName(version) || !IsName(tag)) throw new InvalidDataException($"Invalid component identity: {id}.");
-            var source = c["source"]?.AsObject() ?? throw new InvalidDataException($"{id}: no source.");
-            string commit = Text(source, "commit");
-            if (commit.Length != 40 || !commit.All(Uri.IsHexDigit)) throw new InvalidDataException($"{id}: invalid source commit.");
-            var packages = new List<ComponentPackage>();
-            foreach (var p in c["packages"]?.AsArray() ?? throw new InvalidDataException($"{id}: no packages."))
-            {
-                var o = p?.AsObject() ?? throw new InvalidDataException($"{id}: invalid package.");
-                string file = Text(o, "file"), sha = (o["sha256"]?.GetValue<string>() ?? "").ToLowerInvariant();
-                string root2 = o["root"]?.GetValue<string>() ?? "";
-                if (!IsName(file) || Path.GetFileName(file) != file || !file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException($"{id}: invalid package file name.");
-                if (sha.Length != 0 && (sha.Length != 64 || !sha.All(Uri.IsHexDigit))) throw new InvalidDataException($"{id}: invalid SHA-256.");
-                if (root2.Length != 0 && (!IsName(root2) || root2.Contains("..", StringComparison.Ordinal))) throw new InvalidDataException($"{id}: invalid package root.");
-                var mirrors = (o["mirrors"]?.AsArray() ?? []).Select(m => Uri.TryCreate(m?.GetValue<string>(), UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps
-                    ? uri : throw new InvalidDataException($"{id}: mirrors must be HTTPS URLs.")).ToArray();
-                packages.Add(new ComponentPackage
-                {
-                    Architecture = Text(o, "architecture") is var arch && arch is "x64" or "arm64" ? arch : throw new InvalidDataException($"{id}: unknown architecture."),
-                    File = file,
-                    Size = o["size"]?.GetValue<long>() is >= 0 and <= 2L * 1024 * 1024 * 1024 and var size ? size : throw new InvalidDataException($"{id}: invalid size."),
-                    Sha256 = sha,
-                    Root = root2,
-                    Mirrors = mirrors,
-                });
-            }
-            result.Add(new ComponentRelease
-            {
-                Id = id,
-                Version = version,
-                Tag = tag,
-                Source = new ComponentSource(Text(source, "repository"), commit.ToLowerInvariant(), Text(source, "release")),
-                Packages = packages,
-            });
-        }
+        var result = (root["components"]?.AsArray() ?? throw new InvalidDataException("No components."))
+            .Select(node => ParseComponent(node?.AsObject() ?? throw new InvalidDataException("Invalid component."))).ToList();
         if (result.Select(c => c.Id).Distinct().Count() != result.Count) throw new InvalidDataException("Duplicate component id.");
         return result;
+    }
+
+    /// <summary>A release's own <see cref="ManifestAsset"/>: one component object with <c>"schema": 1</c>.</summary>
+    internal static ComponentRelease ParseRelease(string json)
+    {
+        var root = JsonNode.Parse(json)?.AsObject() ?? throw new InvalidDataException("Empty component description.");
+        if (root["schema"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported component description schema.");
+        return ParseComponent(root);
+    }
+
+    private static ComponentRelease ParseComponent(JsonObject c)
+    {
+        string id = Text(c, "id"), version = Text(c, "version"), tag = Text(c, "tag");
+        if (!IsName(id) || !IsName(version) || !IsName(tag)) throw new InvalidDataException($"Invalid component identity: {id}.");
+        if (!ComponentVersion.TryParse(version, out _) || tag != $"{id}-v{version}") throw new InvalidDataException($"{id}: version and tag must read <x.y.z>-r<n> and {id}-v<version>.");
+        var source = c["source"]?.AsObject() ?? throw new InvalidDataException($"{id}: no source.");
+        string commit = Text(source, "commit");
+        if (commit.Length != 40 || !commit.All(Uri.IsHexDigit)) throw new InvalidDataException($"{id}: invalid source commit.");
+        string? minApp = c["minApp"]?.GetValue<string>();
+        if (minApp is not null && !SemanticVersion.TryParse(minApp, out _)) throw new InvalidDataException($"{id}: invalid minApp.");
+        int contract = c["interface"]?.GetValue<int>() ?? 1;
+        if (contract < 1) throw new InvalidDataException($"{id}: invalid interface.");
+        var packages = new List<ComponentPackage>();
+        foreach (var p in c["packages"]?.AsArray() ?? throw new InvalidDataException($"{id}: no packages."))
+        {
+            var o = p?.AsObject() ?? throw new InvalidDataException($"{id}: invalid package.");
+            string file = Text(o, "file"), sha = (o["sha256"]?.GetValue<string>() ?? "").ToLowerInvariant();
+            string root = o["root"]?.GetValue<string>() ?? "";
+            if (!IsName(file) || Path.GetFileName(file) != file || !file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"{id}: invalid package file name.");
+            if (sha.Length != 0 && (sha.Length != 64 || !sha.All(Uri.IsHexDigit))) throw new InvalidDataException($"{id}: invalid SHA-256.");
+            if (root.Length != 0 && (!IsName(root) || root.Contains("..", StringComparison.Ordinal))) throw new InvalidDataException($"{id}: invalid package root.");
+            var mirrors = (o["mirrors"]?.AsArray() ?? []).Select(m => Uri.TryCreate(m?.GetValue<string>(), UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps
+                ? uri : throw new InvalidDataException($"{id}: mirrors must be HTTPS URLs.")).ToArray();
+            packages.Add(new ComponentPackage
+            {
+                Architecture = Text(o, "architecture") is var arch && arch is "x64" or "arm64" ? arch : throw new InvalidDataException($"{id}: unknown architecture."),
+                File = file,
+                Size = o["size"]?.GetValue<long>() is >= 0 and <= 2L * 1024 * 1024 * 1024 and var size ? size : throw new InvalidDataException($"{id}: invalid size."),
+                Sha256 = sha,
+                Root = root,
+                Mirrors = mirrors,
+            });
+        }
+        return new ComponentRelease
+        {
+            Id = id,
+            Version = version,
+            Tag = tag,
+            Source = new ComponentSource(Text(source, "repository"), commit.ToLowerInvariant(), Text(source, "release")),
+            Interface = contract,
+            MinApp = minApp,
+            Packages = packages,
+        };
     }
 
     private static string Text(JsonObject o, string name) =>

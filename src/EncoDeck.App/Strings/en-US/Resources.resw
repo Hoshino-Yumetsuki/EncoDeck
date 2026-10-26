@@ -525,7 +525,7 @@
   <data name="Home_Dual.Header" xml:space="preserve"><value>Dual connection</value></data>
   <data name="Artwork_GenericMotion.Text" xml:space="preserve"><value>Product motion · not an official lid-opening animation</value></data>
   <data name="Lhdc_Open.Content" xml:space="preserve"><value>Open LHDC control panel</value></data>
-  <data name="Lhdc_Missing" xml:space="preserve"><value>Downloads the drivers and backend EncoDeck compiles from LHDC-Win source, from EncoDeck's LHDC component release, verified against the SHA-256 pinned in the app. The component is independent of the app version, so updating EncoDeck does not download it again. Downloading does not install drivers.</value></data>
+  <data name="Lhdc_Missing" xml:space="preserve"><value>Downloads the drivers and backend EncoDeck compiles from LHDC-Win source, from EncoDeck's LHDC component release, verified by size and SHA-256. The component is independent of the app version, so updating EncoDeck does not download it again. Downloading does not install drivers.</value></data>
   <data name="Lhdc_Store" xml:space="preserve"><value>LHDC is unavailable in the Store edition. It requires separate drivers and a background service installed with administrator privileges. Experimental support is currently limited to the non-Store x64 edition and requires test-signed driver support.</value></data>
   <data name="Lhdc_Title.Text" xml:space="preserve"><value>LHDC V5 (experimental)</value></data>
   <data name="Lhdc_Windows" xml:space="preserve"><value>The LHDC companion requires Windows 11 22H2 (22621) or later.</value></data>
@@ -563,7 +563,7 @@
   <data name="DeviceConnect.Content" xml:space="preserve"><value>Connect in Windows</value></data>
   <data name="Lhdc_Guide.Content" xml:space="preserve"><value>Full guide: driver setup and recovery</value></data>
   <data name="Lhdc_Version" xml:space="preserve"><value>Component version: {0}</value></data>
-  <data name="Lhdc_UpdateAvailable" xml:space="preserve"><value>This EncoDeck version pins a newer LHDC component, {0}. The installed one keeps working until you update.</value></data>
+  <data name="Lhdc_UpdateAvailable" xml:space="preserve"><value>LHDC component {0} is available. The installed one keeps working until you update.</value></data>
   <data name="Lhdc_DownloadSize" xml:space="preserve"><value>Download LHDC component ({0:F0} MB)</value></data>
   <data name="Lhdc_Update" xml:space="preserve"><value>Update LHDC component ({0:F0} MB)</value></data>
   <data name="Lhdc_Unpublished" xml:space="preserve"><value>The LHDC component for this EncoDeck version is not published yet. Please update EncoDeck later.</value></data>
@@ -583,7 +583,7 @@
   <data name="Bridge_StoreStart" xml:space="preserve"><value>Start A2DP Windows Bridge from the Start menu.</value></data>
   <data name="Bridge_Missing" xml:space="preserve"><value>Not installed. The component (about {0:F1} MB) is an unmodified copy of A2DPWB's official build, downloaded from EncoDeck's component release and verified against a pinned SHA-256. Downloading changes no drivers.</value></data>
   <data name="Bridge_Unpublished" xml:space="preserve"><value>The A2DP Bridge component for this EncoDeck version is not published yet.</value></data>
-  <data name="Bridge_UpdateAvailable" xml:space="preserve"><value>This EncoDeck version pins a newer component, {0}, which you can update to.</value></data>
+  <data name="Bridge_UpdateAvailable" xml:space="preserve"><value>Component {0} is available to update to.</value></data>
   <data name="Bridge_StandaloneLink.Content" xml:space="preserve"><value>Download the non-Store version</value></data>
   <data name="Bridge_Download" xml:space="preserve"><value>Download component ({0:F1} MB)</value></data>
   <data name="Bridge_Update" xml:space="preserve"><value>Update component ({0:F1} MB)</value></data>
@@ -669,6 +669,39 @@
   <data name="Bridge_Codec" xml:space="preserve"><value>Codec</value></data>
   <data name="Bridge_SaveProfile" xml:space="preserve"><value>Save profile</value></data>
   <data name="Bridge_ProfileSaved" xml:space="preserve"><value>Saved the profile "{0}". Put the earbuds in pairing mode and click Connect; the first connection pairs them.</value></data>
+  <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Experimental upstream: passes the encoder tests and a virtual receiver, not yet confirmed with real headphones</value></data>
+  <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Experimental codec</value></data>
+  <data name="Bridge_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Codecs A2DP Bridge supports</value></data>
+  <data name="Lhdc_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Codec the LHDC component supports</value></data>
+  <data name="LeAudio_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Codec LE Audio uses</value></data>
+  <data name="Component_CheckUpdates" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Component_Uninstall" xml:space="preserve"><value>Uninstall component</value></data>
+  <data name="Component_Checking" xml:space="preserve"><value>Checking for component updates…</value></data>
+  <data name="Component_UpdateFound" xml:space="preserve"><value>Version {0} is available; click Update component to install it.</value></data>
+  <data name="Component_UpToDate" xml:space="preserve"><value>The component is up to date.</value></data>
+  <data name="Component_RateLimited" xml:space="preserve"><value>GitHub is limiting anonymous requests for now; try again later.</value></data>
+  <data name="Component_Offline" xml:space="preserve"><value>Cannot reach GitHub; check the network and try again.</value></data>
+  <data name="Component_CheckFailed" xml:space="preserve"><value>The update check failed; try again later.</value></data>
+  <data name="Lhdc_UninstallTitle" xml:space="preserve"><value>Uninstall the LHDC component?</value></data>
+  <data name="Lhdc_UninstallBody" xml:space="preserve"><value>This deletes the LHDC component files EncoDeck downloaded (about 120 MB). Enabling LHDC or restoring Windows audio needs them, so they can only be removed once every headset is back on Windows audio. The disabled LHDC service and driver packages in Windows are left as they are.</value></data>
+  <data name="Lhdc_UninstallInUse" xml:space="preserve"><value>LHDC is still enabled: choose the headset that uses it and click Restore Windows audio first, then uninstall the component.</value></data>
+  <data name="Lhdc_UninstallBound" xml:space="preserve"><value>These audio devices still use the LHDC driver: {0}. Restore Windows audio first, then uninstall the component.</value></data>
+  <data name="Lhdc_UninstallBusy" xml:space="preserve"><value>The component files are in use; try again later.</value></data>
+  <data name="Lhdc_Uninstalled" xml:space="preserve"><value>The LHDC component was uninstalled.</value></data>
+  <data name="Bridge_ManagedVersion" xml:space="preserve"><value>Component managed by EncoDeck: {0}</value></data>
+  <data name="Bridge_UninstallTitle" xml:space="preserve"><value>Uninstall the A2DP Bridge component?</value></data>
+  <data name="Bridge_UninstallBody" xml:space="preserve"><value>This quits the A2DPWB background process EncoDeck manages, deletes its files (about 25 MB) and removes startup entries that point to it. A2DPWB's settings folder (pairings, firmware, logs) is kept; an A2DP Windows Bridge you installed yourself is not affected.</value></data>
+  <data name="Bridge_UninstallRestore" xml:space="preserve"><value>Also give the {0} adapter(s) A2DPWB took back to Windows (recommended; one administrator prompt)</value></data>
+  <data name="Bridge_Uninstalling" xml:space="preserve"><value>Uninstalling…</value></data>
+  <data name="Bridge_UninstallingRestore" xml:space="preserve"><value>Restoring the adapter drivers and uninstalling; allow the administrator prompt when Windows asks…</value></data>
+  <data name="Bridge_Uninstalled" xml:space="preserve"><value>The A2DP Bridge component was uninstalled.</value></data>
+  <data name="Bridge_UninstallCoreRunning" xml:space="preserve"><value>The A2DPWB background process did not exit; quit it from its tray icon and try again.</value></data>
+  <data name="Bridge_UninstallRestoreFailed" xml:space="preserve"><value>Not every adapter driver was restored (code {0}); the component was not uninstalled. Restore them one by one under Adapters and try again.</value></data>
+  <data name="Bridge_UninstallBusy" xml:space="preserve"><value>The component files are in use (A2DPWB may still be running); quit it and try again.</value></data>
+  <data name="Bridge_UninstallUacDeclined" xml:space="preserve"><value>The administrator prompt was declined; the component was not uninstalled.</value></data>
+  <data name="Bridge_UpdateAfterRestart" xml:space="preserve"><value>The component was updated. The background process is streaming, so the new version takes over at its next start.</value></data>
+  <data name="Bridge_OwnInstallNote.Text" xml:space="preserve"><value>You are using an A2DP Windows Bridge you installed yourself: it checks for its own updates, and it is uninstalled from Installed apps in Windows Settings.</value></data>
+  <data name="Bridge_OpenAppsSettings.Content" xml:space="preserve"><value>Open Installed apps</value></data>
   <data name="Xiaomi_Level_0" xml:space="preserve"><value>Level 1</value></data>
   <data name="Xiaomi_Level_1" xml:space="preserve"><value>Level 2</value></data>
   <data name="Xiaomi_Level_2" xml:space="preserve"><value>Level 3</value></data>

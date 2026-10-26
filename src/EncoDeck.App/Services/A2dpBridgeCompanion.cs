@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using System.Globalization;
 using System.Text.Json.Nodes;
 using EncoDeck.Core.Devices;
 using EncoDeck.Core.State;
@@ -28,6 +29,7 @@ public sealed class A2dpBridgeCompanion : IAsyncDisposable
     private string? _runningDirectory;
     private bool _wasConnected;
     private bool _started;
+    private DateTimeOffset _lastUpdateCheck = DateTimeOffset.MinValue;
 
     /// <param name="instance">A side-by-side A2DPWB test core (A2DPWB_INSTANCE); null for the user's own.</param>
     public A2dpBridgeCompanion(string componentsRoot, IDeviceStateStore store, ISettingsStore settings, ILogger logger, string? instance = null)
@@ -45,8 +47,17 @@ public sealed class A2dpBridgeCompanion : IAsyncDisposable
     /// <summary>The installed EncoDeck-managed copy, as of the last <see cref="RefreshInstallations"/>.</summary>
     public InstalledComponent? Managed => _managed;
 
-    /// <summary>The managed copy is installed but this app pins a newer one.</summary>
-    public bool ManagedUpdateAvailable => _managed is not null && Component.Package is { IsPublished: true } p && _managed.Sha256 != p.Sha256;
+    /// <summary>A later A2DPWB component release found online (null until checked, or when there is none).</summary>
+    public ComponentRelease? OnlineRelease { get; private set; }
+
+    /// <summary>What an update of the managed copy installs: this app's pin or a later release found online.</summary>
+    public ComponentRelease? UpdateTarget => _managed is null ? null : Component.UpdateTarget(OnlineRelease);
+
+    /// <summary>The managed copy is installed and a later release (pinned or online) is available.</summary>
+    public bool ManagedUpdateAvailable => UpdateTarget is not null;
+
+    /// <summary>What a download installs: the update, or the newest release for a first install.</summary>
+    public ComponentRelease? DownloadTarget => UpdateTarget ?? Component.Newest(OnlineRelease);
 
     /// <summary>The EncoDeck-managed copy (the mirrored official build).</summary>
     public ComponentInstaller Component { get; }
@@ -140,9 +151,81 @@ public sealed class A2dpBridgeCompanion : IAsyncDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task InstallAsync(IProgress<UpdateDownloadProgress>? progress, CancellationToken ct)
+    /// <summary>
+    /// Installs or updates the managed copy. A managed core that runs an older version and is not streaming is
+    /// restarted from the new one; while it streams, the new version takes over at its next start.
+    /// </summary>
+    public async Task<bool> InstallAsync(IProgress<UpdateDownloadProgress>? progress, CancellationToken ct)
     {
-        await Component.InstallAsync(progress, ct).ConfigureAwait(false);
+        string? running = Status.IsConnected && Installation is { Origin: BridgeOrigin.Managed } current ? current.Directory : null;
+        var target = DownloadTarget ?? Component.Release;
+        var installed = await Component.InstallAsync(target, progress, ct).ConfigureAwait(false);
+        RefreshInstallations();
+        if (running is null || SamePath(running, installed.Directory)) return false;
+        if (Status.Snapshot?.Stream.IsActive == true) return true;
+        await QuitCoreAsync().ConfigureAwait(false);
+        for (int i = 0; i < 60 && A2dpBridgeMonitor.IsCoreRunning(_instance); i++) await Task.Delay(250, ct).ConfigureAwait(false);
+        if (!A2dpBridgeMonitor.IsCoreRunning(_instance) && Installation is { Origin: BridgeOrigin.Managed } fresh)
+        {
+            // The old version was in use until now: remove it before starting the new one.
+            Component.CleanUp();
+            A2dpBridgeComponent.StartCore(fresh);
+            await Monitor.WaitForConnectionAsync(TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Looks for a later A2DPWB component release (at most once a day unless <paramref name="force"/>), for this app's
+    /// pipe protocol and version. Only the managed copy uses it: A2DPWB's own installation updates itself.
+    /// </summary>
+    public async Task<ComponentUpdateOutcome?> CheckForUpdateAsync(bool force, CancellationToken ct = default)
+    {
+        if (!CanManage || (!force && DateTimeOffset.UtcNow - _lastUpdateCheck < TimeSpan.FromHours(24))) return null;
+        var app = SemanticVersion.FromAssembly(typeof(A2dpBridgeCompanion).Assembly);
+        using var http = new HttpClient();
+        string floor = _managed is { } managed && ComponentVersion.IsNewer(managed.Version, Component.Release.Version) ? managed.Version : Component.Release.Version;
+        var result = await new ComponentUpdateClient(http, app)
+            .CheckAsync(ComponentCatalog.A2dpBridgeId, A2dpBridgeComponent.Interface, floor, _settings.Current.IncludePrereleaseUpdates, ct).ConfigureAwait(false);
+        if (result.Outcome is ComponentUpdateOutcome.Available or ComponentUpdateOutcome.UpToDate)
+        {
+            OnlineRelease = result.Release;
+            _lastUpdateCheck = DateTimeOffset.UtcNow;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+        return result.Outcome;
+    }
+
+    /// <summary>Adapters A2DPWB took from Windows and has not given back, from its records.</summary>
+    public int AssignedAdapterCount => A2dpBridgeComponent.DriverRecordCount(A2dpBridgeComponent.DriverRecordsDirectory(Status.Snapshot?.ConfigDirectory));
+
+    /// <summary>
+    /// Removes the EncoDeck-managed copy: quits its core if it runs, optionally gives every adapter A2DPWB took back
+    /// to Windows (one administrator prompt, A2DPWB's own helper), drops the autostart entries that name this copy,
+    /// then deletes its files. A2DPWB's settings folder (pairings, firmware) is left alone; so is A2DPWB's own installation.
+    /// </summary>
+    public async Task UninstallAsync(bool restoreDrivers, CancellationToken ct = default)
+    {
+        if (_managed is not { } managed) return;
+        var copy = new BridgeInstallation(managed.Directory, BridgeOrigin.Managed, ManagedVersion(managed.Version));
+        string records = A2dpBridgeComponent.DriverRecordsDirectory(Status.Snapshot?.ConfigDirectory);
+        if (Status.IsConnected && Installation is { Origin: BridgeOrigin.Managed })
+        {
+            await QuitCoreAsync().ConfigureAwait(false);
+            for (int i = 0; i < 80 && A2dpBridgeMonitor.IsCoreRunning(_instance); i++) await Task.Delay(250, ct).ConfigureAwait(false);
+            if (A2dpBridgeMonitor.IsCoreRunning(_instance)) throw new IOException(Loc.Get("Bridge_UninstallCoreRunning"));
+        }
+        if (restoreDrivers && A2dpBridgeComponent.DriverRecordCount(records) > 0)
+        {
+            int exit;
+            try { exit = await A2dpBridgeComponent.RestoreRecordedDriversAsync(copy, records, ct).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new OperationCanceledException(Loc.Get("Bridge_UninstallUacDeclined")); }
+            if (exit != 0) throw new IOException(Loc.Format("Bridge_UninstallRestoreFailed", exit.ToString(CultureInfo.InvariantCulture)));
+        }
+        A2dpBridgeComponent.RemoveStartupEntryUnder(Component.Root);
+        if (_settings.Current.A2dpBridgeAutoStart && _installed is null) _settings.Update(s => s with { A2dpBridgeAutoStart = false });
+        if (!Component.Uninstall()) throw new IOException(Loc.Get("Bridge_UninstallBusy"));
+        OnlineRelease = null;
         RefreshInstallations();
     }
 

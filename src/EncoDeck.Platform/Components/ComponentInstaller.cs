@@ -33,7 +33,8 @@ public sealed class ComponentLayout
 /// Installs one pinned component package under <c>Components\&lt;name&gt;\&lt;version&gt;-&lt;sha&gt;</c>. The pin
 /// (size and SHA-256 in the app) decides what is accepted, so the bytes may come from the EncoDeck component
 /// release or any mirror; a download resumes where it stopped. Installs never depend on the app version:
-/// an app update keeps using what is installed, and the previous version stays until the next install.
+/// an app update keeps using what is installed, and an update replaces the installed version (the old one is
+/// deleted at once, or at the next clean-up while a program still runs from it).
 /// </summary>
 public sealed class ComponentInstaller(HttpClient http, string root, ComponentRelease release, ComponentPackage? package, ComponentLayout layout)
 {
@@ -74,15 +75,40 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
         }
     }
 
-    /// <summary>Installed and identical to this app's pin.</summary>
-    public bool IsCurrent => Package is { IsPublished: true } p && Installed?.Sha256 == p.Sha256;
+    /// <summary>Installed, and the pin is not newer (it may be the pin itself or a later release installed online).</summary>
+    public bool IsCurrent => Package is { IsPublished: true } p && Installed is { } i
+        && (i.Sha256 == p.Sha256 || !ComponentVersion.IsNewer(Release.Version, i.Version));
 
     public bool CanInstall => Package is { IsPublished: true };
 
-    /// <summary>Downloads (resuming a partial file), verifies, unpacks and switches to the pinned package; a no-op when it is already installed.</summary>
-    public async Task<InstalledComponent> InstallAsync(IProgress<UpdateDownloadProgress>? progress = null, CancellationToken ct = default)
+    /// <summary>The package of <paramref name="release"/> for this PC (the architecture of the pinned one).</summary>
+    public ComponentPackage? PackageOf(ComponentRelease release) =>
+        ReferenceEquals(release, Release) ? Package : release.Packages.FirstOrDefault(p => p.Architecture == Package?.Architecture);
+
+    /// <summary>The newest installable release: this app's pin, or <paramref name="online"/> when that is later.</summary>
+    public ComponentRelease? Newest(ComponentRelease? online)
     {
-        if (Package is not { IsPublished: true } package) throw new InvalidOperationException($"No published {Release.Id} package for this PC.");
+        var pinned = CanInstall ? Release : null;
+        if (online is null || online.Id != Release.Id || PackageOf(online) is not { IsPublished: true }) return pinned;
+        return pinned is null || ComponentVersion.IsNewer(online.Version, pinned.Version) ? online : pinned;
+    }
+
+    /// <summary>What to update to: the newest installable release, when it is later than the installed version.</summary>
+    public ComponentRelease? UpdateTarget(ComponentRelease? online) =>
+        Installed is { } installed && Newest(online) is { } newest && ComponentVersion.IsNewer(newest.Version, installed.Version) ? newest : null;
+
+    /// <summary>Downloads (resuming a partial file), verifies, unpacks and switches to the pinned package; a no-op when it is already installed.</summary>
+    public Task<InstalledComponent> InstallAsync(IProgress<UpdateDownloadProgress>? progress = null, CancellationToken ct = default) =>
+        InstallAsync(Release, progress, ct);
+
+    /// <summary>
+    /// Installs <paramref name="release"/> (the pin, or a later release found online with its own size and digest)
+    /// and removes every other version.
+    /// </summary>
+    public async Task<InstalledComponent> InstallAsync(ComponentRelease release, IProgress<UpdateDownloadProgress>? progress, CancellationToken ct)
+    {
+        if (release.Id != Release.Id) throw new ArgumentException("Another component's release.", nameof(release));
+        if (PackageOf(release) is not { IsPublished: true } package) throw new InvalidOperationException($"No published {release.Id} package for this PC.");
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         string? staging = null;
         try
@@ -93,25 +119,23 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
             string downloads = Path.Combine(Root, DownloadsFolder);
             Directory.CreateDirectory(downloads);
             string zip = Path.Combine(downloads, package.File);
-            try { await DownloadAsync(http, Release.Sources(package), zip, package.Size, package.Sha256, progress, overall.Token, Backoff).ConfigureAwait(false); }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new TimeoutException($"The {Release.Id} download took too long."); }
+            try { await DownloadAsync(http, release.Sources(package), zip, package.Size, package.Sha256, progress, overall.Token, Backoff).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new TimeoutException($"The {release.Id} download took too long."); }
 
-            string folder = $"{Release.Version}-{package.Sha256[..12]}";
+            string folder = $"{release.Version}-{package.Sha256[..12]}";
             staging = Path.Combine(Root, ".install-" + Guid.NewGuid().ToString("N"));
             await Task.Run(() => ExtractArchive(zip, staging, overall.Token), overall.Token).ConfigureAwait(false);
             string unpacked = Path.Combine(staging, package.Root);
-            if (!layout.HasRequiredFiles(unpacked)) throw new InvalidDataException($"Incomplete {Release.Id} package.");
-            layout.Validate?.Invoke(unpacked, Release.Version, Release.Source.Commit);
+            if (!layout.HasRequiredFiles(unpacked)) throw new InvalidDataException($"Incomplete {release.Id} package.");
+            layout.Validate?.Invoke(unpacked, release.Version, release.Source.Commit);
 
-            var previous = ReadPointer();
             string destination = Path.Combine(Root, folder);
             // Only a damaged or orphaned copy of this version can be there (a valid current one returned above).
             if (Directory.Exists(destination) && !TryDelete(destination))
-                throw new IOException($"The {Release.Id} component folder is in use. Close the program that uses it and try again.");
+                throw new IOException($"The {release.Id} component folder is in use. Close the program that uses it and try again.");
             Directory.Move(staging, destination);
             staging = null;
-            WritePointer(new PointerFile(Release.Version, package.Sha256, folder, package.Root,
-                previous is not null && previous.Folder != folder ? previous.Folder : previous?.Previous));
+            WritePointer(new PointerFile(release.Version, package.Sha256, folder, package.Root));
             TryDeleteFile(zip);
             CleanUp();
             return Installed ?? throw new InvalidDataException($"The {Release.Id} component did not validate after installation.");
@@ -124,7 +148,19 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
     }
 
     /// <summary>
-    /// Removes unpacked versions other than the current and the previous one, legacy layouts and stale staging
+    /// Removes the component entirely: every version, the pointer, downloads and kept folders. Nothing is removed
+    /// while any file of it is in use (the folder is renamed first, which fails then); returns whether it is gone.
+    /// </summary>
+    public bool Uninstall()
+    {
+        // Never while an installation runs (it holds the gate): report "not removed" instead of blocking.
+        if (!_gate.Wait(0)) return false;
+        try { return TryDelete(Root); }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// Removes unpacked versions other than the current one, legacy layouts and stale staging
     /// folders. A folder whose files are in use (e.g. a running program) is left for a later pass.
     /// </summary>
     public void CleanUp()
@@ -135,7 +171,6 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
             var pointer = ReadPointer();
             var keep = new HashSet<string>(KeepFolders, StringComparer.OrdinalIgnoreCase) { DownloadsFolder };
             if (pointer is not null) keep.Add(pointer.Folder);
-            if (pointer?.Previous is { } previous) keep.Add(previous);
             foreach (string directory in Directory.EnumerateDirectories(Root))
             {
                 string name = Path.GetFileName(directory);
@@ -148,8 +183,8 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
                 foreach (string file in Directory.EnumerateFiles(downloads))
                 {
                     string name = Path.GetFileName(file);
-                    // Keep only the partial download of the pinned package, so a retry resumes.
-                    if (Package is not null && name.Equals(Package.File + ".partial", StringComparison.OrdinalIgnoreCase)) continue;
+                    // Recent partial downloads stay, so a retry (of the pin or of an update) resumes.
+                    if (name.EndsWith(".partial", StringComparison.OrdinalIgnoreCase) && DateTime.UtcNow - File.GetLastWriteTimeUtc(file) < TimeSpan.FromDays(7)) continue;
                     TryDeleteFile(file);
                 }
             }
@@ -157,7 +192,7 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { }
     }
 
-    private sealed record PointerFile(string Version, string Sha256, string Folder, string PackageRoot, string? Previous);
+    private sealed record PointerFile(string Version, string Sha256, string Folder, string PackageRoot);
 
     private PointerFile? ReadPointer()
     {
@@ -167,10 +202,9 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
         if (node is null) return null;
         string? version = node["version"]?.GetValue<string>(), sha = node["sha256"]?.GetValue<string>(), folder = node["folder"]?.GetValue<string>();
         string packageRoot = node["root"]?.GetValue<string>() ?? "";
-        string? previous = node["previous"]?.GetValue<string>();
-        if (version is null || sha is not { Length: 64 } || !sha.All(Uri.IsHexDigit) || !IsFolderName(folder) || (previous is not null && !IsFolderName(previous))
+        if (version is null || sha is not { Length: 64 } || !sha.All(Uri.IsHexDigit) || !IsFolderName(folder)
             || (packageRoot.Length > 0 && !IsFolderName(packageRoot))) return null;
-        return new PointerFile(version, sha, folder!, packageRoot, previous);
+        return new PointerFile(version, sha, folder!, packageRoot);
     }
 
     private void WritePointer(PointerFile pointer)
@@ -181,7 +215,6 @@ public sealed class ComponentInstaller(HttpClient http, string root, ComponentRe
             ["sha256"] = pointer.Sha256,
             ["folder"] = pointer.Folder,
             ["root"] = pointer.PackageRoot,
-            ["previous"] = pointer.Previous,
             ["installedAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
         };
         string temp = Path.Combine(Root, Guid.NewGuid().ToString("N") + ".tmp");

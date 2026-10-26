@@ -150,7 +150,7 @@ The non-Store build can download and manage [A2DP Windows Bridge](https://github
 
 It needs a second USB Bluetooth adapter; while the earbuds are connected only through the bridge, Windows cannot see them, so battery and earbud settings are unavailable (earbuds with dual-device connection can also connect to the PC's Bluetooth). The Store version only connects to an A2DP Windows Bridge you installed and started yourself. See the [A2DP Bridge guide](docs/A2DP_BRIDGE.md).
 
-The LHDC and A2DP Bridge components have their own releases, so updating EncoDeck does not download them again; the app pins the SHA-256 of every component package.
+The LHDC and A2DP Bridge components have their own releases, so updating EncoDeck does not download them again; each can be checked for updates, updated and uninstalled from the Labs page, and every download is verified by size and SHA-256.
 
 ## Building
 

@@ -150,7 +150,7 @@ EncoDeck 是用 **WinUI 3** 编写的 Windows 耳机控制工具。它把常用�
 
 需要第二个 USB 蓝牙适配器；只经 Bridge 连接时 Windows 看不到耳机，电量与耳机设置不可用（支持双设备连接的耳机可同时连接电脑蓝牙）。商店版只连接你自行安装并启动的 A2DP Windows Bridge。详见 [A2DP Bridge 说明](docs/A2DP_BRIDGE.md)。
 
-LHDC 与 A2DP Bridge 组件都有各自独立的 Release，更新 EncoDeck 不会重新下载它们；应用内固定每个组件包的 SHA-256。
+LHDC 与 A2DP Bridge 组件都有各自独立的 Release，更新 EncoDeck 不会重新下载它们；组件可以在实验室页单独检查更新、更新和卸载，下载内容按大小与 SHA-256 校验。
 
 ## 编译
 

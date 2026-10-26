@@ -108,6 +108,7 @@ internal static class ProbeApp
             Components:
               components                  List the component pins of this build (LHDC, A2DP Bridge).
                          [--install lhdc|a2dpwb --root <folder>]  Download and unpack one as the app does.
+                         [--check [--floor <x.y.z-rN>]]  Look for component releases online as the Labs page does.
 
             Diagnostics:
               render-model --file <x.vfxms> --out <dir>  Render a HeyMelody 3D model off screen to PNG

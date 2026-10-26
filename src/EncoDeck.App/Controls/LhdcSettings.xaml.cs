@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.App.Services;
+using EncoDeck.Platform.Components;
 using EncoDeck.Platform.Lhdc;
 using EncoDeck.Platform.Updates;
 using EncoDeck.Platform.Packaging;
@@ -20,6 +21,8 @@ public sealed partial class LhdcSettings : UserControl
         Loaded += async (_, _) =>
         {
             Cancel.Content = Loc.Get("Lhdc_Cancel");
+            CheckUpdates.Content = Loc.Get("Component_CheckUpdates");
+            Uninstall.Content = Loc.Get("Component_Uninstall");
             Devices.Header = Loc.Get("Lhdc_Device");
             Rate.Header = Loc.Get("Lhdc_Rate");
             Depth.Header = Loc.Get("Lhdc_Depth");
@@ -37,6 +40,12 @@ public sealed partial class LhdcSettings : UserControl
             Status.Text = StatusText();
             Sync();
             if (LhdcCompanion.IsReady) await Operate(RefreshDevices);
+            // At most once a day, quietly: a later component release can arrive without an app update.
+            if (await LhdcCompanion.CheckForUpdateAsync(App.Instance.Host.Settings.Current.IncludePrereleaseUpdates, force: false) is not null && !_busy)
+            {
+                Status.Text = StatusText();
+                Sync();
+            }
         };
         Unloaded += (_, _) => _download?.Cancel();
     }
@@ -47,7 +56,7 @@ public sealed partial class LhdcSettings : UserControl
         string text = Loc.Get(LhdcCompanion.StatusKey);
         if (LhdcCompanion.Component.Installed is { } installed)
             text += Environment.NewLine + Loc.Format("Lhdc_Version", installed.Version);
-        if (LhdcCompanion.UpdateAvailable) text += Environment.NewLine + Loc.Format("Lhdc_UpdateAvailable", LhdcCompanion.Component.Release.Version);
+        if (LhdcCompanion.UpdateTarget is { } update) text += Environment.NewLine + Loc.Format("Lhdc_UpdateAvailable", update.Version);
         return text;
     }
 
@@ -60,6 +69,10 @@ public sealed partial class LhdcSettings : UserControl
         Download.IsEnabled = !_busy && LhdcCompanion.CanDownload;
         if (PackageIdentity.IsPackaged) Download.Content = Loc.Get("Lhdc_StoreDisabled");
         StandaloneLink.Visibility = PackageIdentity.IsPackaged ? Visibility.Visible : Visibility.Collapsed;
+        bool manage = !PackageIdentity.IsPackaged && LhdcCompanion.StatusKey is "Lhdc_Ready" or "Lhdc_Missing" or "Lhdc_Unpublished";
+        CheckUpdates.Visibility = manage && _download is null ? Visibility.Visible : Visibility.Collapsed;
+        Uninstall.Visibility = manage && LhdcCompanion.IsDownloaded && _download is null ? Visibility.Visible : Visibility.Collapsed;
+        CheckUpdates.IsEnabled = Uninstall.IsEnabled = !_busy;
         Devices.IsEnabled = Rate.IsEnabled = Depth.IsEnabled = Bitrate.IsEnabled = Adaptive.IsEnabled = Refresh.IsEnabled = !_busy;
         Apply.IsEnabled = Restore.IsEnabled = !_busy && Devices.SelectedItem is LhdcDevice;
     }
@@ -129,6 +142,41 @@ public sealed partial class LhdcSettings : UserControl
         Status.Text = Loc.Get("Lhdc_Applied");
         await ReadStatus();
     });
+
+    private async void OnCheckUpdates(object sender, RoutedEventArgs e) => await Operate(async () =>
+    {
+        Status.Text = Loc.Get("Component_Checking");
+        var outcome = await LhdcCompanion.CheckForUpdateAsync(App.Instance.Host.Settings.Current.IncludePrereleaseUpdates, force: true);
+        Status.Text = StatusText() + Environment.NewLine + outcome switch
+        {
+            ComponentUpdateOutcome.Available => Loc.Format("Component_UpdateFound", LhdcCompanion.UpdateTarget?.Version ?? LhdcCompanion.OnlineRelease?.Version),
+            ComponentUpdateOutcome.UpToDate => Loc.Get("Component_UpToDate"),
+            ComponentUpdateOutcome.RateLimited => Loc.Get("Component_RateLimited"),
+            ComponentUpdateOutcome.Offline => Loc.Get("Component_Offline"),
+            _ => Loc.Get("Component_CheckFailed"),
+        };
+    });
+
+    private async void OnUninstall(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Lhdc_UninstallTitle"),
+            Content = new TextBlock { Text = Loc.Get("Lhdc_UninstallBody"), TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = Loc.Get("Component_Uninstall"),
+            CloseButtonText = Loc.Get("Lhdc_Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        await Operate(async () =>
+        {
+            await LhdcCompanion.UninstallAsync();
+            Devices.ItemsSource = null;
+            Observed.Text = "";
+            Status.Text = StatusText() + Environment.NewLine + Loc.Get("Lhdc_Uninstalled");
+        });
+    }
 
     private void OnCancel(object sender, RoutedEventArgs e) => _download?.Cancel();
     private async void OnDownload(object sender, RoutedEventArgs e)

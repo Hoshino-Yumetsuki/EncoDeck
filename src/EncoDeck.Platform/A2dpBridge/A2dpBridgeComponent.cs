@@ -32,6 +32,9 @@ public sealed record BridgeInstallation(string Directory, BridgeOrigin Origin, s
 /// </summary>
 public static class A2dpBridgeComponent
 {
+    /// <summary>The A2DPWB pipe protocol this app speaks (protocol 1 of the ipc crate).</summary>
+    public const int Interface = A2dpBridgeConnection.ProtocolVersion;
+
     public const string CoreExe = "a2dpwb-core.exe";
     public const string WindowExe = "a2dpwb.exe";
     public const string DriverExe = "a2dpwb-driver.exe";
@@ -162,6 +165,61 @@ public static class A2dpBridgeComponent
         };
         foreach (var (name, value) in environment ?? new Dictionary<string, string>()) start.Environment[name] = value;
         using var process = Process.Start(start) ?? throw new IOException("Cannot start the A2DPWB core.");
+    }
+
+    /// <summary>Where A2DPWB keeps the previous driver of each adapter it assigned WinUSB to (its settings folder's <c>driver</c>).</summary>
+    public static string DriverRecordsDirectory(string? settingsDirectory = null) =>
+        Path.Combine(string.IsNullOrEmpty(settingsDirectory)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "A2DPWB") : settingsDirectory, "driver");
+
+    /// <summary>Adapters A2DPWB took from Windows and has not given back (one record each).</summary>
+    public static int DriverRecordCount(string recordsDirectory)
+    {
+        try { return Directory.Exists(recordsDirectory) ? Directory.EnumerateFiles(recordsDirectory, "*.json").Count() : 0; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return 0; }
+    }
+
+    /// <summary>
+    /// Gives every recorded adapter back to Windows with one administrator prompt, as A2DPWB's uninstaller does:
+    /// <c>a2dpwb-driver.exe restore --records &lt;dir&gt;</c>. Returns the helper's exit code (0: all restored);
+    /// a declined prompt throws <see cref="OperationCanceledException"/>.
+    /// </summary>
+    public static async Task<int> RestoreRecordedDriversAsync(BridgeInstallation installation, string recordsDirectory, CancellationToken ct = default)
+    {
+        string result = Path.Combine(Path.GetTempPath(), $"encodeck-a2dpwb-restore-{Guid.NewGuid():N}.json");
+        if (recordsDirectory.Contains('"') || result.Contains('"')) throw new ArgumentException("Unexpected quote in a path.", nameof(recordsDirectory));
+        // Elevation needs ShellExecute, which takes one argument string; folder paths never contain quotes.
+        var start = new ProcessStartInfo(Path.Combine(installation.Directory, DriverExe), $"restore --records \"{recordsDirectory.TrimEnd('\\')}\" --out \"{result}\"")
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = installation.Directory,
+        };
+        try
+        {
+            using var process = Process.Start(start) ?? throw new IOException("Cannot start a2dpwb-driver.exe.");
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            return process.ExitCode;
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { throw new OperationCanceledException("The administrator prompt was declined.", ex); }
+        finally
+        {
+            try { File.Delete(result); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>Removes A2DPWB's "start with Windows" entry when it names a copy under <paramref name="root"/> (one about to be deleted).</summary>
+    public static void RemoveStartupEntryUnder(string root)
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", writable: true);
+            if (key?.GetValue("A2DPWB") is not string command || ProgramOf(command) is not { } program) return;
+            string prefix = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (Path.GetFullPath(program).StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) key.DeleteValue("A2DPWB", throwOnMissingValue: false);
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException or ArgumentException) { }
     }
 
     /// <summary>A2DPWB's own window (first-run setup, adapter, firmware, pairing and diagnostics).</summary>

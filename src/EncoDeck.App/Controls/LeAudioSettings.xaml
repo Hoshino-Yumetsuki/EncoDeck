@@ -6,6 +6,10 @@
  <Border Style="{StaticResource CardStyle}">
   <StackPanel Spacing="10">
    <TextBlock x:Uid="LeAudio_Title" Style="{StaticResource BodyStrongTextBlockStyle}" />
+   <!-- Codecs, as the home page tags them; outlined ones are experimental upstream. -->
+   <StackPanel Orientation="Horizontal" Spacing="6" x:Uid="LeAudio_Codecs">
+    <Border Style="{StaticResource CodecBadgeStyle}"><TextBlock Text="LC3" Style="{StaticResource CodecBadgeTextStyle}" /></Border>
+   </StackPanel>
    <TextBlock x:Uid="LeAudio_Summary" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    <TextBlock x:Uid="LeAudio_NoiseNote" TextWrapping="Wrap" />
    <TextBlock x:Name="Status" TextWrapping="Wrap" />

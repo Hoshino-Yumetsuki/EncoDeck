@@ -17,6 +17,23 @@ foreach ($component in $manifest.components) {
     try { $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/tags/$($component.tag)" -Headers $headers }
     catch { $failures += "$($component.id): release $($component.tag) not found"; continue }
     if ($release.draft) { $failures += "$($component.id): release $($component.tag) is a draft" }
+    # component.json lets apps released earlier find this release; it must describe exactly the pin.
+    $description = $release.assets | Where-Object name -eq 'component.json'
+    if (-not $description) { $failures += "$($component.id): component.json missing from $($component.tag)" }
+    else {
+        $raw = Invoke-WebRequest -Uri $description.browser_download_url -Headers @{ 'User-Agent' = 'EncoDeck-CI' } -UseBasicParsing
+        $manifest = [Text.Encoding]::UTF8.GetString($raw.RawContentStream.ToArray()).TrimStart([char]0xFEFF) | ConvertFrom-Json
+        if ($manifest.schema -ne 1 -or $manifest.id -ne $component.id -or $manifest.version -ne $component.version -or $manifest.tag -ne $component.tag `
+            -or $manifest.interface -ne $component.interface -or $manifest.minApp -ne $component.minApp) {
+            $failures += "$($component.id): component.json of $($component.tag) does not describe the pin"
+        }
+        foreach ($package in $component.packages) {
+            $described = $manifest.packages | Where-Object file -eq $package.file
+            if (-not $described -or $described.size -ne $package.size -or $described.sha256 -ne $package.sha256) {
+                $failures += "$($component.id): component.json lists $($package.file) differently from the pin"
+            }
+        }
+    }
     foreach ($package in $component.packages) {
         if (-not $package.sha256 -or $package.size -le 0) { $failures += "$($component.id): $($package.file) is not pinned"; continue }
         $asset = $release.assets | Where-Object name -eq $package.file
