@@ -195,7 +195,7 @@
   <data name="Settings_Advanced.Text" xml:space="preserve"><value>Advanced</value></data>
   <data name="Settings_RawLogging.Header" xml:space="preserve"><value>Log control-channel traffic (diagnostics)</value></data>
   <data name="Settings_About.Text" xml:space="preserve"><value>About</value></data>
-  <data name="Settings_Disclaimer.Text" xml:space="preserve"><value>EncoDeck is an open-source community project. It is not affiliated with, endorsed by or supported by OPPO, OnePlus or realme. Product names are used only to describe compatibility.</value></data>
+  <data name="Settings_Disclaimer.Text" xml:space="preserve"><value>EncoDeck is an unofficial open-source project with no affiliation, partnership or endorsement from the earbud brands it supports or their manufacturers. Brand and product names are used only to describe compatibility.</value></data>
   <data name="Settings_License.Text" xml:space="preserve"><value>Licensed under the GNU General Public License v3.0 only (GPL-3.0-only). Third-party notices are included with the app.</value></data>
   <data name="Settings_Source.Content" xml:space="preserve"><value>Source code</value></data>
   <data name="Settings_Notices.Content" xml:space="preserve"><value>Third-party notices</value></data>
@@ -475,7 +475,7 @@
   <data name="Update_DownloadAndInstall" xml:space="preserve"><value>Download and install</value></data>
   <data name="Update_InstallNow" xml:space="preserve"><value>Restart and update now</value></data>
   <data name="Notify_UpdateReady_Title" xml:space="preserve"><value>EncoDeck {0} is ready to install</value></data>
-  <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>Downloaded in the background. Install it from Settings › Updates.</value></data>
+  <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>Downloaded in the background. Install it from About › Updates.</value></data>
   <data name="Notify_Updated_Title" xml:space="preserve"><value>EncoDeck was updated to {0}</value></data>
   <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck is running in the notification area.</value></data>
   <data name="Settings_StoreUpdate.Content" xml:space="preserve"><value>Update</value></data>
@@ -716,4 +716,19 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>Smart volume</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>Automatically adjust playback volume as ambient noise changes</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>This firmware can list devices but cannot remotely connect, disconnect, or remove them. Use Bluetooth settings on the corresponding device.</value></data>
+  <data name="Nav_About.Content" xml:space="preserve"><value>About</value></data>
+  <data name="About_Legal.Text" xml:space="preserve"><value>Legal</value></data>
+  <data name="About_Tagline.Text" xml:space="preserve"><value>Manage your earbuds on Windows — no more reaching for your phone just to switch noise cancelling.</value></data>
+  <data name="About_Compatibility.Content" xml:space="preserve"><value>Device compatibility</value></data>
+  <data name="About_Changelog.Content" xml:space="preserve"><value>Changelog</value></data>
+  <data name="About_Feedback.Text" xml:space="preserve"><value>Feedback</value></data>
+  <data name="About_FeedbackText.Text" xml:space="preserve"><value>If the earbuds will not connect, a setting has no effect or the model is recognised wrongly, open an issue with the earbud model, firmware version, Windows version and the steps you took. Test results for models not yet verified are welcome too.</value></data>
+  <data name="About_ReportIssue.Content" xml:space="preserve"><value>Report an issue</value></data>
+  <data name="About_Contributing.Content" xml:space="preserve"><value>Contributing</value></data>
+  <data name="About_Thanks.Text" xml:space="preserve"><value>Acknowledgements</value></data>
+  <data name="About_ThanksProtocol.Text" xml:space="preserve"><value>Earbud protocol and device support</value></data>
+  <data name="About_ThanksMoondrop.Text" xml:space="preserve"><value>MOONDROP model data, GAIA framing and commands</value></data>
+  <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 component</value></data>
+  <data name="About_ThanksTray.Text" xml:space="preserve"><value>Notification area icon</value></data>
+  <data name="About_LicenseLink.Content" xml:space="preserve"><value>License</value></data>
 </root>

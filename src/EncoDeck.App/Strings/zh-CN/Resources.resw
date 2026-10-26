@@ -195,7 +195,7 @@
   <data name="Settings_Advanced.Text" xml:space="preserve"><value>高级</value></data>
   <data name="Settings_RawLogging.Header" xml:space="preserve"><value>记录控制通道数据（诊断）</value></data>
   <data name="Settings_About.Text" xml:space="preserve"><value>关于</value></data>
-  <data name="Settings_Disclaimer.Text" xml:space="preserve"><value>EncoDeck 是开源社区项目，与 OPPO、OnePlus、realme 没有关联，也未获得其认可或支持。产品名称仅用于说明兼容性。</value></data>
+  <data name="Settings_Disclaimer.Text" xml:space="preserve"><value>EncoDeck 是非官方开源项目，与所支持的耳机品牌及其所属厂商无隶属、合作或背书关系。品牌和产品名称仅用于说明兼容性。</value></data>
   <data name="Settings_License.Text" xml:space="preserve"><value>本软件以 GNU 通用公共许可证第 3 版（仅限，GPL-3.0-only）发布。第三方声明随应用附带。</value></data>
   <data name="Settings_Source.Content" xml:space="preserve"><value>源代码</value></data>
   <data name="Settings_Notices.Content" xml:space="preserve"><value>第三方声明</value></data>
@@ -475,7 +475,7 @@
   <data name="Update_DownloadAndInstall" xml:space="preserve"><value>下载并安装</value></data>
   <data name="Update_InstallNow" xml:space="preserve"><value>立即重启并更新</value></data>
   <data name="Notify_UpdateReady_Title" xml:space="preserve"><value>EncoDeck {0} 已可安装</value></data>
-  <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>已在后台下载。前往 设置 › 更新 安装。</value></data>
+  <data name="Notify_UpdateReady_Message" xml:space="preserve"><value>已在后台下载。前往 关于 › 更新 安装。</value></data>
   <data name="Notify_Updated_Title" xml:space="preserve"><value>EncoDeck 已更新到 {0}</value></data>
   <data name="Notify_Updated_Message" xml:space="preserve"><value>EncoDeck 正在通知区域中运行。</value></data>
   <data name="Settings_StoreUpdate.Content" xml:space="preserve"><value>更新</value></data>
@@ -716,4 +716,19 @@
   <data name="Toggle_AutoVolume" xml:space="preserve"><value>智能音量调节</value></data>
   <data name="Toggle_AutoVolume_Description" xml:space="preserve"><value>根据环境噪声变化自动调整耳机播放音量</value></data>
   <data name="Dual_ManagementUnavailable" xml:space="preserve"><value>此耳机固件支持查看设备列表，但不支持远程连接、断开或移除。请在对应设备的蓝牙设置中操作。</value></data>
+  <data name="Nav_About.Content" xml:space="preserve"><value>关于</value></data>
+  <data name="About_Legal.Text" xml:space="preserve"><value>法律信息</value></data>
+  <data name="About_Tagline.Text" xml:space="preserve"><value>在 Windows 上轻松管理你的耳机，不用为了切个降噪再拿起手机。</value></data>
+  <data name="About_Compatibility.Content" xml:space="preserve"><value>设备兼容性</value></data>
+  <data name="About_Changelog.Content" xml:space="preserve"><value>更新日志</value></data>
+  <data name="About_Feedback.Text" xml:space="preserve"><value>反馈问题</value></data>
+  <data name="About_FeedbackText.Text" xml:space="preserve"><value>如果遇到连不上、某项设置不生效或者型号识别错误，欢迎提交 Issue，并写明耳机型号、固件版本、Windows 版本和操作步骤。耳机不在已测试列表中但可以正常使用，也欢迎反馈测试结果。</value></data>
+  <data name="About_ReportIssue.Content" xml:space="preserve"><value>提交 Issue</value></data>
+  <data name="About_Contributing.Content" xml:space="preserve"><value>参与贡献</value></data>
+  <data name="About_Thanks.Text" xml:space="preserve"><value>致谢</value></data>
+  <data name="About_ThanksProtocol.Text" xml:space="preserve"><value>耳机协议与设备适配</value></data>
+  <data name="About_ThanksMoondrop.Text" xml:space="preserve"><value>水月雨型号档案、GAIA 帧格式与控制命令</value></data>
+  <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 组件</value></data>
+  <data name="About_ThanksTray.Text" xml:space="preserve"><value>托盘图标</value></data>
+  <data name="About_LicenseLink.Content" xml:space="preserve"><value>许可证全文</value></data>
 </root>

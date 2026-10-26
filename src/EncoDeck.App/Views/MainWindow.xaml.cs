@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
         ["Devices"] = typeof(DevicesPage),
         ["Labs"] = typeof(LabsPage),
         ["Settings"] = typeof(SettingsPage),
+        ["About"] = typeof(AboutPage),
     };
 
     public MainWindow()
