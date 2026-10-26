@@ -107,7 +107,7 @@ public sealed class DeviceManager : IDeviceManager
                 .Where(x => x.Profile is not null)
                 // A USB endpoint name can also contain a Bluetooth model name; never open Bluetooth control for it.
                 .Where(x => x.Device.Identity.Transport != DeviceTransport.Usb || x.Profile is UsbHeadsetProfile)
-                // The read-only generic profile matches by name ("OPPO …"), which also hits phones and
+                // The read-only generic profile matches by name ("OPPO 鈥?), which also hits phones and
                 // watches; only accept it for audio devices. Exact model profiles are trusted as-is.
                 .Where(x => !IsGeneric(x.Profile!) || x.Device.IsAudioDevice)
                 .Select(x => new KnownDevice(x.Device.Identity, x.Profile!, x.Device.IsConnected, x.Device.Identity.DeviceId == activeId))
@@ -245,7 +245,10 @@ public sealed class DeviceManager : IDeviceManager
                 }
             }
 
-            var link = await BluetoothLinkMonitor.CreateAsync(choice.Identity.DeviceId, cancellationToken).ConfigureAwait(false);
+            var link = await BluetoothLinkMonitor.CreateAsync(
+                choice.Identity.DeviceId,
+                profile.Form == DeviceForm.Headphones,
+                cancellationToken).ConfigureAwait(false);
             if (link is null)
             {
                 _logger.LogWarning("Could not open {Device} for link monitoring", choice.Identity);
@@ -289,6 +292,9 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetEqualizerPresetAsync(string presetId, CancellationToken cancellationToken = default) =>
         Controller is { } c ? c.SetEqualizerPresetAsync(presetId, cancellationToken) : Task.FromResult(CommandResult.NotConnected);
+
+    public Task<CommandResult> SetEqualizerBandsAsync(IReadOnlyList<int> bands, CancellationToken cancellationToken = default) =>
+        Controller is { } c ? c.SetEqualizerBandsAsync(bands, cancellationToken) : Task.FromResult(CommandResult.NotConnected);
 
     public Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken = default) =>
         Controller is { } c ? c.SetToggleAsync(toggle, enabled, cancellationToken) : Task.FromResult(CommandResult.NotConnected);

@@ -369,6 +369,10 @@ public sealed partial class OppoDeviceController : IDeviceController
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Oppo exposes no per-band write command, so band editing stays unavailable.</summary>
+    public Task<CommandResult> SetEqualizerBandsAsync(IReadOnlyList<int> bands, CancellationToken cancellationToken) =>
+        Task.FromResult(CommandResult.Unsupported("Editable equalizer bands."));
+
     public async Task<CommandResult> SetEqualizerPresetAsync(string presetId, CancellationToken cancellationToken)
     {
         if (!IsAvailable(DeviceCapability.Equalizer)) return CommandResult.Unsupported("Device EQ is not available on this model.");

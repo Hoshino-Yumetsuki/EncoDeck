@@ -52,6 +52,9 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
                     if (functions[i] == 34) _caseType = 2;
                     if (functions[i] == 42) _caseType = 10;
                 }
+                Logger.LogInformation(
+                    "Sony v2 capability types: battery={Battery:X2}, noise={Noise:X2}, eq={Eq:X2}, function table={FunctionCount} entries",
+                    _batteryType, _noiseType ?? 0, _eqType ?? 0, (functions.Length - 3) / 2);
             }
         }
         return (await RefreshAsync(cancellationToken).ConfigureAwait(false)).Status == CommandStatus.Success;
@@ -228,7 +231,10 @@ internal sealed partial class SonyAkgController(IDuplexByteChannel channel, Cont
         else if (Sony && p[0] == 7 && p[1] == 0 && p.Length >= 3 && p.Length == 3 + p[2] * 2) valid = true;
         else if (Sony && ((!_v2 && p[0] is 0x11 or 0x13) || (_v2 && p[0] is 0x23 or 0x25)))
         {
-            if (p[1] is 1 or 9 && p.Length >= 6) { Battery(BatteryComponent.Left, p[2], p[3]); Battery(BatteryComponent.Right, p[4], p[5]); valid = true; }
+            // Subtype 9 is the extra "second unit" layout the earbuds push on connect; on a headset
+            // it carries zeros and would otherwise overwrite the real (single) battery level with 0.
+            if (p[1] == 9 && profile.Form != Core.Profiles.DeviceForm.Earbuds) valid = true;
+            else if (p[1] is 1 or 9 && p.Length >= 6) { Battery(BatteryComponent.Left, p[2], p[3]); Battery(BatteryComponent.Right, p[4], p[5]); valid = true; }
             else if (p[1] is 0 or 2 or 8 or 10 && p.Length >= 4) { Battery(p[1] is 2 or 10 ? BatteryComponent.Case : BatteryComponent.Left, p[2], p[3]); valid = true; }
         }
         else if (Sony && _v2 && p[0] is 0x67 or 0x69 && p[1] == _noiseType && SonyV2Noise.TryRead(p, out var mode))

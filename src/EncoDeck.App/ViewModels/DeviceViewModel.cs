@@ -160,6 +160,12 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial bool IsEqualizerAvailable { get; set; }
     [ObservableProperty] public partial string EqualizerText { get; set; } = string.Empty;
 
+    /// <summary>Band values (dB offsets, -6..+6) the device reported for the active preset.</summary>
+    [ObservableProperty] public partial IReadOnlyList<int> EqualizerBands { get; set; } = [];
+
+    /// <summary>True when the active preset's band values can be overwritten (Sony manual / custom slots).</summary>
+    [ObservableProperty] public partial bool CanEditEqualizerBands { get; set; }
+
     [ObservableProperty] public partial string FirmwareText { get; set; } = string.Empty;
     [ObservableProperty] public partial string LastUpdatedText { get; set; } = string.Empty;
     [ObservableProperty] public partial string TrayToolTip { get; set; } = "EncoDeck";
@@ -190,6 +196,12 @@ public sealed partial class DeviceViewModel : ObservableObject
     private async Task SetEqualizerAsync(string presetId)
     {
         await RunAsync(() => _commands.SetEqualizerPresetAsync(presetId));
+    }
+
+    /// <summary>Pushes edited band values (dB offsets) for the active manual/custom preset.</summary>
+    public async Task SetEqualizerBandsAsync(IReadOnlyList<int> bands)
+    {
+        await RunAsync(() => _commands.SetEqualizerBandsAsync(bands));
     }
 
     public async Task SetToggleAsync(DeviceToggle toggle, bool enabled)
@@ -504,6 +516,12 @@ public sealed partial class DeviceViewModel : ObservableObject
             var preset = profile?.EqualizerPresets.FirstOrDefault(p => p.Id == eq.ActivePresetId);
             EqualizerText = preset is not null ? Text(preset.ResourceKey, preset.DisplayName) : Loc.Format("Eq_UnknownPreset", eq.RawPresetValue);
         }
+
+        // Band values come from the device for manual/custom presets; fixed presets leave them empty
+        // so the view falls back to the built-in reference curve.
+        EqualizerBands = eq?.Bands ?? [];
+        CanEditEqualizerBands = IsReady && IsEqualizerAvailable
+            && profile?.EqualizerPresets.FirstOrDefault(p => p.Id == eq?.ActivePresetId)?.EditableBands == true;
     }
 
     private void ApplyToggles(DeviceState state)

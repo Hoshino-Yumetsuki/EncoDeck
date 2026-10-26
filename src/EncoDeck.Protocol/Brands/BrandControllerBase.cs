@@ -123,6 +123,8 @@ public abstract class BrandControllerBase : IDeviceController
 
     public virtual Task<CommandResult> SetEqualizerPresetAsync(string presetId, CancellationToken cancellationToken) => Task.FromResult(NotSupported("Equalizer"));
 
+    public virtual Task<CommandResult> SetEqualizerBandsAsync(IReadOnlyList<int> bands, CancellationToken cancellationToken) => Task.FromResult(NotSupported("Editable equalizer bands"));
+
     public virtual Task<CommandResult> SetToggleAsync(DeviceToggle toggle, bool enabled, CancellationToken cancellationToken) => Task.FromResult(NotSupported(toggle.ToString()));
 
     public abstract Task<CommandResult> RefreshAsync(CancellationToken cancellationToken);
