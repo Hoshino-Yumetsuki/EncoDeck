@@ -17,7 +17,7 @@ namespace EncoDeck.Protocol.Brands.Xiaomi;
 /// (catalog option lists, community notes) is looked up by name or by the VID/PID the earbuds
 /// report, and every feature is declared only once the earbuds answered for it.
 /// </summary>
-public sealed class XiaomiDeviceProfile : IControllableProfile
+public sealed class XiaomiDeviceProfile : IControllableProfile, IBrandGestureProfile
 {
     private const string ProtocolNote = "Community protocol notes (BudsLink, redmi-buds-bar, mebuds); enabled after a live readback.";
 
@@ -111,6 +111,9 @@ public sealed class XiaomiDeviceProfile : IControllableProfile
     public bool HasCustomEqualizer => HasConfig(XiaomiConfig.EqualizerPreset) && HasConfig(XiaomiConfig.CustomEqualizer);
 
     public bool HasGestures => HasConfig(XiaomiConfig.Gestures);
+
+    /// <summary>Gesture rows; each appears only after the earbuds reported that gesture.</summary>
+    public IReadOnlyList<BrandGestureSlot> GestureSlots => XiaomiGestures.Slots;
 
     /// <summary>Ringing needs a readable wear state (the in-ear safety check) and a model not known to lack the command.</summary>
     public bool HasFind => HasConfig(XiaomiConfig.WearState) && _community?.FindCommand != false;

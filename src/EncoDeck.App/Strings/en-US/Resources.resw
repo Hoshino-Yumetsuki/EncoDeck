@@ -493,6 +493,21 @@
   <data name="Vivo_Eq_Immersive" xml:space="preserve"><value>Immersive audio</value></data>
   <data name="Vivo_Eq_Audiobooks" xml:space="preserve"><value>Audiobooks</value></data>
   <data name="Vivo_Eq_UltimateMaster" xml:space="preserve"><value>Ultimate master</value></data>
+  <data name="Vivo_Function_Translate" xml:space="preserve"><value>Translate</value></data>
+  <data name="Vivo_Function_DeclineCall" xml:space="preserve"><value>Decline incoming call</value></data>
+  <data name="Vivo_HoldCycle" xml:space="preserve"><value>Touch-and-hold noise modes</value></data>
+  <data name="Brand_UnknownValue" xml:space="preserve"><value>Unknown value (0x{0}) — reported only</value></data>
+  <data name="Edifier_AncComfort" xml:space="preserve"><value>Comfort</value></data>
+  <data name="Edifier_Eq_Classic" xml:space="preserve"><value>Classic</value></data>
+  <data name="Edifier_Eq_Pop" xml:space="preserve"><value>Pop</value></data>
+  <data name="Edifier_Eq_Classical" xml:space="preserve"><value>Classical</value></data>
+  <data name="Edifier_Eq_Rock" xml:space="preserve"><value>Rock</value></data>
+  <data name="Edifier_ButtonCycle" xml:space="preserve"><value>Modes the button cycles through</value></data>
+  <data name="PowerOff_Timer.Header" xml:space="preserve"><value>Auto power-off</value></data>
+  <data name="PowerOff_Timer.Description" xml:space="preserve"><value>Turns the headphones off after the selected time.</value></data>
+  <data name="PowerOff_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="PowerOff_Minutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="PowerOff_Hours" xml:space="preserve"><value>{0} h</value></data>
   <data name="Huawei_NoiseLevel_Dynamic" xml:space="preserve"><value>Dynamic</value></data>
   <data name="Huawei_NoiseLevel_Cozy" xml:space="preserve"><value>Cozy</value></data>
   <data name="Huawei_NoiseLevel_General" xml:space="preserve"><value>General</value></data>
@@ -606,7 +621,6 @@
   <data name="Xiaomi_Ambient_0" xml:space="preserve"><value>Regular</value></data>
   <data name="Xiaomi_Ambient_1" xml:space="preserve"><value>Voice</value></data>
   <data name="Xiaomi_Ambient_2" xml:space="preserve"><value>Ambient</value></data>
-  <data name="Xiaomi_UnknownAction" xml:space="preserve"><value>Unknown function (0x{0})</value></data>
   <data name="Toggle_AutoAnswerCalls" xml:space="preserve"><value>Auto-answer calls</value></data>
   <data name="Toggle_AutoAnswerCalls_Description" xml:space="preserve"><value>The earbuds answer incoming calls automatically</value></data>
   <data name="Error_FindWhileWorn" xml:space="preserve"><value>An earbud is in an ear. Take both earbuds out before playing the find tone.</value></data>

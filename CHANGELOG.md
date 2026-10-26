@@ -21,6 +21,10 @@
 - FreeBuds 4E / 5、FreeClip 新增预设 EQ，FreeBuds 7、Pro 5 提供 7 种场景音效，FreeClip 2、FreeArc 增加运动音效；FreeBuds Pro 4 开放降噪 / 通透 / 关闭，FreeBuds 7i 开放游戏模式与双设备连接，FreeBuds 3 开放电量。
 - 小米 / Redmi 耳机新增左右耳手势设置、佩戴状态与佩戴检测开关、查找耳机、自动接听、自适应降噪和自定义 EQ 曲线编辑；空间音频可在关闭 / 开启 / 头部跟踪之间切换。每项功能只在耳机给出有效回读后显示，写入以回读确认，未识别的手势功能只显示不改写。查找耳机在任一耳机佩戴中时拒绝播放。
 - 小米 / Redmi 耳机名称不在型号目录中时，按耳机报告的 VID/PID 识别型号，新增识别 Redmi Buds 3 / 3 Pro、Redmi AirDots 3 Pro 等。功能按协议实现，尚未在 Windows 真机验证，详见 [设备兼容性](docs/COMPATIBILITY.md#小米--redmi)。
+- vivo / iQOO 新增手势设置（左右耳双击、长按功能、长按切换的降噪模式）和佩戴检测开关，耳机回报当前设置后才显示。vivo TWS 3e 依据社区真机记录开放，其他型号需开启实验功能；均未在 EncoDeck 真机验证，详见 [vivo 适配说明](docs/COMPATIBILITY.md#vivo--iqoo)。
+- vivo TWS 5 新增双设备列表：显示已配对设备，可连接、断开其他设备或移除未连接的设备，每次操作以耳机回报的列表确认；同系列其他声明双连的型号需开启实验功能。
+- 漫步者 W820NB 新增环境声音量（−3～+3）、游戏模式和定时关机；W820NB 双金标版另有按键循环模式和预设音效；新增 W200BT Plus（音效、定时关机）。各项均在耳机回读后显示。
+- 新增漫步者 W860NB PRO、花再 Evo Pro、FitBuds Turbo、FitClip Ultra、X5 Pro：电量，按型号的降噪 / 防风降噪 / 环境声，FitBuds Turbo、FitClip Ultra 的游戏模式；X5 Pro 的游戏模式和佩戴检测为实验功能。依据社区真机记录，尚未在 EncoDeck 真机验证，详见 [漫步者适配说明](docs/COMPATIBILITY.md#漫步者)。
 
 ### 改进
 
@@ -30,6 +34,8 @@
 - 按社区实机记录修正 FreeBuds Pro 3 / 7i 的降噪档位对应和 Pro 5 的音效名称；电量为 0 的部件按“未上报”处理，不再显示 0%。
 - 小米 / Redmi 降噪档位改为“轻度 / 均衡 / 深度”、通透档位改为“标准 / 人声增强 / 环境声增强”命名；Redmi Buds 6 Play、REDMI Buds 8 Active 等没有降噪硬件的型号不再显示降噪。
 - 小米 / Redmi 设置改为逐项读取，单个不支持的设置不再让其他设置一起读取失败；耳机主动推送的电量变化会即时更新界面。
+- vivo / iQOO 耳机没有经典蓝牙控制服务时，改用 BLE GATT 控制通道。
+- 漫步者真无线耳机的充电盒离线时不再显示旧的盒电量。
 
 ### 修复
 

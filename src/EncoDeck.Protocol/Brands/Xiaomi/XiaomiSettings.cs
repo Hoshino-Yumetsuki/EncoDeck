@@ -4,6 +4,7 @@
 // GPL-3.0), mebuds (https://github.com/paradox-ng/mebuds, GPL-3.0-or-later) and MiBudsClient
 // (https://github.com/CesurPolat/MiBudsClient, GPL-3.0). Gesture kind / function ids also match
 // android_packages_apps_XiaomiTWS (Apache-2.0) and OpenXia (MIT); see THIRD_PARTY_NOTICES.md.
+using EncoDeck.Core.Capabilities;
 using EncoDeck.Core.State;
 
 namespace EncoDeck.Protocol.Brands.Xiaomi;
@@ -57,6 +58,29 @@ public static class XiaomiGestures
         GestureAction.SqueezeAndHold => noiseControl ? [None, VoiceAssistant, NoiseControl] : [None, VoiceAssistant],
         GestureAction.Slide => [None, Volume],
         _ => [None, PlayPause, Previous, Next, VolumeUp, VolumeDown],
+    };
+
+    /// <summary>
+    /// Controls-page rows: every gesture on each earbud, shown once the earbuds reported it. Noise
+    /// control on hold is listed but selectable only after the earbuds' noise control is confirmed.
+    /// </summary>
+    public static IReadOnlyList<BrandGestureSlot> Slots { get; } =
+    [
+        .. from side in new[] { EarSide.Left, EarSide.Right }
+           from action in Actions
+           select new BrandGestureSlot(side, 0, action, SlotLabelKey(action),
+               Functions(action, noiseControl: true)
+                   .Select(f => new BrandGestureChoice(f, [LabelKey(f)], f == NoiseControl ? DeviceCapability.NoiseCancellation : null))
+                   .ToArray()),
+    ];
+
+    private static string SlotLabelKey(GestureAction action) => action switch
+    {
+        GestureAction.SingleSqueeze => "Gesture_Tap1",
+        GestureAction.DoubleSqueeze => "Gesture_Tap2",
+        GestureAction.TripleSqueeze => "Gesture_Tap3",
+        GestureAction.SqueezeAndHold => "Gesture_TapHold",
+        _ => "Gesture_Slide",
     };
 
     /// <summary>Localization key of a function label (shared gesture strings).</summary>

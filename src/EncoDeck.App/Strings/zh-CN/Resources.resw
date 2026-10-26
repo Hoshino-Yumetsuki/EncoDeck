@@ -493,6 +493,21 @@
   <data name="Vivo_Eq_Immersive" xml:space="preserve"><value>沉浸环绕</value></data>
   <data name="Vivo_Eq_Audiobooks" xml:space="preserve"><value>悠扬听书</value></data>
   <data name="Vivo_Eq_UltimateMaster" xml:space="preserve"><value>至臻大师</value></data>
+  <data name="Vivo_Function_Translate" xml:space="preserve"><value>翻译</value></data>
+  <data name="Vivo_Function_DeclineCall" xml:space="preserve"><value>拒接来电</value></data>
+  <data name="Vivo_HoldCycle" xml:space="preserve"><value>长按切换的降噪模式</value></data>
+  <data name="Brand_UnknownValue" xml:space="preserve"><value>未知值 (0x{0})，仅显示</value></data>
+  <data name="Edifier_AncComfort" xml:space="preserve"><value>舒适</value></data>
+  <data name="Edifier_Eq_Classic" xml:space="preserve"><value>经典</value></data>
+  <data name="Edifier_Eq_Pop" xml:space="preserve"><value>流行</value></data>
+  <data name="Edifier_Eq_Classical" xml:space="preserve"><value>古典</value></data>
+  <data name="Edifier_Eq_Rock" xml:space="preserve"><value>摇滚</value></data>
+  <data name="Edifier_ButtonCycle" xml:space="preserve"><value>按键循环切换的模式</value></data>
+  <data name="PowerOff_Timer.Header" xml:space="preserve"><value>定时关机</value></data>
+  <data name="PowerOff_Timer.Description" xml:space="preserve"><value>到达所选时间后自动关闭耳机</value></data>
+  <data name="PowerOff_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="PowerOff_Minutes" xml:space="preserve"><value>{0} 分钟</value></data>
+  <data name="PowerOff_Hours" xml:space="preserve"><value>{0} 小时</value></data>
   <data name="Huawei_NoiseLevel_Dynamic" xml:space="preserve"><value>动态</value></data>
   <data name="Huawei_NoiseLevel_Cozy" xml:space="preserve"><value>舒适</value></data>
   <data name="Huawei_NoiseLevel_General" xml:space="preserve"><value>均衡</value></data>
@@ -606,7 +621,6 @@
   <data name="Xiaomi_Ambient_0" xml:space="preserve"><value>标准</value></data>
   <data name="Xiaomi_Ambient_1" xml:space="preserve"><value>人声增强</value></data>
   <data name="Xiaomi_Ambient_2" xml:space="preserve"><value>环境声增强</value></data>
-  <data name="Xiaomi_UnknownAction" xml:space="preserve"><value>未知功能 (0x{0})</value></data>
   <data name="Toggle_AutoAnswerCalls" xml:space="preserve"><value>自动接听来电</value></data>
   <data name="Toggle_AutoAnswerCalls_Description" xml:space="preserve"><value>来电时由耳机自动接听</value></data>
   <data name="Error_FindWhileWorn" xml:space="preserve"><value>检测到耳机在耳中。请先取下两只耳机，再播放查找提示音。</value></data>

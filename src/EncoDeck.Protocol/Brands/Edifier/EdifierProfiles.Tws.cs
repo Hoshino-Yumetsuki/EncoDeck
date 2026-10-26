@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Model facts from Edifier Connect 8.5.3 assets/products_release.json.
+// Community TWS models: see CreateCommunityTwsProfiles (HyperEars and BudsLink, GPL-3.0).
 using EncoDeck.Core.Profiles;
 
 namespace EncoDeck.Protocol.Brands.Edifier;
@@ -36,5 +37,30 @@ public static partial class EdifierProfiles
         new EdifierProfile("edifier-578", "EDIFIER Lolli5 ANC", "lolli5anc", false, isTws: true, hasSpp: true, gattService: "48093203-1a48-11e9-ab14-d663bd873d93"),
         new EdifierProfile("edifier-586", "EDIFIER LolliClip SE", "lolliclipse", false, isTws: true, hasSpp: true, gattService: "48096603-1a48-11e9-ab14-d663bd873d93"),
         new EdifierProfile("edifier-605", "EDIFIER Atom Max 2.0", "atommax20", false, isTws: true, hasSpp: true, gattService: "48098903-1a48-11e9-ab14-d663bd873d93"),
+        .. CreateCommunityTwsProfiles(),
+    ];
+
+    // Models recorded on real devices by community projects: HyperEars docs/edifier-bes-protocol.md
+    // and PRs #17 / #33 / #54 / #62 (https://github.com/silverpoetry/HyperEars, 361d279, GPL-3.0-only),
+    // and BudsLink deviceConfigs/X5Pro.js + PR #76 (https://github.com/maniacx/BudsLink, ba3160d, GPL-3.0).
+    private static IEnumerable<IDeviceProfile> CreateCommunityTwsProfiles() =>
+    [
+        new EdifierProfile("edifier-evo-pro", "EDIFIER 花再 Evo Pro", "evopro", false, isTws: true, hasSpp: true,
+            spec: new EdifierSpec(EdifierFraming.V2Xor, StateBattery: true, EdifierAnc.SlotEvo, EdifierFeatures.Noise,
+                Evidence: "花再 Evo Pro: HyperEars community real-device capture (L/R battery, noise slot 0x1B incl. wind)",
+                RequireBrand: true)),
+        new EdifierProfile("edifier-fitbuds-turbo", "EDIFIER FitBuds Turbo", "fitbudsturbo", false, isTws: true, hasSpp: true,
+            spec: new EdifierSpec(EdifierFraming.V2, StateBattery: true, EdifierAnc.SlotEvo, EdifierFeatures.Noise | EdifierFeatures.GameMode,
+                Evidence: "FitBuds Turbo: HyperEars PR #62 contributor device (plaintext payloads, slot 0x1B, game mode)")),
+        new EdifierProfile("edifier-fitclip-ultra", "EDIFIER FitClip Ultra", "fitclipultra", false, isTws: true, hasSpp: true,
+            spec: new EdifierSpec(EdifierFraming.V2Xor, StateBattery: true, EdifierAnc.None, EdifierFeatures.GameMode,
+                Evidence: "FitClip Ultra: HyperEars PR #33 / #54 real device (L/R battery, game mode; no noise control)")),
+        new EdifierProfile("edifier-x5-pro", "EDIFIER X5 Pro", "x5pro", false, isTws: true, hasSpp: false,
+            gattService: "48098001-1a48-11e9-ab14-d663bd873d93", alternateGattService: "48090302-1a48-11e9-ab14-d663bd873d93",
+            spec: new EdifierSpec(EdifierFraming.V2Xor, StateBattery: true, EdifierAnc.SlotX5,
+                EdifierFeatures.Noise | EdifierFeatures.GameMode | EdifierFeatures.InEarSwitch,
+                Experimental: EdifierFeatures.GameMode | EdifierFeatures.InEarSwitch,
+                Evidence: "X5 Pro: BudsLink PR #76 contributor test (L/R/case battery and noise group 0x17 samples)",
+                RequireBrand: true)),
     ];
 }

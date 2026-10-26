@@ -183,6 +183,20 @@ public class XiaomiProtocolTests
     }
 
     [Fact]
+    public void Gestures_ShareTheBrandGestureRows()
+    {
+        // Both earbuds × five gestures; each slot matches the key functions the parser reports.
+        var slots = XiaomiGestures.Slots;
+        Assert.Equal(10, slots.Count);
+        var hold = Assert.Single(slots, s => s.Side == EarSide.Left && s.Action == GestureAction.SqueezeAndHold);
+        Assert.True(hold.Matches(new KeyFunction(EarSide.Left, 0, GestureAction.SqueezeAndHold, XiaomiGestures.NoiseControl)));
+        // Noise control on hold is listed but needs confirmed noise control; the other choices need nothing.
+        Assert.Equal(EncoDeck.Core.Capabilities.DeviceCapability.NoiseCancellation,
+            Assert.Single(hold.Choices, c => c.Function == XiaomiGestures.NoiseControl).Requires);
+        Assert.All(slots.SelectMany(s => s.Choices).Where(c => c.Function != XiaomiGestures.NoiseControl), c => Assert.Null(c.Requires));
+    }
+
+    [Fact]
     public void CustomCurve_ParsesCaptureAndBuildsSaveWrite()
     {
         Assert.True(XiaomiCustomCurve.TryParse(XiaomiFakeEarbuds.SixProCustomCurve, out var curve));
