@@ -756,4 +756,31 @@
   <data name="Eq_Sony_Custom1" xml:space="preserve"><value>自定义 1</value></data>
   <data name="Eq_Sony_Custom2" xml:space="preserve"><value>自定义 2</value></data>
   <data name="Update_BadgeHint" xml:space="preserve"><value>有新版本可用</value></data>
+  <data name="Toggle_TouchLock" xml:space="preserve"><value>锁定触控</value></data>
+  <data name="Toggle_TouchLock_Description" xml:space="preserve"><value>开启后耳机的触控操作不再响应；各手势的原有设置保持不变。</value></data>
+  <data name="Samsung_AncLevel_1" xml:space="preserve"><value>1 档</value></data>
+  <data name="Samsung_AncLevel_2" xml:space="preserve"><value>2 档</value></data>
+  <data name="Samsung_AncLevel_3" xml:space="preserve"><value>3 档</value></data>
+  <data name="Samsung_AncLevel_4" xml:space="preserve"><value>4 档</value></data>
+  <data name="Samsung_AncLevel_5" xml:space="preserve"><value>5 档</value></data>
+  <data name="Samsung_Eq_Normal" xml:space="preserve"><value>标准</value></data>
+  <data name="Samsung_Eq_BassBoost" xml:space="preserve"><value>低音增强</value></data>
+  <data name="Samsung_Eq_Soft" xml:space="preserve"><value>柔和</value></data>
+  <data name="Samsung_Eq_Dynamic" xml:space="preserve"><value>动感</value></data>
+  <data name="Samsung_Eq_Clear" xml:space="preserve"><value>清晰</value></data>
+  <data name="Samsung_Eq_TrebleBoost" xml:space="preserve"><value>高音增强</value></data>
+  <data name="Google_Eq_Balanced" xml:space="preserve"><value>均衡</value></data>
+  <data name="Google_Eq_HeavyBass" xml:space="preserve"><value>重低音</value></data>
+  <data name="Google_Eq_VocalBoost" xml:space="preserve"><value>人声增强</value></data>
+  <data name="Google_Eq_TrebleBoost" xml:space="preserve"><value>高音增强</value></data>
+  <data name="Google_Eq_LightBass" xml:space="preserve"><value>低音减弱</value></data>
+  <data name="Nothing_Eq_Balanced" xml:space="preserve"><value>均衡</value></data>
+  <data name="Nothing_Eq_Voice" xml:space="preserve"><value>人声</value></data>
+  <data name="Nothing_Eq_MoreTreble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="Nothing_Eq_MoreBass" xml:space="preserve"><value>低音增强</value></data>
+  <data name="Nothing_Eq_Rock" xml:space="preserve"><value>摇滚</value></data>
+  <data name="Nothing_Eq_Electronic" xml:space="preserve"><value>电子</value></data>
+  <data name="Nothing_Eq_Pop" xml:space="preserve"><value>流行</value></data>
+  <data name="Nothing_Eq_EnhanceVocals" xml:space="preserve"><value>人声增强</value></data>
+  <data name="Nothing_Eq_Classical" xml:space="preserve"><value>古典</value></data>
 </root>

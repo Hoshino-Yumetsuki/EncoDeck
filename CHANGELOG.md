@@ -11,6 +11,11 @@
 - 新增独立的“关于”页面（导航栏底部）：版本与更新、开发者、赞助和法律信息从设置页移到这里，并新增问题反馈、致谢和设备兼容性、更新日志链接；应用内更新完成后也改为打开此页。
 - 扩展水月雨 MOONDROP GAIA 适配：按设备能力发现及有效回读，实验性开放 LDAC / LC3、入耳检测、空间音频（关闭 / 固定 / 头部跟踪）、动态低音和左右声道交换。所有设置写入后回读确认；新增功能尚未在真机验证，不包含 9ECA EQ / PEQ 或 OTA。
 - 索尼耳机以 LE Audio 连接时改用耳机的 BLE 控制通道，WH-1000XM6 可读取电量、切换降噪；打不开控制通道时提示如何切回经典音频。索尼 EQ 在设备上报 10 段增益时显示频段曲线，手动和自定义预设可调整各频段（写入尚未真机验证）。
+- 新增三星 Galaxy Buds2、Galaxy Buds2 Pro、Galaxy Buds4 Pro：左右耳与充电盒电量、关闭 / 降噪 / 通透、六组预设 EQ；Buds4 Pro 另有自适应模式和 5 档降噪强度，Buds2 / Buds2 Pro 可锁定触控（各手势原有设置保持不变）。充电状态只在耳机状态数据含充电字段时显示。
+- 新增 Google Pixel Buds Pro、Pixel Buds Pro 2：左右耳与充电盒电量及充电状态、关闭 / 降噪 / 通透、五组预设 EQ、固件版本。
+- 新增 Bose QuietComfort 45、QuietComfort Ultra Headphones (2nd Gen)：电量、固件版本，以及“安静 / 感知”两种内置模式的切换。
+- 新增 Nothing Ear (a)、Nothing Headphone (1)、CMF Buds 2、CMF Buds Pro 2：电量与充电状态、关闭 / 降噪 / 通透、预设 EQ、固件版本。CMF Buds 2 的 EQ 需固件 1.0.1.50 及以上；Headphone (1) 仅在高级 EQ 关闭时提供预设。
+- 以上 11 款依据社区项目 [HeyBuds](https://github.com/abaichuan1017/HeyBuds) 的协议实现移植，按协议实现、尚未真机验证。各项设置在耳机回读后才显示，写入也以回读结果为准；暂无产品图片，使用通用插图。详见[兼容性说明](docs/COMPATIBILITY.md)。
 
 ### 改进
 
