@@ -621,6 +621,8 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>切换设备</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未连接）</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>管理设备</value></data>
+  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>耳机报告的传统蓝牙（A2DP）音频编码</value></data>
+  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>传统蓝牙音频编码</value></data>
   <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>已连接 LE 链路；LC3 音频流由 Windows 管理，尚未验证</value></data>
   <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>已连接 LE 链路，音频流尚未验证</value></data>
   <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>等待 LC3 连接 · 长按充电盒按键可恢复</value></data>

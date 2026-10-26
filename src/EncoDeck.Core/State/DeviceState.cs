@@ -40,6 +40,9 @@ public sealed record DeviceState
 
     public Observed<FirmwareInfo>? Firmware { get; init; }
 
+    /// <summary>A2DP codec reported by the earbuds; null when unknown or not on Classic audio (e.g. LE Audio).</summary>
+    public Observed<AudioCodec>? Codec { get; init; }
+
     /// <summary>24-bit product id reported by the device (e.g. 0x06EC10 for Enco X4).</summary>
     public uint? ProductId { get; init; }
 

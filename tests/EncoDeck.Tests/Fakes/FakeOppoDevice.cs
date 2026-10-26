@@ -22,6 +22,9 @@ internal sealed class FakeOppoDevice
 
     public byte[] Battery { get; set; } = [0x01, 0x64, 0x02, 0x64];
 
+    /// <summary>0x8114 payload: [status][codec]; 01 01 is what the X4 answers over LE Audio.</summary>
+    public byte[] CodecResponse { get; set; } = [0x00, 0x02];
+
     /// <summary>Wear flags per component (left, right, case): 0x07 = in ear, 0x04 = in case lid open.</summary>
     public byte[] Wear { get; set; } = [0x07, 0x07, 0x04];
 
@@ -151,7 +154,7 @@ internal sealed class FakeOppoDevice
             case OppoCommand.QueryMtu:
                 return [new OppoFrame(rsp, seq, [0x00, 0x00, 0x02])];
             case OppoCommand.QueryCodec:
-                return [new OppoFrame(rsp, seq, [0x00, 0x02])];
+                return [new OppoFrame(rsp, seq, CodecResponse)];
             case OppoCommand.QueryUpgradeCapability:
                 return [new OppoFrame(rsp, seq, [0x00, 0x00])];
             case OppoCommand.QueryEventCodes:

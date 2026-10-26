@@ -108,6 +108,9 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     /// <summary>The audio runs over LE Audio (shown as an "LC3" tag next to the status).</summary>
     [ObservableProperty] public partial bool IsLeAudio { get; set; }
+    /// <summary>Classic (A2DP) codec the earbuds report, shown as a tag like "LC3" (null when unknown or on LE Audio).</summary>
+    [ObservableProperty] public partial string? ClassicCodec { get; set; }
+    [ObservableProperty] public partial bool HasClassicCodec { get; set; }
     [ObservableProperty] public partial string? DeviceImagePath { get; set; }
     [ObservableProperty] public partial string? LeftArtworkPath { get; set; }
     [ObservableProperty] public partial string? RightArtworkPath { get; set; }
@@ -287,6 +290,18 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsControlUnavailable = state.Connection == DeviceConnectionState.ControlUnavailable;
         IsLinkDown = state.Connection is DeviceConnectionState.PairedNotConnected or DeviceConnectionState.Disconnected;
         IsLeAudio = state.IsLeAudio && !IsLinkDown;
+        ClassicCodec = state.IsLeAudio || IsLinkDown ? null : state.Codec?.Value switch
+        {
+            AudioCodec.Sbc => "SBC",
+            AudioCodec.Aac => "AAC",
+            AudioCodec.Ldac => "LDAC",
+            AudioCodec.AptX => "aptX",
+            AudioCodec.AptXHd => "aptX HD",
+            AudioCodec.AptXAdaptive => "aptX Adaptive",
+            AudioCodec.Lhdc => "LHDC",
+            _ => null,
+        };
+        HasClassicCodec = ClassicCodec is not null;
         // A single-body LC3 headset has only the one LE identity, so one link is all of it. Warn
         // only for a pair whose other earbud is bonded, or earbuds whose other half was never found.
         if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1 && profile?.Form != DeviceForm.Headphones

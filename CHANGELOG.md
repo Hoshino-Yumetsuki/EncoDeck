@@ -2,6 +2,12 @@
 
 本文件记录 EncoDeck 每个版本的用户可见变化，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本按“新增 / 改进 / 修复 / 移除”分类。
 
+## [未发布]
+
+### 新增
+
+- 传统蓝牙连接时，在主页和快捷面板的连接状态旁显示耳机报告的音频编码（SBC、AAC、LDAC、aptX 系列、LHDC），样式与 LE Audio 的 LC3 标记一致；连接期间刷新时会重新读取。
+
 ## [1.9.0] - 2026-10-26
 
 ### 新增

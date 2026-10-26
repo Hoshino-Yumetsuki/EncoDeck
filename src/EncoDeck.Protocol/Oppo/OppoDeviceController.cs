@@ -132,6 +132,8 @@ public sealed partial class OppoDeviceController : IDeviceController
             requests.Add(new OppoRequest(OppoCommand.QueryVid, [0xFF, 0xFF]));
         }
         requests.Add(new OppoRequest(OppoCommand.QueryBattery, [], SequenceMode.FixedSet));
+        // The codec can change while connected (e.g. Hi-Res/LHDC toggled), so refreshes read it too.
+        if (!initial) requests.Add(new OppoRequest(OppoCommand.QueryCodec, []));
         if (initial)
         {
             requests.Add(new OppoRequest(OppoCommand.QueryColor, []));
@@ -250,6 +252,11 @@ public sealed partial class OppoDeviceController : IDeviceController
                 break;
             case OppoCommand.QueryFirmware:
                 ApplyFirmware(frame);
+                break;
+            case OppoCommand.QueryCodec:
+                // Unknown or no Classic codec (e.g. LE Audio) clears a value left from an earlier link.
+                Observed<AudioCodec>? codec = OppoParsers.TryParseCodec(frame, out var parsedCodec) ? Observed.From(parsedCodec, _time.GetUtcNow(), source) : null;
+                _store.TryUpdate(_identity.DeviceId, s => s with { Codec = codec });
                 break;
             default:
                 ApplyFeatureResponse(frame, source);

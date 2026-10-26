@@ -621,6 +621,8 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Switch device</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0} (not connected)</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>Manage devices</value></data>
+  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Classic Bluetooth (A2DP) codec reported by the earbuds</value></data>
+  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Classic Bluetooth audio codec</value></data>
   <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>LE link connected; Windows manages LC3 streaming, which has not been verified</value></data>
   <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>LE link connected; audio streaming unverified</value></data>
   <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>Waiting for LC3 · hold the case button to reconnect</value></data>
