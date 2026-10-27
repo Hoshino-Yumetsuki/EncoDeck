@@ -372,7 +372,7 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 
 ## 15. 索尼 MDR 与 AKG（独立于 OPPO）
 
-来源：[SonyHeadphonesClient `4061cf3`](https://github.com/mos9527/SonyHeadphonesClient/tree/4061cf353fd0044e559e9a1f1b7f2faa334d09c6)（libmdr 协议定义及 WH-1000XM3 4.5.2、WF-1000XM5 6.1.0、WF-LC900 2.0.3 真机抓包）、[SonyPods `3f701ff`](https://github.com/Mercury000/SonyPods/tree/3f701ff8f9b30c6909b9dbe8d99248f20d55560e)（GATT 特征 UUID）、[akg_earbud_control `184d2e2`](https://github.com/tthayer/akg_earbud_control/tree/184d2e21542d0f419e4d5789cc555e5c41c9863e)（N400NC 真机记录）、[jbl-control `a276b85`](https://github.com/AhmadRun/jbl-control/tree/a276b8561c15fc5a3effa76cb75500847219d750)（同一 GATT 服务的交叉核对）、[Raito `5804b65`](https://github.com/kalicyh/Raito/tree/5804b657e7d6aa5fcd17d33a3c6f13ce4602086a)（N9 Hybrid 真机记录）。本项目均未在 Windows 真机上验证。
+来源：[SonyHeadphonesClient `4061cf3`](https://github.com/mos9527/SonyHeadphonesClient/tree/4061cf353fd0044e559e9a1f1b7f2faa334d09c6)（libmdr 协议定义及 WH-1000XM3 4.5.2、WF-1000XM5 6.1.0、WF-LC900 2.0.3 真机抓包）、[SonyPods `3f701ff`](https://github.com/Mercury000/SonyPods/tree/3f701ff8f9b30c6909b9dbe8d99248f20d55560e)（GATT 特征 UUID）、[akg_earbud_control `184d2e2`](https://github.com/tthayer/akg_earbud_control/tree/184d2e21542d0f419e4d5789cc555e5c41c9863e)（N400NC 真机记录）、[jbl-control `a276b85`](https://github.com/AhmadRun/jbl-control/tree/a276b8561c15fc5a3effa76cb75500847219d750)（同一 GATT 服务的交叉核对）、[Raito `5804b65`](https://github.com/kalicyh/Raito/tree/5804b657e7d6aa5fcd17d33a3c6f13ce4602086a)（N9 Hybrid 真机记录）。除 WH-1000XM5 固件 2.5.1（见 15.1 末条）外，本项目均未在 Windows 真机上验证。
 
 ### 15.1 索尼 MDR
 
@@ -386,6 +386,7 @@ Free4 标准版 / 丹拿版的支持范围见 [设备兼容性](COMPATIBILITY.md
 - **[社区]** EQ：预设名称为空时（WF-LC900 2.0.3、XM3）按编号显示名称；选择预设时频段数为 0，否则固件会切到 Custom。WH-1000XM6（固件 3.0.0 起）只应用 0x30–0x33、0xA0 与用户设置，其余上报的编号隐藏。ULT 组合 EQ 未实现。
 - **[社区]** WF-C700N 固件 2.0.5 会确认并回显 NC/ASM 写入但不生效，2.0.7 修复；EncoDeck 在 2.0.5 上拒绝写入。
 - **[社区]** BLE GATT：服务 `5b833e20-6bc7-4802-8e9a-723ceca4bd8f`，写 `5b833c60-…`、通知 `5b833c61-…`，承载与 RFCOMM 相同的 MDR 字节流。SonyHeadphonesClient PR #43 取服务中第一个可写 / 第一个可通知特征；EncoDeck 优先使用上述命名特征，找不到时同样回退到第一个。**[推测]** 该 PR 优先无响应写入，EncoDeck 在特征支持时使用有响应写入，未发现影响。GATT 只在两个 RFCOMM 服务都失败后尝试。
+- **[真机]** WH-1000XM5 固件 2.5.1：主控制服务 `956c7b26-…` 的 SDP 记录存在（服务名 `Serial HPC`），但协议描述符是 `RFCOMM:00000000`，Windows 解析出的通道号为 0，无法用它建立连接；`96cc203e-…` 在 SDP 中不出现。经典链路在线时直连通道 9 可完成握手（`CONNECT_RET_PROTOCOL_INFO` 返回 8 字节，即 v2），功能表 33 项，电量、NC/ASM、EQ、摘下暂停、多点连接、说话即对话、DSEE、触控开关均可读；降噪 Off ↔ 降噪 写入后回读一致（62–211 ms）。该固件在会话空闲约 10–25 秒后主动关闭 RFCOMM 连接，需重连后重新握手。
 
 ### 15.2 AKG N400NC / N200NC / N700NCM2 / Y600
 

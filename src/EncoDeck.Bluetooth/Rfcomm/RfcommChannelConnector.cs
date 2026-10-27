@@ -220,7 +220,7 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
     private static bool IsClassicFreeFallback(Guid uuid) =>
         uuid == SennheiserProfile.GattServiceId || EncoDeck.Protocol.Brands.GattStreamEndpoints.Find(uuid) is { BondedLeIdentities: true };
 
-    /// <summary>RFCOMM channel of the Sony MDR v2 control service on WH/WF-1000XM6 class hardware.</summary>
+    /// <summary>RFCOMM channel of the Sony MDR v2 control service on WH/WF-1000XM5 and XM6 class hardware.</summary>
     internal const int SonyMdrV2Channel = 9;
 
     /// <summary>Reads the RFCOMM channel out of <c>RFCOMM:00000009:{uuid}</c>; 0 means unresolved.</summary>
@@ -245,8 +245,15 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
     /// Last-resort channel for models whose MDR v2 channel is verified independently of Windows' SDP,
     /// used only when the classic link is up but Windows still reports an unresolved channel.
     /// </summary>
+    /// <remarks>
+    /// WH-1000XM5 and WH-1000XM6 both publish their MDR control service with
+    /// <c>RFCOMM:00000000</c>, so SDP alone never yields a channel; the real channel 9 is verified on
+    /// hardware for both (WH-1000XM5: protocol-version ACK over channel 9).
+    /// </remarks>
     internal static int? KnownSonyControlChannel(string? deviceName) =>
-        deviceName is not null && deviceName.Contains("1000XM6", StringComparison.OrdinalIgnoreCase)
+        deviceName is not null
+        && (deviceName.Contains("WH-1000XM5", StringComparison.OrdinalIgnoreCase)
+            || deviceName.Contains("WH-1000XM6", StringComparison.OrdinalIgnoreCase))
             ? SonyMdrV2Channel
             : null;
 
@@ -324,8 +331,8 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             _logger.LogInformation(
                 "Sony SDP reports no resolvable channel although the classic link is up; trying the known RFCOMM channel {Channel}",
                 knownChannel);
-            var direct = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, (uint)knownChannel, cancellationToken).ConfigureAwait(false);
-            if (direct.Status == ChannelOpenStatus.Opened) return direct;
+            var direct = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, (uint)knownChannel, cancellationToken, "Sony MDR").ConfigureAwait(false);
+            if (direct.Status == ChannelOpenStatus.Opened) return direct with { ServiceUuid = SonyAkgProfiles.PrimaryServiceUuid };
             _logger.LogInformation("Known Sony RFCOMM channel {Channel} failed: {Detail}", knownChannel, direct.Detail);
             // The RFCOMM endpoint is unusable even with the link up; the LE Audio control service
             // carries the identical MDR v2 stream and is the remaining transport.
