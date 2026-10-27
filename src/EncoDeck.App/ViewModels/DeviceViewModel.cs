@@ -122,7 +122,6 @@ public sealed partial class DeviceViewModel : ObservableObject
     [ObservableProperty] public partial string? RightArtworkPath { get; set; }
     [ObservableProperty] public partial string? CaseArtworkPath { get; set; }
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion))] public partial bool HasComponentArtwork { get; set; }
-    [ObservableProperty] public partial bool IsRepresentativeArtwork { get; set; }
     /// <summary>HeyMelody's 360° device model (turntable WebP) for the home page, when available.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion)), NotifyPropertyChangedFor(nameof(IsGenericMotion))] public partial string? DeviceModelPath { get; set; }
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDeviceMotion)), NotifyPropertyChangedFor(nameof(IsGenericMotion))] public partial string? DeviceMotionPath { get; set; }
@@ -363,7 +362,6 @@ public sealed partial class DeviceViewModel : ObservableObject
         {
             var image = ResourceKey is { } key ? _resources.Resolve(key, DeviceResourceRole.Device) : null;
             DeviceImagePath = image?.Path ?? DeviceImages.Resolve(profile?.ImageKey);
-            IsRepresentativeArtwork = image?.RepresentativeArtwork ?? false;
             LeftArtworkPath = ResourceKey is { } kl ? _resources.Resolve(kl, DeviceResourceRole.LeftBud)?.Path : null;
             RightArtworkPath = ResourceKey is { } kr ? _resources.Resolve(kr, DeviceResourceRole.RightBud)?.Path : null;
             CaseArtworkPath = ResourceKey is { } kc ? _resources.Resolve(kc, DeviceResourceRole.Case)?.Path : null;

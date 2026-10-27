@@ -521,7 +521,6 @@
   <data name="Artwork_Left.Text" xml:space="preserve"><value>左耳</value></data>
   <data name="Artwork_Right.Text" xml:space="preserve"><value>右耳</value></data>
   <data name="Artwork_Case.Text" xml:space="preserve"><value>充电盒</value></data>
-  <data name="Artwork_Representative.Text" xml:space="preserve"><value>配色未识别，展示同型号参考素材。</value></data>
   <data name="Home_Dual.Header" xml:space="preserve"><value>设备双连</value></data>
   <data name="Artwork_GenericMotion.Text" xml:space="preserve"><value>通用产品动效 · 非原厂开盖动画</value></data>
   <data name="Lhdc_Open.Content" xml:space="preserve"><value>打开 LHDC 控制面板</value></data>

@@ -161,9 +161,6 @@
                                       Visibility="{x:Bind ViewModel.HasDeviceMotion, Mode=OneWay}" />
                 </Grid>
                 <TextBlock Text="{x:Bind ViewModel.FirmwareText, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" />
-                <TextBlock x:Uid="Artwork_Representative" Text="Showing reference artwork for this model; device color is unknown."
-                           TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
-                           Visibility="{x:Bind ViewModel.IsRepresentativeArtwork, Mode=OneWay}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24" Margin="0,12,0,4"
                             Visibility="{x:Bind ViewModel.HasComponentArtwork, Mode=OneWay}">
                     <StackPanel Spacing="6" Visibility="{x:Bind services:Ui.VisibleIfText(ViewModel.LeftArtworkPath), Mode=OneWay}">

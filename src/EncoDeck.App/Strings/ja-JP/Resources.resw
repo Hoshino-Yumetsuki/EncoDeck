@@ -521,7 +521,6 @@
   <data name="Artwork_Left.Text" xml:space="preserve"><value>左イヤホン</value></data>
   <data name="Artwork_Right.Text" xml:space="preserve"><value>右イヤホン</value></data>
   <data name="Artwork_Case.Text" xml:space="preserve"><value>充電ケース</value></data>
-  <data name="Artwork_Representative.Text" xml:space="preserve"><value>デバイスのカラーが不明なため、このモデルの参考アートワークを表示しています。</value></data>
   <data name="Home_Dual.Header" xml:space="preserve"><value>デュアル接続</value></data>
   <data name="Artwork_GenericMotion.Text" xml:space="preserve"><value>製品モーション · 公式のふた開けアニメーションではありません</value></data>
   <data name="Lhdc_Open.Content" xml:space="preserve"><value>LHDC コントロールパネルを開く</value></data>

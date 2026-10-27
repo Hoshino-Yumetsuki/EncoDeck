@@ -521,7 +521,6 @@
   <data name="Artwork_Left.Text" xml:space="preserve"><value>Left earbud</value></data>
   <data name="Artwork_Right.Text" xml:space="preserve"><value>Right earbud</value></data>
   <data name="Artwork_Case.Text" xml:space="preserve"><value>Charging case</value></data>
-  <data name="Artwork_Representative.Text" xml:space="preserve"><value>Showing reference artwork for this model; device color is unknown.</value></data>
   <data name="Home_Dual.Header" xml:space="preserve"><value>Dual connection</value></data>
   <data name="Artwork_GenericMotion.Text" xml:space="preserve"><value>Product motion · not an official lid-opening animation</value></data>
   <data name="Lhdc_Open.Content" xml:space="preserve"><value>Open LHDC control panel</value></data>
