@@ -33,10 +33,11 @@ public sealed record ComponentPackage
 public sealed record ComponentSource(string Repository, string Commit, string Release);
 
 /// <summary>
-/// A component version: the upstream version and EncoDeck's build revision of it ("0.8.8-r1"). Revisions compare
-/// as numbers, so r10 follows r9.
+/// A component version: the upstream version, possibly an upstream pre-release, and EncoDeck's build revision of it
+/// ("0.8.8-r1", "2.0.2-beta.10-r1"). Upstream versions compare as SemVer (a pre-release before its release),
+/// revisions as numbers, so r10 follows r9. Apps before 1.12 cannot read a pre-release and never take one.
 /// </summary>
-public sealed record ComponentVersion(int Major, int Minor, int Patch, int Revision) : IComparable<ComponentVersion>
+public sealed record ComponentVersion(SemanticVersion Upstream, int Revision) : IComparable<ComponentVersion>
 {
     public static bool TryParse(string? text, [NotNullWhen(true)] out ComponentVersion? version)
     {
@@ -44,23 +45,29 @@ public sealed record ComponentVersion(int Major, int Minor, int Patch, int Revis
         if (text is null) return false;
         int dash = text.LastIndexOf("-r", StringComparison.Ordinal);
         if (dash <= 0 || !int.TryParse(text[(dash + 2)..], NumberStyles.None, CultureInfo.InvariantCulture, out int revision)) return false;
-        string[] parts = text[..dash].Split('.');
-        if (parts.Length != 3) return false;
-        var numbers = new int[3];
-        for (int i = 0; i < 3; i++)
-            if (!int.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out numbers[i])) return false;
-        version = new ComponentVersion(numbers[0], numbers[1], numbers[2], revision);
+        string upstream = text[..dash];
+        int pre = upstream.IndexOf('-');
+        // Exactly x.y.z, with no "v" prefix or build metadata, as tags are named.
+        if (!char.IsAsciiDigit(upstream[0]) || upstream.Contains('+') || (pre < 0 ? upstream : upstream[..pre]).Split('.').Length != 3) return false;
+        if (!SemanticVersion.TryParse(upstream, out var parsed)) return false;
+        version = new ComponentVersion(parsed, revision);
         return true;
     }
 
-    public int CompareTo(ComponentVersion? other) => other is null ? 1
-        : (Major, Minor, Patch, Revision).CompareTo((other.Major, other.Minor, other.Patch, other.Revision));
+    public bool IsPrerelease => Upstream.IsPrerelease;
+
+    public int CompareTo(ComponentVersion? other)
+    {
+        if (other is null) return 1;
+        int c = Upstream.CompareTo(other.Upstream);
+        return c != 0 ? c : Revision.CompareTo(other.Revision);
+    }
 
     /// <summary>Whether <paramref name="candidate"/> is a later version than <paramref name="current"/> (unparsable ones never are).</summary>
     public static bool IsNewer(string candidate, string? current) =>
         TryParse(candidate, out var a) && (current is null || !TryParse(current, out var b) || a.CompareTo(b) > 0);
 
-    public override string ToString() => $"{Major}.{Minor}.{Patch}-r{Revision}";
+    public override string ToString() => $"{Upstream}-r{Revision}";
 }
 
 /// <summary>

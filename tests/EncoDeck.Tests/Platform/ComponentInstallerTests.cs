@@ -217,8 +217,28 @@ public sealed class ComponentInstallerTests : IDisposable
     [InlineData("0.8.8-r1", "0.9.0-r1", false)]
     [InlineData("0.8.8", null, false)]
     [InlineData("1.0.0-r1", null, true)]
+    // Upstream pre-releases: before their release, after the version below, ordered as SemVer.
+    [InlineData("2.0.2-beta.10-r1", "2.0.1-r1", true)]
+    [InlineData("2.0.2-beta.10-r1", "2.0.2-beta.9-r3", true)]
+    [InlineData("2.0.2-beta.10-r2", "2.0.2-beta.10-r1", true)]
+    [InlineData("2.0.2-r1", "2.0.2-beta.10-r4", true)]
+    [InlineData("2.0.2-beta.10-r1", "2.0.2-r1", false)]
+    [InlineData("2.0.2-rc.1-r1", "2.0.2-beta.10-r1", true)]
+    [InlineData("v2.0.2-r1", null, false)]
+    [InlineData("2.0-r1", null, false)]
+    [InlineData("2.0.2+abc-r1", null, false)]
     public void ComparesComponentVersionsWithNumericRevisions(string candidate, string? current, bool newer) =>
         Assert.Equal(newer, ComponentVersion.IsNewer(candidate, current));
+
+    [Fact]
+    public void AComponentVersionReadsBackAsWritten()
+    {
+        Assert.True(ComponentVersion.TryParse("2.0.2-beta.10-r1", out var version));
+        Assert.True(version.IsPrerelease);
+        Assert.Equal("2.0.2-beta.10-r1", version.ToString());
+        Assert.True(ComponentVersion.TryParse("0.8.8-r1", out version));
+        Assert.Equal("0.8.8-r1", version.ToString());
+    }
 
     [Fact]
     public void AFolderInUseIsNotHalfDeleted()

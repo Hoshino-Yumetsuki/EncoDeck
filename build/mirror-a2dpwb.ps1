@@ -42,6 +42,8 @@ Unmodified official A2DP Windows Bridge $($pin.source.release) portable builds, 
 Source: $($pin.source.repository) at commit $($pin.source.commit) (see SOURCE.txt inside each archive).
 A2DPWB is Apache-2.0 OR MIT; the distributed a2dpwb-core.exe statically links BTstack, licensed for personal, non-commercial use only. See LICENSE and THIRD_PARTY_LICENSES.md inside the archive.
 "@
-    & gh release create $tag @files --repo TIANLI0/EncoDeck --title "A2DP Windows Bridge component $($pin.version)" --notes $notes --latest=false
+    # An upstream pre-release (2.0.2-beta.10-r1) is published as one: apps without pre-release updates skip it.
+    $prerelease = if (($pin.version -replace '-r\d+$', '').Contains('-')) { @('--prerelease') } else { @() }
+    & gh release create $tag @files --repo TIANLI0/EncoDeck --title "A2DP Windows Bridge component $($pin.version)" --notes $notes --latest=false @prerelease
     if ($LASTEXITCODE -ne 0) { throw 'Could not publish the A2DPWB component release.' }
 }
