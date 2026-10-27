@@ -2,7 +2,7 @@
 
 部分 OPPO 耳机的固件同时支持传统蓝牙（A2DP）和 LE Audio（LC3）。在 OPPO 手机上，LE Audio 由系统蓝牙自行切换；Windows 的“添加设备”找不到这些耳机的 LE 身份，所以总是按传统蓝牙配对。EncoDeck 的“实验室”页提供一个实验性开关，帮 Windows 通过 LE Audio 配对这类耳机。
 
-目前只在 **OPPO Enco X4** 上真机验证过。Enco X4、Enco X3 提供实验性入口；其他 OPPO 型号须回复 LE/BR 开关查询（`0x0136`）或已有 LE 配对，才会显示入口。Enco X3 尚未完成 Windows 真机配对与双耳播放验证。
+目前只在 **OPPO Enco X4** 上真机验证过。Enco X4、Enco X3 提供实验性入口；其他 OPPO 型号须回复 LE/BR 开关查询（`0x0136`）或已有 LE 配对，才会显示入口。Enco X3 尚未完成 Windows 真机配对与双耳播放验证：它的另一只耳机以自己的 LE 地址广播（不同于主耳扫描响应里给出的地址），EncoDeck 接受 Windows 按 LE Audio 集合协议找到的这只耳机；切换完成、LE 控制通道建立后，再告诉耳机主机已改用 LE 传输（功能开关 `0x1F`），X4 不需要这一步（[#12](https://github.com/TIANLI0/EncoDeck/issues/12)）。
 
 ## 开始之前
 

@@ -66,7 +66,28 @@ internal static class DiagnosticsExporter
             }
             await WriteEntryAsync(zip, "logs/" + log.Name, LogRedactor.Redact(text));
         }
+        // The LE Audio switch writes its steps (advert, per-earbud pairing results) to a trace of its own.
+        if (await ReadTailAsync(EncoDeck.Bluetooth.LeAudio.LeAudioPairing.DiagnosticLogPath, LeAudioTraceTail) is { } trace)
+            await WriteEntryAsync(zip, "logs/enco-leaudio.log", LogRedactor.Redact(trace));
         return path;
+    }
+
+    private const int LeAudioTraceTail = 256 * 1024;
+
+    /// <summary>The last <paramref name="maxBytes"/> of a file, or null when it does not exist or cannot be read.</summary>
+    private static async Task<string?> ReadTailAsync(string path, int maxBytes)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (stream.Length > maxBytes) stream.Seek(-maxBytes, SeekOrigin.End);
+            using var reader = new StreamReader(stream);
+            return await reader.ReadToEndAsync();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private static async Task WriteEntryAsync(ZipArchive zip, string name, string content)
