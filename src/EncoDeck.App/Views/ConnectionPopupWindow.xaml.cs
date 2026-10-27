@@ -84,6 +84,7 @@ public sealed partial class ConnectionPopupWindow : Window
         _animate = ShellEnvironment.AnimationsEnabled();
         _passThrough = passThrough;
         InitializeComponent();
+        Loc.ApplyLanguage(this);
         // A Window's x:Bind bindings start on Activated, which never fires for a non-activating
         // pop-up: initialise them here, or every bound value (name, levels) stays empty.
         Bindings.Initialize();
