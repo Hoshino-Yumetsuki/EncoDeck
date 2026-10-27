@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth.Control;
 using EncoDeck.Bluetooth.Discovery;
+using EncoDeck.Bluetooth.Rfcomm;
 using EncoDeck.Core.Commands;
 using EncoDeck.Core.Connection;
 using EncoDeck.Core.Devices;
@@ -117,6 +118,12 @@ public sealed class DeviceManager : IDeviceManager
     }
 
     public event EventHandler? KnownDevicesChanged;
+
+    /// <summary>
+    /// Opens control channels through A2DP Windows Bridge, for earbuds only the bridge is linked to; null without
+    /// one. Read when a device is selected.
+    /// </summary>
+    public IChannelConnector? BridgeConnector { get; set; }
 
     public event EventHandler<DeviceIdentity>? ActiveDeviceLinkConnected;
 
@@ -263,11 +270,20 @@ public sealed class DeviceManager : IDeviceManager
                 return;
             }
 
-            var supervisor = new ControlChannelSupervisor(choice.Identity, controllable, link, _connector, _store, _policy, _allowExperimental, _loggers, trace: _trace);
+            // While A2DP Windows Bridge alone streams to the earbuds, their control channel runs through it.
+            ILinkStateSource supervised = link;
+            var connector = _connector;
+            if (BridgeConnector is { } bridge && controllable.ControlServiceUuids.Any(RfcommChannelConnector.IsRfcommService))
+            {
+                var bridged = new BridgedLinkState(link, _store, choice.Identity.DeviceId);
+                supervised = bridged;
+                connector = new BridgeRoutingConnector(_connector, bridge, bridged);
+            }
+            var supervisor = new ControlChannelSupervisor(choice.Identity, controllable, supervised, connector, _store, _policy, _allowExperimental, _loggers, trace: _trace);
             var identity = choice.Identity;
             supervisor.LinkConnected += (_, _) => ActiveDeviceLinkConnected?.Invoke(this, identity);
             supervisor.CaseLidOpened += (_, _) => ActiveDeviceCaseLidOpened?.Invoke(this, identity);
-            _active = new ActiveDevice(identity, link, supervisor);
+            _active = new ActiveDevice(identity, supervised, supervisor);
             supervisor.Start();
             KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -467,7 +483,7 @@ public sealed class DeviceManager : IDeviceManager
         catch (Exception ex) { _logger.LogWarning(ex, "USB monitoring stopped"); }
     }
 
-    private sealed record ActiveDevice(DeviceIdentity Identity, BluetoothLinkMonitor Link, ControlChannelSupervisor Supervisor) : IAsyncDisposable
+    private sealed record ActiveDevice(DeviceIdentity Identity, ILinkStateSource Link, ControlChannelSupervisor Supervisor) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {

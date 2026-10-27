@@ -217,6 +217,11 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         return connectFailure ?? gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
     }
 
+    /// <summary>Whether <paramref name="uuid"/> names an RFCOMM service; the others are GATT services opened over LE.</summary>
+    internal static bool IsRfcommService(Guid uuid) =>
+        EncoDeck.Protocol.Brands.GattStreamEndpoints.Find(uuid) is null && !EdifierConstants.IsGattService(uuid)
+        && uuid != SonyAkgProfiles.BleServiceUuid && uuid != SennheiserProfile.GattServiceId && uuid != MoondropConstants.GattServiceId;
+
     private static bool IsClassicFreeFallback(Guid uuid) =>
         uuid == SennheiserProfile.GattServiceId || EncoDeck.Protocol.Brands.GattStreamEndpoints.Find(uuid) is { BondedLeIdentities: true };
 

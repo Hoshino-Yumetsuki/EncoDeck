@@ -38,7 +38,7 @@ internal static class BridgeCommand
             Console.WriteLine($"Not connected: {monitor.Status.Link} {monitor.Status.Detail}");
             return 3;
         }
-        Console.WriteLine($"Connected to {monitor.Status.Server}");
+        Console.WriteLine($"Connected to {monitor.Status.Server}{(monitor.Status.Rfcomm ? " (rfcomm)" : "")}");
         string? windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync().ConfigureAwait(false);
         string last = "";
         void Print()
@@ -57,7 +57,10 @@ internal static class BridgeCommand
             var diag = await monitor.RequestAsync("diag.info", new JsonObject { ["mask"] = !showAddress }, ct: ct).ConfigureAwait(false);
             Console.WriteLine(diag?["text"]?.GetValue<string>());
         }
-        await Task.Delay(TimeSpan.FromSeconds(options.GetInt("seconds", 5)), ct).ConfigureAwait(false);
+        var seconds = TimeSpan.FromSeconds(options.GetInt("seconds", 5));
+        if (options.Get("rfcomm") is { } service)
+            await ReadRfcommAsync(monitor, Guid.Parse(service), seconds, ct).ConfigureAwait(false);
+        else await Task.Delay(seconds, ct).ConfigureAwait(false);
         if (options.Has("quit"))
         {
             try { await monitor.RequestAsync("app.quit", ct: ct).ConfigureAwait(false); }
@@ -66,6 +69,34 @@ internal static class BridgeCommand
             Console.WriteLine($"Quit; core running: {A2dpBridgeMonitor.IsCoreRunning(instance)}");
         }
         return 0;
+    }
+
+    /// <summary>Opens <paramref name="service"/> through the core and prints what the device sends (nothing is written).</summary>
+    private static async Task ReadRfcommAsync(A2dpBridgeMonitor monitor, Guid service, TimeSpan duration, CancellationToken ct)
+    {
+        string address = monitor.Status.Snapshot?.ActiveStreamProfile?.DeviceAddress ?? "00:00:00:00:00:00";
+        BridgeRfcommChannel channel;
+        try { channel = await monitor.OpenRfcommAsync(address, service, ct).ConfigureAwait(false); }
+        catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException or NotSupportedException)
+        {
+            Console.WriteLine($"rfcomm.open {service}: {(ex is BridgeRequestException r ? $"{r.Code} {string.Join(' ', r.BridgeMessage.Args)}" : ex.Message)}");
+            return;
+        }
+        await using (channel)
+        {
+            Console.WriteLine($"rfcomm.open {service}: channel {channel.Id}, MTU {channel.Mtu}");
+            using var until = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            until.CancelAfter(duration);
+            var buffer = new byte[4096];
+            try
+            {
+                int n;
+                while ((n = await channel.ReadAsync(buffer, until.Token).ConfigureAwait(false)) > 0)
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {n} bytes: {Convert.ToHexString(buffer, 0, n)}");
+                Console.WriteLine($"Channel closed: {channel.CloseReason}");
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { }
+        }
     }
 
     private static string Describe(BridgeSnapshot s, bool showAddress, string? windowsAdapter)

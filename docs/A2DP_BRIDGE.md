@@ -14,7 +14,7 @@ A2DP Windows Bridge 是 Seiya Funaoka 的第三方开源项目（Apache-2.0 / MI
 | 额外硬件 | 不需要 | 需要第二个 USB 蓝牙适配器 |
 | 系统设置 | 需要测试签名模式、关闭内存完整性 | 不需要；只为该适配器分配微软签名的 WinUSB 驱动 |
 | 编码 | LHDC V5 | LDAC、LHDC V5、aptX 系列、AAC、SBC XQ 等 |
-| Windows 是否看得到耳机 | 看得到，EncoDeck 照常控制 | 只经 Bridge 连接时看不到（见下文） |
+| Windows 是否看得到耳机 | 看得到，EncoDeck 照常控制 | 只经 Bridge 连接时看不到；A2DPWB 2.0.2 起 EncoDeck 经 Bridge 控制（见下文） |
 
 两者互不依赖，可以只用其中一个。LHDC 组件不需要额外硬件，所以在实验室页排在前面。卡片标题下的编码标记与主页相同：实心为上游已支持，描边为上游仍属实验性（aptX HD、aptX LL、Opus）。
 
@@ -25,8 +25,9 @@ A2DPWB 通过它自己的适配器连接耳机，这条连接对 Windows 蓝牙�
 现在 EncoDeck 会连接 A2DPWB 后台的本地管道（仅当前用户可访问），读取它正在连接的耳机地址，与 Windows 中配对过的耳机对应起来：
 
 - 首页显示 **“已通过 A2DP Bridge 连接”**，编码标签显示 Bridge 实际使用的编码（如 LDAC）。
-- 只经 Bridge 连接时，Windows 看不到耳机，EncoDeck 暂时**读不到电量、也无法更改耳机设置**。
-- 支持**双设备连接**的耳机可以同时连接这台电脑的自带蓝牙：EncoDeck 照常通过 Windows 控制耳机，声音仍走 Bridge。此时请把 Windows 的默认输出设为其他设备（或让 A2DPWB 采集虚拟声卡），避免两路声音同时发往耳机。
+- 只经 Bridge 连接时，Windows 看不到耳机。A2DPWB **2.0.2 及以上**可以替 EncoDeck 打开到耳机的控制通道（RFCOMM）：EncoDeck 经 Bridge 读取电量、更改耳机设置，首页提示“电量读取和耳机设置也经 A2DP Bridge 进行”。控制通道只在 Bridge 以经典蓝牙（A2DP）向这副耳机推流期间可用，断开推流时一并关闭；只有 LE（GATT）控制通道的耳机仍无法经 Bridge 控制。
+- A2DPWB 2.0.1 及更早版本不能转发控制通道：只经 Bridge 连接时，EncoDeck **读不到电量、也无法更改耳机设置**。
+- 支持**双设备连接**的耳机可以同时连接这台电脑的自带蓝牙：EncoDeck 优先通过 Windows 控制耳机，声音仍走 Bridge。此时请把 Windows 的默认输出设为其他设备（或让 A2DPWB 采集虚拟声卡），避免两路声音同时发往耳机。
 
 ## 开始之前
 

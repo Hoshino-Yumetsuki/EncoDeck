@@ -7,4 +7,6 @@ namespace EncoDeck.Core.State;
 /// disconnected (or both, with dual-device connection).
 /// </summary>
 /// <param name="Codec">As A2DPWB names it ("LDAC", "LHDC V5"); null until the stream is configured.</param>
-public sealed record BridgeAudioLink(bool IsStreaming, string? Codec, int BitrateKbps, int SampleRate, string? Profile);
+/// <param name="CanCarryControl">The bridge can open RFCOMM channels to the device (A2DPWB 2.0.2, Classic audio): the
+/// control channel can run through it while Windows has no link.</param>
+public sealed record BridgeAudioLink(bool IsStreaming, string? Codec, int BitrateKbps, int SampleRate, string? Profile, bool CanCarryControl = false);

@@ -149,6 +149,7 @@ internal static class UiSnapshot
             {
                 ("Bridge-Home-Only", sample with { Connection = DeviceConnectionState.PairedNotConnected, Bridge = link }),
                 ("Bridge-Home-Both", sample with { Bridge = link }),
+                ("Bridge-Home-Control", sample with { Bridge = link with { CanCarryControl = true }, LinkViaBridge = true }),
             })
             {
                 host.Store.Reset(state);

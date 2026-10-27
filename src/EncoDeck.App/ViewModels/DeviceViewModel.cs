@@ -341,8 +341,9 @@ public sealed partial class DeviceViewModel : ObservableObject
                 IsLeAudio = false;
             }
             if (bridge.IsStreaming && bridge.Codec is { } bridgeCodec) ClassicCodec = bridgeCodec;
+            // With A2DPWB 2.0.2 the control channel itself can run through the bridge.
             BridgeMessage = bridge.IsStreaming
-                ? Loc.Format(IsBridgeOnly ? "Home_Bridge_Only" : "Home_Bridge_Both", DescribeBridge(bridge))
+                ? Loc.Format(IsBridgeOnly ? "Home_Bridge_Only" : state.LinkViaBridge ? "Home_Bridge_Control" : "Home_Bridge_Both", DescribeBridge(bridge))
                 : Loc.Get("Connection_BridgeConnecting");
         }
         else BridgeMessage = string.Empty;

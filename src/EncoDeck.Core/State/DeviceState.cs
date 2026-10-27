@@ -31,6 +31,9 @@ public sealed record DeviceState
     /// <summary>A2DP Windows Bridge is connecting or streaming to this device over its own adapter; null otherwise.</summary>
     public BridgeAudioLink? Bridge { get; init; }
 
+    /// <summary>Only A2DP Windows Bridge's adapter is linked to the earbuds (Windows is not): control runs through it.</summary>
+    public bool LinkViaBridge { get; init; }
+
     public BatteryStatus Battery { get; init; } = BatteryStatus.Unknown;
 
     public Observed<WearStatus>? Wear { get; init; }

@@ -16,7 +16,7 @@ public static class BridgeDeviceMatch
         var stream = snapshot.Stream;
         var info = stream.State == BridgeStreamState.Streaming ? stream.Info : null;
         return new BridgeAudioLink(stream.State == BridgeStreamState.Streaming, info?.Codec is { Length: > 0 } codec ? codec : null,
-            info?.BitrateKbps ?? 0, info?.SampleRate ?? 0, profile.Name);
+            info?.BitrateKbps ?? 0, info?.SampleRate ?? 0, profile.Name, CanCarryControl: status.Rfcomm && !profile.LeAudio);
     }
 
     /// <summary>"AA:BB:CC:DD:EE:FF" (also with '-' or no separators) as the 48-bit address.</summary>

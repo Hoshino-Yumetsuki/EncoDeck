@@ -47,8 +47,10 @@ internal static class DiagnosticsExporter
             {
                 link = host.Bridge.Status.Link.ToString(),
                 server = host.Bridge.Status.Server,
+                rfcomm = host.Bridge.Status.Rfcomm,
                 origin = host.Bridge.Installation?.Origin.ToString(),
                 stream = state.Bridge,
+                controlViaBridge = state.LinkViaBridge,
                 component = host.Bridge.Managed?.Version,
             },
         };

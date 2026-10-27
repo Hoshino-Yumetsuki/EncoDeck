@@ -7,6 +7,7 @@
 ### 新增
 
 - 新增日语界面：设置 › 语言可选择“日本語”，跟随系统时日语 Windows 自动使用日语；安装程序也提供日语。
+- 耳机只经 A2DP Bridge 连接时也能控制（[#9](https://github.com/TIANLI0/EncoDeck/issues/9)）：配合 A2DP Windows Bridge 2.0.2 及以上版本，EncoDeck 通过 Bridge 自己的适配器打开耳机的控制通道（RFCOMM），照常读取电量、切换降噪和更改耳机设置，不再需要耳机同时连接电脑自带蓝牙。Windows 也连着耳机时仍优先走 Windows 蓝牙；Bridge 停止推流时控制通道随之关闭。较早的 A2DP Bridge 版本保持原来的行为。EncoDeck.Probe `bridge` 新增 `--rfcomm <uuid>`，可单独验证经 Bridge 打开的通道。
 
 ### 改进
 

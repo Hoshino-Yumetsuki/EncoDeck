@@ -103,6 +103,8 @@ internal static class ProbeApp
             A2DP Windows Bridge:
               bridge [--seconds N]        Connect to the A2DPWB core's pipe, print its state and changes.
                      [--diag]             Also print A2DPWB's diagnostic text (addresses masked).
+                     [--rfcomm <uuid>]    Open that RFCOMM service through the core to the device it streams to
+                                          (A2DPWB 2.0.2+) and print what the device sends for --seconds.
                      [--instance <name>]  A side-by-side test core (A2DPWB_INSTANCE).
                      [--start <folder> [--config-dir <dir>]]  Start that core first (--background).
                      [--quit]             Ask the core to exit afterwards.

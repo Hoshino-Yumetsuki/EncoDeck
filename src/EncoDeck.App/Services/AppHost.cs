@@ -4,6 +4,7 @@ using EncoDeck.Bluetooth.Rfcomm;
 using EncoDeck.Core.Notifications;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Core.State;
+using EncoDeck.Platform.A2dpBridge;
 using EncoDeck.Platform.Cache;
 using EncoDeck.Platform.Logging;
 using EncoDeck.Platform.Packaging;
@@ -35,6 +36,8 @@ public sealed class AppHost : IAsyncDisposable
             settings, Path.Combine(paths.UpdatesDirectory, "last-check.txt"), loggers.CreateLogger<UpdateManager>());
         StoreUpdates = new StoreUpdateService(loggers.CreateLogger<StoreUpdateService>());
         Bridge = new A2dpBridgeCompanion(Path.Combine(paths.Root, "Components"), store, settings, loggers.CreateLogger<A2dpBridgeCompanion>());
+        if (devices is DeviceManager manager)
+            manager.BridgeConnector = new A2dpBridgeChannelConnector(() => Bridge.Monitor, loggers.CreateLogger<A2dpBridgeChannelConnector>());
         Paths = paths;
         FileLog = fileLog;
         Loggers = loggers;

@@ -82,6 +82,9 @@ public sealed class A2dpBridgeTests
         var connecting = new BridgeStatus(BridgeLink.Connected, BridgeJson.Snapshot(State("connecting")), "a2dpwb-core/2.0.1");
         Assert.Equal(new EncoDeck.Core.State.BridgeAudioLink(false, null, 0, 0, "X4"), BridgeDeviceMatch.LinkFor(x4, connecting));
         Assert.Equal("2.0.1", connected.ServerVersion);
+        // A core with RFCOMM can carry the control channel of a Classic stream.
+        Assert.True(BridgeDeviceMatch.LinkFor(x4, connected with { Rfcomm = true })?.CanCarryControl);
+        Assert.False(BridgeDeviceMatch.LinkFor(x4, connected)?.CanCarryControl);
     }
 
     [Theory]
@@ -245,6 +248,179 @@ public sealed class A2dpBridgeTests
         await accept;
     }
 
+    private static readonly Guid ControlService = new("00001107-D102-11E1-9B23-00025B00A5A5");
+
+    [Fact]
+    public async Task AnRfcommChannelCarriesDataBothWays()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var core = new FakeCore();
+        var accept = core.AcceptAsync(State(), rev: 3, features: ["rfcomm"]);
+        await using var connection = await A2dpBridgeConnection.OpenAsync(core.PipeName, "encodeck/test", TimeSpan.FromSeconds(5), ct);
+        await accept;
+        Assert.Contains("rfcomm", connection.Features);
+
+        var open = connection.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, ct);
+        var request = await core.ReadAsync(ct);
+        Assert.Equal("rfcomm.open", request?["method"]?.GetValue<string>());
+        Assert.Equal("AA:BB:CC:DD:EE:FF", request?["params"]?["address"]?.GetValue<string>());
+        Assert.Equal(ControlService, Guid.Parse(request!["params"]!["uuid"]!.GetValue<string>()));
+        // The earbuds answer at once: their data comes right behind the answer, with the current revision.
+        await Respond(core, request, new JsonObject { ["channel_id"] = 3, ["mtu"] = 990 });
+        await core.SendAsync(RfcommEvent("rfcomm_data", 3, data: "AQID"));
+        var channel = await open;
+        Assert.Equal(990, channel.Mtu);
+        var buffer = new byte[2];
+        Assert.Equal(2, await channel.ReadAsync(buffer, ct));
+        Assert.Equal(new byte[] { 1, 2 }, buffer);
+        Assert.Equal(1, await channel.ReadAsync(buffer, ct));
+        Assert.Equal(3, buffer[0]);
+
+        // A full send queue is waited out; the same data goes again.
+        var write = channel.WriteAsync(new byte[] { 0xAA, 0x55 }, ct).AsTask();
+        request = await core.ReadAsync(ct);
+        Assert.Equal("rfcomm.send", request?["method"]?.GetValue<string>());
+        Assert.Equal(3, request?["params"]?["channel_id"]?.GetValue<int>());
+        Assert.Equal("qlU=", request?["params"]?["data"]?.GetValue<string>());
+        await Respond(core, request, null, Error("rfcomm.busy"));
+        request = await core.ReadAsync(ct);
+        Assert.Equal("qlU=", request?["params"]?["data"]?.GetValue<string>());
+        await Respond(core, request, null);
+        await write.WaitAsync(TimeSpan.FromSeconds(5), ct);
+
+        // Closed by the earbuds: the reader sees the end; events of other channels change nothing.
+        await core.SendAsync(RfcommEvent("rfcomm_data", 9, data: "AQID"));
+        await core.SendAsync(RfcommEvent("rfcomm_closed", 3, reason: "remote"));
+        Assert.Equal(0, await channel.ReadAsync(buffer, ct).AsTask().WaitAsync(TimeSpan.FromSeconds(5), ct));
+        Assert.Equal("remote", channel.CloseReason);
+        // A closed channel is not closed again.
+        await channel.DisposeAsync();
+        _ = connection.RequestAsync("diag.mark", new JsonObject { ["note"] = "x" }, TimeSpan.FromSeconds(5), ct);
+        Assert.Equal("diag.mark", (await core.ReadAsync(ct))?["method"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RfcommOpenErrorsAndClosesAreRequests()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var core = new FakeCore();
+        var accept = core.AcceptAsync(State(), rev: 1, features: ["rfcomm"]);
+        await using var connection = await A2dpBridgeConnection.OpenAsync(core.PipeName, "encodeck/test", TimeSpan.FromSeconds(5), ct);
+        await accept;
+
+        var open = connection.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, ct);
+        await Respond(core, await core.ReadAsync(ct), null, Error("rfcomm.service_not_found"));
+        var error = await Assert.ThrowsAsync<BridgeRequestException>(() => open);
+        Assert.Equal("rfcomm.service_not_found", error.Code);
+
+        open = connection.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, ct);
+        await Respond(core, await core.ReadAsync(ct), new JsonObject { ["channel_id"] = 4, ["mtu"] = 127 });
+        var channel = await open;
+        var dispose = channel.DisposeAsync().AsTask();
+        var close = await core.ReadAsync(ct);
+        Assert.Equal("rfcomm.close", close?["method"]?.GetValue<string>());
+        Assert.Equal(4, close?["params"]?["channel_id"]?.GetValue<int>());
+        await Respond(core, close, null);
+        await dispose.WaitAsync(TimeSpan.FromSeconds(5), ct);
+
+        // Given up before the answer: the channel the answer opens is closed at once.
+        using var giveUp = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        open = connection.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, giveUp.Token);
+        var late = await core.ReadAsync(ct);
+        await giveUp.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => open);
+        await Respond(core, late, new JsonObject { ["channel_id"] = 5, ["mtu"] = 127 });
+        close = await core.ReadAsync(ct);
+        Assert.Equal("rfcomm.close", close?["method"]?.GetValue<string>());
+        Assert.Equal(5, close?["params"]?["channel_id"]?.GetValue<int>());
+
+        // The session ends: an open channel ends with it.
+        open = connection.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, ct);
+        await Respond(core, await core.ReadAsync(ct), new JsonObject { ["channel_id"] = 6, ["mtu"] = 127 });
+        channel = await open;
+        await core.SendAsync(new JsonObject { ["type"] = "event", ["rev"] = 1, ["event"] = new JsonObject { ["kind"] = "bye" } });
+        Assert.Equal(0, await channel.ReadAsync(new byte[4], ct).AsTask().WaitAsync(TimeSpan.FromSeconds(5), ct));
+        Assert.Equal("disconnected", channel.CloseReason);
+    }
+
+    [Fact]
+    public async Task TheBridgeConnectorTriesEachServiceOnTheStreamedDevice()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        string instance = "encodeck-test-" + Guid.NewGuid().ToString("N")[..8];
+        await using var monitor = new A2dpBridgeMonitor(instance: instance) { IdleInterval = TimeSpan.FromMilliseconds(100) };
+        await using var core = new FakeCore(instance);
+        var accept = core.AcceptAsync(State(), rev: 1, features: ["rfcomm"]);
+        monitor.Start();
+        Assert.True(await monitor.WaitForConnectionAsync(TimeSpan.FromSeconds(10), ct));
+        await accept;
+        Assert.True(monitor.Status.Rfcomm);
+
+        var other = Guid.NewGuid();
+        var connector = new A2dpBridgeChannelConnector(() => monitor);
+        var open = connector.OpenAsync("BTHENUM#x4", [other, ControlService], ct);
+        var request = await core.ReadAsync(ct);
+        Assert.Equal(other, Guid.Parse(request!["params"]!["uuid"]!.GetValue<string>()));
+        // The address is the streamed profile's.
+        Assert.Equal("AA:BB:CC:DD:EE:FF", request["params"]!["address"]!.GetValue<string>());
+        await Respond(core, request, null, Error("rfcomm.service_not_found"));
+        request = await core.ReadAsync(ct);
+        Assert.Equal(ControlService, Guid.Parse(request!["params"]!["uuid"]!.GetValue<string>()));
+        await Respond(core, request, new JsonObject { ["channel_id"] = 1, ["mtu"] = 990 });
+        var result = await open;
+        Assert.Equal(EncoDeck.Protocol.Transport.ChannelOpenStatus.Opened, result.Status);
+        Assert.Equal(ControlService, result.ServiceUuid);
+
+        // Not connected yet: retried later, not given up on.
+        open = connector.OpenAsync("BTHENUM#x4", [ControlService], ct);
+        await Respond(core, await core.ReadAsync(ct), null, Error("rfcomm.not_connected"));
+        Assert.Equal(EncoDeck.Protocol.Transport.ChannelOpenStatus.DeviceUnreachable, (await open).Status);
+        open = connector.OpenAsync("BTHENUM#x4", [ControlService], ct);
+        await Respond(core, await core.ReadAsync(ct), null, Error("rfcomm.open_failed", "0x04"));
+        var failed = await open;
+        Assert.Equal(EncoDeck.Protocol.Transport.ChannelOpenStatus.ConnectFailed, failed.Status);
+        Assert.Contains("0x04", failed.Detail);
+    }
+
+    [Fact]
+    public async Task ACoreWithoutRfcommIsNeverAskedForIt()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        string instance = "encodeck-test-" + Guid.NewGuid().ToString("N")[..8];
+        await using var monitor = new A2dpBridgeMonitor(instance: instance) { IdleInterval = TimeSpan.FromMilliseconds(100) };
+        await using var core = new FakeCore(instance);
+        var accept = core.AcceptAsync(State(), rev: 1);
+        monitor.Start();
+        Assert.True(await monitor.WaitForConnectionAsync(TimeSpan.FromSeconds(10), ct));
+        await accept;
+        Assert.False(monitor.Status.Rfcomm);
+        await Assert.ThrowsAsync<NotSupportedException>(() => monitor.OpenRfcommAsync("AA:BB:CC:DD:EE:FF", ControlService, ct));
+        var result = await new A2dpBridgeChannelConnector(() => monitor).OpenAsync("BTHENUM#x4", [ControlService], ct);
+        Assert.Equal(EncoDeck.Protocol.Transport.ChannelOpenStatus.DeviceUnreachable, result.Status);
+        // Nothing was sent: an old core would close the session on it.
+        _ = monitor.RequestAsync("diag.mark", new JsonObject { ["note"] = "x" }, ct: ct);
+        Assert.Equal("diag.mark", (await core.ReadAsync(ct))?["method"]?.GetValue<string>());
+    }
+
+    private static Task Respond(FakeCore core, JsonObject? request, JsonNode? result, JsonObject? error = null) => core.SendAsync(new JsonObject
+    {
+        ["type"] = "response", ["id"] = request!["id"]!.GetValue<long>(), ["result"] = result, ["error"] = error,
+    });
+
+    private static JsonObject Error(string code, params string[] args) => new()
+    {
+        ["code"] = code,
+        ["message"] = new JsonObject { ["key"] = "ipc.error." + code.Replace('.', '_'), ["args"] = new JsonArray(args.Select(a => (JsonNode?)a).ToArray()) },
+    };
+
+    private static JsonObject RfcommEvent(string kind, uint channel, string? data = null, string? reason = null)
+    {
+        var value = new JsonObject { ["channel_id"] = channel };
+        if (data is not null) value["data"] = data;
+        if (reason is not null) value["reason"] = reason;
+        return new JsonObject { ["type"] = "event", ["rev"] = 3, ["event"] = Event(kind, value) };
+    }
+
     private static JsonObject Event(string kind, JsonNode? value) => new() { ["kind"] = kind, ["value"] = value };
 
     private static JsonObject StreamEvent(long rev, int volume) => new()
@@ -271,7 +447,7 @@ public sealed class A2dpBridgeTests
         public string PipeName { get; }
 
         /// <summary>Waits for the client, reads its hello, answers welcome + snapshot (or reject); returns the hello.</summary>
-        public async Task<JsonObject> AcceptAsync(JsonObject? state, long rev = 1, string? reject = null)
+        public async Task<JsonObject> AcceptAsync(JsonObject? state, long rev = 1, string? reject = null, string[]? features = null)
         {
             await _pipe.WaitForConnectionAsync();
             var hello = await A2dpBridgeConnection.ReadFrameAsync(_pipe, CancellationToken.None) ?? throw new IOException("no hello");
@@ -280,7 +456,10 @@ public sealed class A2dpBridgeTests
                 await SendAsync(new JsonObject { ["type"] = "reject", ["reason"] = reject });
                 return hello;
             }
-            await SendAsync(new JsonObject { ["type"] = "welcome", ["protocol"] = 1, ["server"] = "a2dpwb-core/2.0.1" });
+            var welcome = new JsonObject { ["type"] = "welcome", ["protocol"] = 1, ["server"] = "a2dpwb-core/2.0.1" };
+            // Cores before 2.0.2 send no features at all.
+            if (features is not null) welcome["features"] = new JsonArray(features.Select(f => (JsonNode?)f).ToArray());
+            await SendAsync(welcome);
             await SendAsync(new JsonObject { ["type"] = "snapshot", ["rev"] = rev, ["state"] = state });
             return hello;
         }

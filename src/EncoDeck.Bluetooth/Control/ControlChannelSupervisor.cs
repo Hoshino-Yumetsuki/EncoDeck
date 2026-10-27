@@ -361,9 +361,10 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
 
     private void SetConnection(DeviceConnectionState state)
     {
-        bool leAudio = _link.IsLeAudio, bonded = _link.IsLeAudioBonded;
+        bool leAudio = _link.IsLeAudio, bonded = _link.IsLeAudioBonded, viaBridge = _link.IsConnected && _link.IsViaBridge;
         var links = _link.LeAudioLinks;
-        _store.TryUpdate(_identity.DeviceId, s => s.Connection == state && s.IsLeAudio == leAudio && s.IsLeAudioBonded == bonded && s.LeAudioLinks == links ? s : s with { Connection = state, IsLeAudio = leAudio, IsLeAudioBonded = bonded, LeAudioLinks = links });
+        _store.TryUpdate(_identity.DeviceId, s => s.Connection == state && s.IsLeAudio == leAudio && s.IsLeAudioBonded == bonded && s.LeAudioLinks == links && s.LinkViaBridge == viaBridge
+            ? s : s with { Connection = state, IsLeAudio = leAudio, IsLeAudioBonded = bonded, LeAudioLinks = links, LinkViaBridge = viaBridge });
     }
 
     private void SetError(string message, string? resourceKey = null)

@@ -23,7 +23,8 @@ public enum BridgeLink
 
 /// <param name="Server">"a2dpwb-core/2.0.1" while connected.</param>
 /// <param name="Detail">Why the core is not usable (Incompatible), in English from the core.</param>
-public sealed record BridgeStatus(BridgeLink Link, BridgeSnapshot? Snapshot = null, string? Server = null, string? Detail = null)
+/// <param name="Rfcomm">The core opens RFCOMM channels to the device it streams to (its "rfcomm" feature, 2.0.2).</param>
+public sealed record BridgeStatus(BridgeLink Link, BridgeSnapshot? Snapshot = null, string? Server = null, string? Detail = null, bool Rfcomm = false)
 {
     public static BridgeStatus NotRunning { get; } = new(BridgeLink.NotRunning);
 
@@ -150,6 +151,22 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
             : connection.RequestAsync(method, parameters, timeout ?? TimeSpan.FromSeconds(15), ct);
     }
 
+    /// <summary>
+    /// An RFCOMM channel from the core's adapter to the device it streams to (see <see cref="BridgeStatus.Rfcomm"/>);
+    /// <see cref="BridgeUnavailableException"/> when no core is connected, <see cref="NotSupportedException"/> when it
+    /// is older than 2.0.2. The channel ends with the session, the stream or the A2DP connection.
+    /// </summary>
+    public Task<BridgeRfcommChannel> OpenRfcommAsync(string address, Guid service, CancellationToken ct = default)
+    {
+        A2dpBridgeConnection? connection;
+        lock (_gate) connection = _connection;
+        if (connection is null) return Task.FromException<BridgeRfcommChannel>(new BridgeUnavailableException());
+        // Cores before 2.0.2 close the session on a request they do not know.
+        if (!connection.Features.Contains(A2dpBridgeConnection.RfcommFeature))
+            return Task.FromException<BridgeRfcommChannel>(new NotSupportedException("This A2DPWB core cannot open RFCOMM channels."));
+        return connection.OpenRfcommAsync(address, service, ct);
+    }
+
     private async Task RunAsync()
     {
         var token = _stop.Token;
@@ -249,7 +266,8 @@ public sealed class A2dpBridgeMonitor : IAsyncDisposable
     /// </summary>
     private void SetConnected(A2dpBridgeConnection connection)
     {
-        lock (_gate) _status = new BridgeStatus(BridgeLink.Connected, connection.Snapshot, connection.Server);
+        lock (_gate) _status = new BridgeStatus(BridgeLink.Connected, connection.Snapshot, connection.Server,
+            Rfcomm: connection.Features.Contains(A2dpBridgeConnection.RfcommFeature));
         try { Changed?.Invoke(this, EventArgs.Empty); }
         catch (Exception ex) { _logger.LogWarning(ex, "A2DPWB status handler failed"); }
     }
