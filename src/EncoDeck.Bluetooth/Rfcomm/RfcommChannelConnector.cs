@@ -9,6 +9,7 @@ using EncoDeck.Protocol.Brands.Edifier;
 using EncoDeck.Protocol.Brands.Sennheiser;
 using EncoDeck.Protocol.Brands.Sony;
 using EncoDeck.Protocol.Oppo;
+using EncoDeck.Protocol.Oppo.Models;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,6 +46,7 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         {
             if (serviceUuids.Any(OppoServiceUuids.IsCandidate))
             {
+                bool guardsPartialLeBond = GuardsPartialLeBond(profiles.Match(new DeviceIdentity(deviceId, device.Name, new BluetoothAddress(device.BluetoothAddress))));
                 return await OppoControlChannelRouter.OpenAsync(
                     async () =>
                     {
@@ -53,7 +55,7 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                         bool bonded = await LeAudioLink.IsBondedAsync(device.BluetoothAddress, cancellationToken).ConfigureAwait(false);
                         if (!bonded && LeAudioLink.IsPreferred(device.BluetoothAddress))
                             throw new InvalidOperationException("LE Audio 配对未完成，请重新进入配对模式后再试一次。");
-                        if (!bonded && await LeAudioLink.HasSecondaryBondAsync(device.BluetoothAddress, cancellationToken, device.Name).ConfigureAwait(false))
+                        if (!bonded && guardsPartialLeBond && await LeAudioLink.HasSecondaryBondAsync(device.BluetoothAddress, cancellationToken, device.Name).ConfigureAwait(false))
                             throw new InvalidOperationException("LE Audio 配对不完整：主耳 LE 绑定缺失，请重新切换到 LE Audio。");
                         if (LeAudioLink.IsPairingChanging(device.BluetoothAddress))
                             throw new InvalidOperationException("The earbuds' pairing is being changed.");
@@ -65,6 +67,14 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
             return await OpenClassicAsync(device, deviceId, serviceUuids, cancellationToken).ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// Whether another LE bond without the primary's means a half-finished LE Audio switch that Classic
+    /// must not paper over. Only models EncoDeck can switch to LE Audio are guarded: Swift Pair leaves an
+    /// LE bond next to a Classic-only pair (OPPO Enco Air5s), and blocking RFCOMM there left it uncontrollable.
+    /// </summary>
+    internal static bool GuardsPartialLeBond(IDeviceProfile? profile) =>
+        profile is OppoDeviceProfile { Definition.SupportsLeAudioPairing: true };
 
     private async Task<ChannelOpenResult> OpenClassicAsync(BluetoothDevice device, string deviceId, IReadOnlyList<Guid> serviceUuids, CancellationToken cancellationToken)
     {
