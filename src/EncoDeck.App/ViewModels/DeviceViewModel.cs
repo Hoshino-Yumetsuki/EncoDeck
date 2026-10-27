@@ -345,14 +345,13 @@ public sealed partial class DeviceViewModel : ObservableObject
         }
         else BridgeMessage = string.Empty;
         HasClassicCodec = ClassicCodec is not null;
-        // A single-body LC3 headset has only the one LE identity, so one link is all of it. Warn
-        // only for a pair whose other earbud is bonded, or earbuds whose other half was never found.
-        if (state.IsLeAudio && state.LeAudioLinks.ConnectedEarbuds == 1 && profile?.Form != DeviceForm.Headphones
-            && (state.LeAudioLinks.SecondaryBonded || profile is OppoDeviceProfile))
+        // One earbud worn while the other charges is ordinary use; warn only when the other should be up.
+        if (LeAudioStatus.IsMissingEarbud(state, warnWithoutWear: profile is OppoDeviceProfile))
             ConnectionText = Loc.Get("Connection_LeAudioSingleEar");
         // Switched to LE Audio but LC3 is not up (e.g. after the case reopened): the earbuds only come
-        // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect.
-        if (state.IsLeAudioBonded && !state.IsLeAudio && state.Connection != DeviceConnectionState.ControlReady && !IsBridgeOnly)
+        // back over LE once they advertise; EncoDeck keeps the existing bond ready to reconnect. OPPO
+        // control waits for that link; Classic-controlled earbuds show their own state meanwhile.
+        if (LeAudioStatus.IsWaitingForLeAudio(state, controlNeedsLeAudio: profile is OppoDeviceProfile) && !IsBridgeOnly)
             ConnectionText = Loc.Get("Connection_WaitingForLeAudio");
         // Until the earbuds connect and report their ids, use the ones remembered from last time
         // (restored by the device cache) or the model's own product id, so the art shows at once.

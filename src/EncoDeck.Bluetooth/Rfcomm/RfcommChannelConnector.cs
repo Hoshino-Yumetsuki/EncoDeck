@@ -167,7 +167,9 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                 _logger.LogInformation("SDP lookup for {Service}: {Error}", uuid, services.Error);
                 if (services.Error is BluetoothError.DeviceNotConnected or BluetoothError.RadioNotAvailable)
                 {
-                    if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Contains(SennheiserProfile.GattServiceId))
+                    // Unless a GATT service later in the list can still answer without Classic (one
+                    // earbud worn on LE Audio has no Classic link to page).
+                    if (services.Error == BluetoothError.RadioNotAvailable || !serviceUuids.Any(IsClassicFreeFallback))
                         return ChannelOpenResult.Failed(ChannelOpenStatus.DeviceUnreachable, services.Error.ToString());
                 }
                 continue;
@@ -204,6 +206,9 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
         // connects; report it (retryable) rather than a permanent GATT or SDP outcome.
         return connectFailure ?? gattFailure ?? ChannelOpenResult.Failed(ChannelOpenStatus.ServiceNotFound, "No candidate control service could be opened.");
     }
+
+    private static bool IsClassicFreeFallback(Guid uuid) =>
+        uuid == SennheiserProfile.GattServiceId || EncoDeck.Protocol.Brands.GattStreamEndpoints.Find(uuid) is { BondedLeIdentities: true };
 
     /// <summary>RFCOMM channel of the Sony MDR v2 control service on WH/WF-1000XM6 class hardware.</summary>
     internal const int SonyMdrV2Channel = 9;
