@@ -23,6 +23,8 @@ internal static class ProbeApp
                 "devices" => await ListDevicesAsync(options, ct),
                 "usb-devices" => await UsbDevicesCommand.RunAsync(ct),
                 "services" => await ListServicesAsync(options, ct),
+                "sony-services" => await SonyServicesCommand.RunAsync(options, ct),
+                "sony-probe" => await SonyProbeCommand.RunAsync(options, ct),
                 "query" => await QueryCommands.QueryAsync(options, ct),
                 "listen" => await QueryCommands.ListenAsync(options, ct),
                 "watch" => await QueryCommands.WatchAsync(options, ct),
