@@ -24,7 +24,7 @@ internal static class SonyProbeCommand
         if (device is null) { Console.Error.WriteLine("Device not found."); return 3; }
         Console.WriteLine($"Device: {device.Name}; classic link {device.ConnectionStatus}; probing RFCOMM channel {channel}");
 
-        var opened = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, (uint)channel, ct).ConfigureAwait(false);
+        var opened = await BluetoothSocketByteChannel.OpenAsync(device.BluetoothAddress, (uint)channel, ct, "Sony MDR").ConfigureAwait(false);
         if (opened.Status != ChannelOpenStatus.Opened)
         {
             Console.WriteLine($"connect failed: {opened.Status} {opened.Detail}");
