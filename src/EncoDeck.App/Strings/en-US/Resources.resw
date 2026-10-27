@@ -907,9 +907,19 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="About_Contributing.Content" xml:space="preserve"><value>Contributing</value></data>
   <data name="About_Thanks.Text" xml:space="preserve"><value>Acknowledgements</value></data>
   <data name="About_ThanksProtocol.Text" xml:space="preserve"><value>Earbud protocol and device support</value></data>
-  <data name="About_ThanksMoondrop.Text" xml:space="preserve"><value>MOONDROP model data, GAIA framing and commands</value></data>
   <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 component</value></data>
-  <data name="About_ThanksTray.Text" xml:space="preserve"><value>Notification area icon</value></data>
+  <data name="Lhdc_Summary.Text" xml:space="preserve"><value>Installs an LHDC V5 driver on Windows' own Bluetooth so earbuds that support LHDC V5 can play at higher bitrates. The driver needs test-signed driver loading and is offered only in the non-Store x64 version.</value></data>
+  <data name="About_ThanksIntro.Text" xml:space="preserve"><value>EncoDeck builds on the work of these open-source projects. Thanks to their authors and contributors.</value></data>
+  <data name="About_ThanksUsb.Text" xml:space="preserve"><value>USB and 2.4 GHz gaming headsets</value></data>
+  <data name="About_ThanksComponents.Text" xml:space="preserve"><value>Components and libraries</value></data>
+  <data name="About_ThanksBridge.Text" xml:space="preserve"><value>A2DP Bridge component</value></data>
+  <data name="About_ThanksLibraries.Text" xml:space="preserve"><value>Libraries</value></data>
+  <data name="About_ThanksAll.Text" xml:space="preserve"><value>The third-party notices list every project with the revision used and its license.</value></data>
+  <data name="About_PrivacyText.Text" xml:space="preserve"><value>EncoDeck has no accounts, ads, analytics or telemetry. It goes online only to check for updates, fetch device artwork and download the optional components you choose.</value></data>
+  <data name="About_Privacy.Content" xml:space="preserve"><value>Privacy policy</value></data>
+  <data name="About_SystemInfo.Header" xml:space="preserve"><value>Version information</value></data>
+  <data name="About_CopyInfo" xml:space="preserve"><value>Copy</value></data>
+  <data name="About_Copied" xml:space="preserve"><value>Copied</value></data>
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>License</value></data>
   <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>The headset is connected over LE Audio, and its control service cannot be opened in this mode right now. In Sony | Sound Connect on your phone, set “LE Audio connection setting” to “Classic Audio only”, or set “Bluetooth connection quality” to “Priority on sound quality” or “Priority on stable connection”, so the headset reconnects over Classic Bluetooth. EncoDeck tries again once it reconnects.</value></data>
   <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>The headset has no Classic Bluetooth connection, so there is no control channel. Connect it in Windows Settings › Bluetooth &amp; devices (or play some audio to wake it), and if needed switch the headset to Classic Audio, then try again.</value></data>

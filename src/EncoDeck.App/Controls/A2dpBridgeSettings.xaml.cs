@@ -64,7 +64,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
             _ = LoadWindowsAdapterAsync();
             Refresh();
             // At most once a day, quietly: a later component release can arrive without an app update.
-            _ = Bridge.CheckForUpdateAsync(force: false);
+            _ = CheckForUpdateQuietlyAsync();
         };
         Unloaded += (_, _) =>
         {
@@ -86,8 +86,15 @@ public sealed partial class A2dpBridgeSettings : UserControl
 
     private async Task LoadWindowsAdapterAsync()
     {
-        _windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync();
+        try { _windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync(); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { _windowsAdapter = null; }
         Refresh();
+    }
+
+    private static async Task CheckForUpdateQuietlyAsync()
+    {
+        try { await Bridge.CheckForUpdateAsync(force: false); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { }
     }
 
     private void Refresh()
@@ -231,7 +238,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
             string name = await Bridge.SaveProfileAsync(candidate.Name, candidate.Address, codec);
             _selectProfile = name;
             AddPanel.IsExpanded = false;
-            ShowInfo(Loc.Format("Bridge_ProfileSaved", name));
+            CardNotice.Show(Notice, InfoBarSeverity.Success, Loc.Format("Bridge_ProfileSaved", name));
         });
     }
 
@@ -319,23 +326,32 @@ public sealed partial class A2dpBridgeSettings : UserControl
     private async Task ChangeDriver(BridgeAdapter adapter)
     {
         bool assign = adapter.Driver != BridgeDriver.WinUsb;
+        if (_busy) return;
         // Checked again at the moment of the click: the default adapter can change (one was plugged in).
-        _windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync();
+        try { _windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync(); }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // Unknown which adapter Windows uses: taking one could cut off every paired device.
+            if (assign)
+            {
+                CardNotice.ShowError(Notice, ex);
+                return;
+            }
+        }
         if (assign && WindowsAdapterGuard.IsSameDevice(adapter.InstanceId, _windowsAdapter))
         {
-            ShowError(Loc.Get("Bridge_WindowsAdapterTip"));
+            CardNotice.Show(Notice, InfoBarSeverity.Warning, Loc.Get("Bridge_WindowsAdapterTip"));
             return;
         }
         var dialog = new ContentDialog
         {
-            XamlRoot = XamlRoot,
             Title = Loc.Format(assign ? "Bridge_AssignTitle" : "Bridge_RestoreTitle", adapter.DisplayName),
             Content = new TextBlock { Text = Loc.Get(assign ? "Bridge_AssignBody" : "Bridge_RestoreBody"), TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = Loc.Get(assign ? "Bridge_AssignWinUsb" : "Bridge_RestoreDriver"),
             CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        if (await CardNotice.ShowDialogAsync(dialog, XamlRoot) != ContentDialogResult.Primary) return;
         await Operate(async () =>
         {
             Status.Text = Loc.Get("Bridge_DriverChanging");
@@ -344,19 +360,18 @@ public sealed partial class A2dpBridgeSettings : UserControl
         });
     }
 
+    /// <summary>
+    /// Runs one operation at a time. Its progress shows in the status line, its result or failure in the message
+    /// bar; the status line returns to the bridge's state afterwards whatever happened.
+    /// </summary>
     private async Task Operate(Func<Task> action)
     {
         if (_busy) return;
         _busy = true;
-        ErrorBar.IsOpen = false;
+        CardNotice.Hide(Notice);
         Refresh();
         try { await action(); }
-        catch (BridgeRequestException ex) { ShowError(ex.BridgeMessage.IsEmpty ? ex.Code : A2dpBridgeText.Format(ex.BridgeMessage)); }
-        catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException or InvalidDataException
-            or UnauthorizedAccessException or HttpRequestException or System.ComponentModel.Win32Exception or OperationCanceledException)
-        {
-            ShowError(ex is BridgeUnavailableException ? Loc.Get("Bridge_NotConnected") : ex.Message);
-        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
         finally
         {
             _busy = false;
@@ -364,24 +379,17 @@ public sealed partial class A2dpBridgeSettings : UserControl
         }
     }
 
-    private void ShowError(string message)
+    private void ShowError(Exception ex) => CardNotice.ShowError(Notice, ex, ex switch
     {
-        ErrorBar.Severity = InfoBarSeverity.Error;
-        ErrorBar.Message = message;
-        ErrorBar.IsOpen = true;
-    }
-
-    private void ShowInfo(string message)
-    {
-        ErrorBar.Severity = InfoBarSeverity.Success;
-        ErrorBar.Message = message;
-        ErrorBar.IsOpen = true;
-    }
+        BridgeRequestException request => request.BridgeMessage.IsEmpty ? request.Code : A2dpBridgeText.Format(request.BridgeMessage),
+        BridgeUnavailableException => Loc.Get("Bridge_NotConnected"),
+        _ => null,
+    });
 
     private async void OnStartCore(object sender, RoutedEventArgs e) => await Operate(async () =>
     {
         Status.Text = Loc.Get("Bridge_Starting");
-        if (!await Bridge.StartCoreAsync()) ShowError(Loc.Get("Bridge_StartTimeout"));
+        if (!await Bridge.StartCoreAsync()) CardNotice.Show(Notice, InfoBarSeverity.Error, Loc.Get("Bridge_StartTimeout"));
     });
 
     private async void OnQuitCore(object sender, RoutedEventArgs e) => await Operate(Bridge.QuitCoreAsync);
@@ -394,7 +402,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
             A2dpBridgeComponent.OpenWindow(installation);
             Bridge.Monitor.Wake();
         }
-        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception) { ShowError(ex.Message); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
     }
 
     private async void OnConnect(object sender, RoutedEventArgs e)
@@ -422,7 +430,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
             _volumeTimer.Tick += async (_, _) =>
             {
                 try { await Bridge.SetVolumeAsync((int)Math.Round(Volume.Value)); }
-                catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException) { ShowError(ex.Message); }
+                catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
             };
         }
         _volumeTimer.Stop();
@@ -438,7 +446,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
 
     private async void OnRefreshAdapters(object sender, RoutedEventArgs e) => await Operate(async () =>
     {
-        _windowsAdapter = await WindowsAdapterGuard.DefaultAdapterInstanceIdAsync();
+        await LoadWindowsAdapterAsync();
         await Bridge.RefreshAdaptersAsync();
     });
 
@@ -447,14 +455,14 @@ public sealed partial class A2dpBridgeSettings : UserControl
         string? folder = Bridge.Status.Snapshot?.ConfigDirectory;
         if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return;
         try { using var _ = Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true }); }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException) { ShowError(ex.Message); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
     }
 
     private async void OnCheckUpdates(object sender, RoutedEventArgs e) => await Operate(async () =>
     {
         Status.Text = Loc.Get("Component_Checking");
         var outcome = await Bridge.CheckForUpdateAsync(force: true);
-        ShowInfo(outcome switch
+        CardNotice.Show(Notice, outcome is ComponentUpdateOutcome.Available or ComponentUpdateOutcome.UpToDate ? InfoBarSeverity.Success : InfoBarSeverity.Warning, outcome switch
         {
             ComponentUpdateOutcome.Available => Loc.Format("Component_UpdateFound", Bridge.UpdateTarget?.Version ?? Bridge.OnlineRelease?.Version),
             ComponentUpdateOutcome.UpToDate => Loc.Get("Component_UpToDate"),
@@ -466,6 +474,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
 
     private async void OnUninstall(object sender, RoutedEventArgs e)
     {
+        if (_busy) return;
         int assigned = Bridge.AssignedAdapterCount;
         bool own = Bridge.Installation is { Origin: BridgeOrigin.Installed } || A2dpBridgeComponent.FindInstalled(Bridge.Component.Root) is not null;
         var panel = new StackPanel { Spacing = 10 };
@@ -475,20 +484,19 @@ public sealed partial class A2dpBridgeSettings : UserControl
         if (assigned > 0) panel.Children.Add(restore);
         var dialog = new ContentDialog
         {
-            XamlRoot = XamlRoot,
             Title = Loc.Get("Bridge_UninstallTitle"),
             Content = panel,
             PrimaryButtonText = Loc.Get("Component_Uninstall"),
             CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        if (await CardNotice.ShowDialogAsync(dialog, XamlRoot) != ContentDialogResult.Primary) return;
         bool restoreDrivers = assigned > 0 && restore.IsChecked == true;
         await Operate(async () =>
         {
             Status.Text = Loc.Get(restoreDrivers ? "Bridge_UninstallingRestore" : "Bridge_Uninstalling");
             await Bridge.UninstallAsync(restoreDrivers);
-            ShowInfo(Loc.Get("Bridge_Uninstalled"));
+            CardNotice.Show(Notice, InfoBarSeverity.Success, Loc.Get("Bridge_Uninstalled"));
         });
     }
 
@@ -511,9 +519,12 @@ public sealed partial class A2dpBridgeSettings : UserControl
                 Status.Text = Loc.Format("Bridge_DownloadProgress", p.Received / 1048576.0, p.Total / 1048576.0);
             });
             // A managed core of an older version is restarted from the new one unless it streams (then at its next start).
-            if (await Bridge.InstallAsync(progress, cancellation.Token)) ShowInfo(Loc.Get("Bridge_UpdateAfterRestart"));
+            if (await Bridge.InstallAsync(progress, cancellation.Token)) CardNotice.Show(Notice, InfoBarSeverity.Informational, Loc.Get("Bridge_UpdateAfterRestart"));
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { ShowError(Loc.Get("Bridge_Cancelled")); }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            CardNotice.Show(Notice, InfoBarSeverity.Informational, Loc.Get("Bridge_Cancelled"));
+        }
         finally
         {
             _download = null;

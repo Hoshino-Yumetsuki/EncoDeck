@@ -907,9 +907,19 @@
   <data name="About_Contributing.Content" xml:space="preserve"><value>参与贡献</value></data>
   <data name="About_Thanks.Text" xml:space="preserve"><value>致谢</value></data>
   <data name="About_ThanksProtocol.Text" xml:space="preserve"><value>耳机协议与设备适配</value></data>
-  <data name="About_ThanksMoondrop.Text" xml:space="preserve"><value>水月雨型号档案、GAIA 帧格式与控制命令</value></data>
   <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 组件</value></data>
-  <data name="About_ThanksTray.Text" xml:space="preserve"><value>托盘图标</value></data>
+  <data name="Lhdc_Summary.Text" xml:space="preserve"><value>在 Windows 自带的蓝牙上安装 LHDC V5 驱动，让支持 LHDC V5 的耳机以更高码率播放。驱动需满足测试签名加载条件，仅在非商店 x64 版本提供。</value></data>
+  <data name="About_ThanksIntro.Text" xml:space="preserve"><value>EncoDeck 建立在这些开源项目的成果之上，感谢它们的作者和贡献者。</value></data>
+  <data name="About_ThanksUsb.Text" xml:space="preserve"><value>USB 与 2.4 GHz 游戏耳机</value></data>
+  <data name="About_ThanksComponents.Text" xml:space="preserve"><value>组件与开源库</value></data>
+  <data name="About_ThanksBridge.Text" xml:space="preserve"><value>A2DP Bridge 组件</value></data>
+  <data name="About_ThanksLibraries.Text" xml:space="preserve"><value>开源库</value></data>
+  <data name="About_ThanksAll.Text" xml:space="preserve"><value>第三方声明中列出了每个项目所用的修订版本及其许可证。</value></data>
+  <data name="About_PrivacyText.Text" xml:space="preserve"><value>EncoDeck 没有账户、广告、统计或遥测，只在检查更新、获取设备图片和下载你选择的可选组件时联网。</value></data>
+  <data name="About_Privacy.Content" xml:space="preserve"><value>隐私政策</value></data>
+  <data name="About_SystemInfo.Header" xml:space="preserve"><value>版本信息</value></data>
+  <data name="About_CopyInfo" xml:space="preserve"><value>复制</value></data>
+  <data name="About_Copied" xml:space="preserve"><value>已复制</value></data>
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>许可证全文</value></data>
   <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>耳机正通过 LE Audio 连接，这种连接下暂时打不开控制服务。可以在手机的 Sony | Sound Connect 中把“LE Audio 连接设置”改为“仅经典音频”，或把“蓝牙连接质量”设为“音质优先”或“稳定连接优先”，让耳机以经典蓝牙重新连接；重新连接后 EncoDeck 会自动重试。</value></data>
   <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>耳机当前没有经典蓝牙连接，因此没有可用的控制通道。请在 Windows 设置 › 蓝牙和设备 中连接耳机（或播放一段音频唤醒它），必要时把耳机切换到经典音频后重试。</value></data>

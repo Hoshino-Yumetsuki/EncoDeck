@@ -907,9 +907,19 @@
   <data name="About_Contributing.Content" xml:space="preserve"><value>コントリビュート</value></data>
   <data name="About_Thanks.Text" xml:space="preserve"><value>謝辞</value></data>
   <data name="About_ThanksProtocol.Text" xml:space="preserve"><value>イヤホンのプロトコルとデバイス対応</value></data>
-  <data name="About_ThanksMoondrop.Text" xml:space="preserve"><value>MOONDROP のモデルデータ、GAIA フレーミングとコマンド</value></data>
   <data name="About_ThanksLhdc.Text" xml:space="preserve"><value>LHDC V5 コンポーネント</value></data>
-  <data name="About_ThanksTray.Text" xml:space="preserve"><value>通知領域アイコン</value></data>
+  <data name="Lhdc_Summary.Text" xml:space="preserve"><value>Windows 標準の Bluetooth に LHDC V5 ドライバーをインストールし、LHDC V5 対応イヤホンをより高いビットレートで再生できるようにします。ドライバーの読み込みにはテスト署名の条件を満たす必要があり、ストア版以外の x64 版でのみ利用できます。</value></data>
+  <data name="About_ThanksIntro.Text" xml:space="preserve"><value>EncoDeck は以下のオープンソースプロジェクトの成果の上に成り立っています。作者とコントリビューターの皆さんに感謝します。</value></data>
+  <data name="About_ThanksUsb.Text" xml:space="preserve"><value>USB / 2.4 GHz ゲーミングヘッドセット</value></data>
+  <data name="About_ThanksComponents.Text" xml:space="preserve"><value>コンポーネントとライブラリ</value></data>
+  <data name="About_ThanksBridge.Text" xml:space="preserve"><value>A2DP Bridge コンポーネント</value></data>
+  <data name="About_ThanksLibraries.Text" xml:space="preserve"><value>ライブラリ</value></data>
+  <data name="About_ThanksAll.Text" xml:space="preserve"><value>各プロジェクトの使用リビジョンとライセンスは、サードパーティの通知に記載しています。</value></data>
+  <data name="About_PrivacyText.Text" xml:space="preserve"><value>EncoDeck にはアカウント、広告、分析、テレメトリーはありません。インターネットに接続するのは、更新の確認、デバイス画像の取得、選択したオプションコンポーネントのダウンロードのときだけです。</value></data>
+  <data name="About_Privacy.Content" xml:space="preserve"><value>プライバシーポリシー</value></data>
+  <data name="About_SystemInfo.Header" xml:space="preserve"><value>バージョン情報</value></data>
+  <data name="About_CopyInfo" xml:space="preserve"><value>コピー</value></data>
+  <data name="About_Copied" xml:space="preserve"><value>コピーしました</value></data>
   <data name="About_LicenseLink.Content" xml:space="preserve"><value>ライセンス</value></data>
   <data name="Error_SonyLeAudioControl" xml:space="preserve"><value>ヘッドホンは LE Audio で接続されており、このモードでは現在制御サービスを開けません。スマートフォンの Sony | Sound Connect で「LE Audio 接続設定」を「Classic Audio のみ」にするか、「Bluetooth 接続品質」を「音質優先」または「接続優先」にして、ヘッドホンをクラシック Bluetooth で再接続させてください。再接続されると EncoDeck が自動的に再試行します。</value></data>
   <data name="Error_SonyClassicLinkDown" xml:space="preserve"><value>ヘッドホンにクラシック Bluetooth の接続がないため、制御チャネルがありません。Windows の [設定] › [Bluetooth とデバイス] で接続し（または音声を再生して起動し）、必要に応じてヘッドホンを Classic Audio に切り替えてから再試行してください。</value></data>
