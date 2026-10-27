@@ -373,7 +373,7 @@ internal static class UiSnapshot
             NoiseControl = O(new NoiseControlState(NoiseControlMode.NoiseCancellation, "smart")),
             SmartLevelId = "medium",
             Equalizer = O(new EqualizerState("dynaudio-original", 0)),
-            Codec = O(AudioCodec.Lhdc),
+            Codec = O(AudioCodec.Aac),
             Firmware = O(new FirmwareInfo("116", "06EC10", new Dictionary<string, string> { ["left"] = "116", ["right"] = "116", ["case"] = "100" })),
             Toggles = toggles.ToImmutableDictionary(),
             Spatial = O(SpatialAudioMode.Off),

@@ -9,6 +9,7 @@ using EncoDeck.Core.Devices;
 using EncoDeck.Core.Profiles;
 using EncoDeck.Core.Resources;
 using EncoDeck.Core.State;
+using EncoDeck.Platform.Lhdc;
 using EncoDeck.Platform.Settings;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Brands.Usb;
@@ -317,11 +318,13 @@ public sealed partial class DeviceViewModel : ObservableObject
         {
             AudioCodec.Sbc => "SBC",
             AudioCodec.Aac => "AAC",
-            AudioCodec.Ldac => "LDAC",
             AudioCodec.AptX => "aptX",
             AudioCodec.AptXHd => "aptX HD",
             AudioCodec.AptXAdaptive => "aptX Adaptive",
-            AudioCodec.Lhdc => "LHDC",
+            // The reply is the earbuds' configured Hi-Res codec, not the codec this link negotiated. Windows'
+            // own A2DP carries neither LDAC nor LHDC (LHDC only through the LHDC-Win service), so an earbud
+            // set to them (Enco Air5s: LHDC) still streams SBC/AAC here.
+            AudioCodec.Lhdc when LhdcComponent.ServiceEnabled() => "LHDC",
             _ => null,
         };
         // A2DP Windows Bridge streams to these earbuds over its own adapter: Windows (and so the control

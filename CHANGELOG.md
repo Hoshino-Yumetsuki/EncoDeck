@@ -15,6 +15,7 @@
 
 ### 修复
 
+- OPPO Enco Air5s 等耳机连接电脑时，编码标记不再误显示为 LHDC：耳机报告的是自己设置的高清编码，而 Windows 自带的蓝牙音频不支持 LDAC 和 LHDC。现在 LDAC 不再显示，LHDC 只在实验室的 LHDC 组件启用时显示；通过 A2DP Bridge 播放时仍显示 Bridge 实际使用的编码。
 - OPPO Enco X3 切换到 LE Audio 后只有一只耳机配对（[#12](https://github.com/TIANLI0/EncoDeck/issues/12)）：另一只耳机以自己的 LE 地址加入时，EncoDeck 不再因为它与主耳广播的地址不同而忽略 Windows 找到的这只耳机，并按它实际的 LE 身份检查绑定和连接；等待 Windows 找到另一只耳机的时间延长到 30 秒。LE 控制通道建立后，EncoDeck 会像手机一样告诉耳机主机已改用 LE 传输（X4 不受影响）。尚待 X3 真机验证。
 - 通过 Swift Pair（快速配对）连接的 OPPO Enco Air5s 等不支持 EncoDeck LE Audio 切换的耳机，重新连接后不再一直提示“LE Audio 配对不完整：主耳 LE 绑定缺失”而无法控制：快速配对在经典蓝牙配对之外留下的 LE 绑定不再阻止经典蓝牙控制通道。
 - 小米 / Redmi 耳机以 LE Audio 连接、只戴一只时也能控制（[#11](https://github.com/TIANLI0/EncoDeck/issues/11)）：经典蓝牙控制通道打不开时，改走耳机已绑定、已连接的 LE Audio 链路上的 BLE 控制服务，不扫描或连接附近的其他设备。
