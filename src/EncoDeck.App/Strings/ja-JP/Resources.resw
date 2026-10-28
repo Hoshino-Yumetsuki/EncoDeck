@@ -809,7 +809,7 @@
   <data name="LeAudio_Switch" xml:space="preserve"><value>LE Audio に切り替え</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>クラシック Bluetooth に戻す</value></data>
   <data name="LeAudio_StatusLe" xml:space="preserve"><value>左右両方のイヤホンが LE でペアリング済みです。実際のオーディオ接続は Windows が管理します。</value></data>
-  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows にクラシック A2DP エンドポイントが残っています。「ヘッドホン (OPPO Enco X4)」を選択すると片耳だけで再生されます。LE Audio の「スピーカー」エンドポイントを選択してください。</value></data>
+  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows にクラシック A2DP エンドポイントが残っています。このイヤホンの「ヘッドホン」エンドポイントを選択すると片耳だけで再生されます。LE Audio の「スピーカー」エンドポイントを選択してください。</value></data>
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>Windows のオーディオエンドポイントの状態を確認できませんでした。ACL/GATT の準備完了は両耳再生を保証するものではありません。</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>クラシックのオーディオエンドポイントを無効化</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>クラシックのオーディオエンドポイントを復元</value></data>
@@ -843,6 +843,7 @@
   <data name="LeAudio_Stage_WaitingForCleanup" xml:space="preserve"><value>Windows が古いペアリングを削除するのを待っています（最大約 45 秒）。LE Audio に切り替える場合は、イヤホンをペアリングモードのままにしてください…</value></data>
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>両方のイヤホンをケースに入れてふたを開け、ランプが点滅するまでケースのボタンを長押ししてください（最大 2 分間待機）…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>ペアリングモードを検出しました。LE Audio で 1 つ目のイヤホンをペアリングしています…</value></data>
+  <data name="LeAudio_Stage_ReportingLeTransport" xml:space="preserve"><value>LE Audio 経由でイヤホンの制御接続が戻るのを待ち、この PC が LE Audio を使うことをイヤホンに伝えています…</value></data>
   <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>もう片方のイヤホンをペアリングしています…</value></data>
   <data name="LeAudio_Stage_DisablingMultipoint" xml:space="preserve"><value>マルチポイントをオフにして、イヤホンの設定を確認しています…</value></data>
   <data name="Error_LeAudioMultipoint" xml:space="preserve"><value>LE Audio の使用中は、スマートフォンに接続を奪われにくくするため、マルチポイントをオフのままにしてください。マルチポイントを有効にする前に、クラシック Bluetooth に戻してください。</value></data>

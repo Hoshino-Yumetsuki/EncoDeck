@@ -124,7 +124,7 @@ public sealed partial class OppoDeviceController : IDeviceController
 
         // HeyMelody advertises its translation support here; a PC has none.
         await RequestIfAllowedAsync(new OppoRequest(OppoCommand.SetHostCapabilities, [0x00], SequenceMode.FixedSet), cancellationToken).ConfigureAwait(false);
-        await ReportLeAudioTransportAsync(cancellationToken).ConfigureAwait(false);
+        if (IsLeAudioTransport) await ReportLeAudioTransportAsync(cancellationToken).ConfigureAwait(false);
         StartCodecPolling();
         if (KeepAliveInterval is { } interval)
             _keepAliveTask ??= Task.Run(() => KeepAliveAsync(interval, _keepAliveStop.Token), CancellationToken.None);
@@ -132,18 +132,23 @@ public sealed partial class OppoDeviceController : IDeviceController
     }
 
     /// <summary>
-    /// ColorOS tells the earbuds over 0x0403 [0x1F, 1] that the host's transport is now LE; firmware without
-    /// the 0x0433 LE/BR switch (Enco X3) then syncs this host's LE bond to the other earbud. Sent on every LE
+    /// ColorOS tells the earbuds over 0x0403 [0x1F, 1] that the host's transport is now LE. Report this before
+    /// secondary pairing on firmware without 0x0433 (Enco X3); an ACK does not verify peer bonding. Sent on every LE
     /// connection like the phone does, and not at all on Classic or on firmware with 0x0433 (X4, verified
     /// without it). The feature is never in the capability list, so the bitmap is not consulted.
+    /// Not connected over LE yet is <see cref="CommandStatus.NotConnected"/>; firmware with 0x0433 is unsupported.
     /// </summary>
-    private async Task ReportLeAudioTransportAsync(CancellationToken cancellationToken)
+    public async Task<CommandResult> ReportLeAudioTransportAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsLeAudioTransport || _remoteCapabilities is not { } caps || caps.Allows(OppoCommand.SetLeBrSwitch)) return;
+        if (!IsLeAudioTransport || _remoteCapabilities is not { } caps) return CommandResult.NotConnected;
+        if (caps.Allows(OppoCommand.SetLeBrSwitch)) return CommandResult.Unsupported("These earbuds use the LE/BR switch (0x0433).");
         var result = await _session.RequestAsync(new OppoRequest(OppoCommand.SetFeature, [LeAudioTransportFeature, 1], SequenceMode.FixedSet), CommandTimeout, cancellationToken).ConfigureAwait(false);
         byte status = 0xFF;
         bool acknowledged = result.Response is { } ack && OppoParsers.TryParseAck(ack, OppoCommand.SetFeature, out status) && status == OppoParsers.StatusOk;
         _logger.LogInformation("LE Audio transport reported (0x0403 [1F 01]): {Status} {Ack}", result.Status, acknowledged ? "ok" : $"status 0x{status:X2}");
+        if (acknowledged) return CommandResult.Ok;
+        return result.Response is null ? ToCommandResult(result.Status, "LE Audio transport")
+            : new CommandResult(CommandStatus.Rejected, $"LE Audio transport: status 0x{status:X2}");
     }
 
     /// <summary>Queries the battery periodically, so a silent control earbud is noticed while idle.</summary>

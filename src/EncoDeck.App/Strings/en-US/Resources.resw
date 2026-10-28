@@ -809,7 +809,7 @@
   <data name="LeAudio_Switch" xml:space="preserve"><value>Switch to LE Audio</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>Restore Classic Bluetooth</value></data>
   <data name="LeAudio_StatusLe" xml:space="preserve"><value>Both earbuds have LE bonds; Windows manages the actual audio connection.</value></data>
-  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows still exposes a Classic A2DP endpoint. Selecting "Headphones (OPPO Enco X4)" plays on one earbud only; choose the LE Audio "Speakers" endpoint.</value></data>
+  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows still exposes a Classic A2DP endpoint. Selecting these earbuds' "Headphones" endpoint plays on one earbud only; choose the LE Audio "Speakers" endpoint.</value></data>
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>The Windows audio endpoint state could not be confirmed; ACL/GATT readiness does not prove dual-ear playback.</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>Disable Classic audio endpoint</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>Restore Classic audio endpoint</value></data>
@@ -843,6 +843,7 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="LeAudio_Stage_WaitingForCleanup" xml:space="preserve"><value>Waiting for Windows to clean up the old pairing (up to about 45 seconds). Keep the earbuds in pairing mode when switching to LE Audio…</value></data>
   <data name="LeAudio_Stage_WaitingForPairingMode" xml:space="preserve"><value>Put both earbuds in the case, open the lid and hold the case button until the light flashes (waiting up to 2 minutes)…</value></data>
   <data name="LeAudio_Stage_PairingPrimary" xml:space="preserve"><value>Pairing mode detected. Pairing the first earbud over LE Audio…</value></data>
+  <data name="LeAudio_Stage_ReportingLeTransport" xml:space="preserve"><value>Waiting for earbud control over LE Audio, then telling the earbuds this PC uses LE Audio…</value></data>
   <data name="LeAudio_Stage_PairingSecondary" xml:space="preserve"><value>Pairing the other earbud…</value></data>
   <data name="LeAudio_Stage_DisablingMultipoint" xml:space="preserve"><value>Turning multipoint off and confirming the earbud setting…</value></data>
   <data name="Error_LeAudioMultipoint" xml:space="preserve"><value>Keep multipoint off while using LE Audio to reduce connection takeovers by a phone. Restore Classic Bluetooth before enabling multipoint.</value></data>

@@ -345,6 +345,8 @@ public sealed class DeviceManager : IDeviceManager
 
     public Task<CommandResult> SetLeBrSwitchAsync(bool enabled, CancellationToken cancellationToken = default) => WithController(c => c.SetLeBrSwitchAsync(enabled, cancellationToken));
 
+    public Task<CommandResult> ReportLeAudioTransportAsync(CancellationToken cancellationToken = default) => WithController(c => c.ReportLeAudioTransportAsync(cancellationToken));
+
     public Task<CommandResult> SetGameSoundAsync(int type, CancellationToken cancellationToken = default) => WithController(c => c.SetGameSoundAsync(type, cancellationToken));
 
     public Task<CommandResult> RefreshGameModeAsync(CancellationToken cancellationToken = default) => WithController(c => c.RefreshGameModeAsync(cancellationToken));

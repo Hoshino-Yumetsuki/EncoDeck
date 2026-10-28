@@ -70,6 +70,18 @@ public class OppoDeviceControllerTests
         Assert.False(SentLeAudioTransport(h.Device));
     }
 
+    [Theory]
+    [InlineData(true, true, CommandStatus.Success)]
+    [InlineData(true, false, CommandStatus.Unsupported)]  // X4: the LE/BR switch replaces 0x1F
+    [InlineData(false, true, CommandStatus.NotConnected)] // control still on Classic
+    public async Task ReportLeAudioTransport_AnswersByTransportAndFirmware(bool leAudioTransport, bool withoutLeBrSwitch, CommandStatus expected)
+    {
+        await using var h = new Harness(leAudioTransport: leAudioTransport);
+        if (withoutLeBrSwitch) h.Device.Capabilities = CapabilitiesWithoutLeBrSwitch;
+        Assert.True(await h.Controller.InitializeAsync(Ct));
+        Assert.Equal(expected, (await h.Controller.ReportLeAudioTransportAsync(Ct)).Status);
+    }
+
     [Fact]
     public async Task Initialize_PopulatesStateFromDevice()
     {

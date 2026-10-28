@@ -11,7 +11,8 @@ namespace EncoDeck.Bluetooth.LeAudio;
 /// address differs from the scan-response hint: the X4 advertises the peer at that public address, while the
 /// Enco X3's LE Audio advert uses a private address and its hint may be the peer's Classic address.
 /// </summary>
-internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<string> log)
+internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<string> log,
+    Func<CancellationToken, Task>? prepareMembers = null)
 {
     private readonly object _gate = new();
     private readonly HashSet<string> _claimed = new(StringComparer.OrdinalIgnoreCase);
@@ -22,6 +23,8 @@ internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<s
 
     /// <summary>Address of the set member this attempt bonded (its identity once bonded), or null.</summary>
     public ulong? PairedMember => Interlocked.Read(ref _pairedMember) is var a && a != 0 ? (ulong)a : null;
+
+    internal bool RequiresPreparation => prepareMembers is not null;
 
     internal enum MemberKind { Rejected, AdvertisedPeer, SetMember }
 
@@ -68,6 +71,7 @@ internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<s
     {
         var custom = pairing.Custom;
         var discovery = new PairingSetDiscovery();
+        var preparation = new PairingSetPreparation();
         Exception? callbackError = null;
         bool supported = discoverMembers && ApiInformation.IsEventPresent(
             "Windows.Devices.Enumeration.DeviceInformationCustomPairing", "PairingSetMembersRequested");
@@ -118,6 +122,16 @@ internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<s
                         var memberPairing = member.Pairing;
                         bool alreadyPaired = memberPairing.IsPaired;
                         log($"SET expected peer admitted; alreadyPaired={alreadyPaired}");
+                        if (prepareMembers is not null && !alreadyPaired)
+                        {
+                            stage = "wait-primary-preparation";
+                            log("SET member waiting for primary LE transport preparation");
+                            if (!await preparation.WaitAsync(ct).ConfigureAwait(false))
+                            {
+                                lock (_gate) _claimed.Remove(id);
+                                return;
+                            }
+                        }
                         stage = "pair-member";
                         var status = alreadyPaired ? DevicePairingResultStatus.AlreadyPaired
                             : await PairAsync(memberPairing, level, ct, discoverMembers: false).ConfigureAwait(false);
@@ -146,6 +160,10 @@ internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<s
         {
             var status = (await custom.PairAsync(DevicePairingKinds.ConfirmOnly, level)
                 .AsTask(ct).ConfigureAwait(false)).Status;
+            if (discoverMembers)
+                await preparation.CompleteAsync(
+                    status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired,
+                    prepareMembers, ct).ConfigureAwait(false);
             if (supported)
             {
                 log($"SET primary pairing returned {status}; waiting for discovery callback and member completion");
@@ -162,6 +180,7 @@ internal sealed class LeAudioSetPairing(ulong primary, ulong secondary, Action<s
         }
         finally
         {
+            preparation.Stop();
             discovery.Close();
             custom.PairingRequested -= OnRequested;
             if (supported) custom.PairingSetMembersRequested -= OnMembers;

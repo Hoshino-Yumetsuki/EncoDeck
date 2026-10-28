@@ -155,7 +155,8 @@ public sealed partial class LeAudioSettings : UserControl
         if (await ConfirmAsync("LeAudio_ConfirmSwitch", "LeAudio_Switch") && target == _address)
             await RunAsync((address, progress, ct) => LeAudioPairing.SwitchToLeAudioAsync(address, progress, ct,
                 (on, token) => Features.State.Device?.Address.Value == address ? Features.SetLeBrSwitchAsync(on, token) : Task.FromResult(CommandResult.NotConnected),
-                token => Features.State.Device?.Address.Value == address ? Features.DisableMultipointForLeAudioAsync(token) : Task.FromResult(CommandResult.NotConnected)));
+                token => Features.State.Device?.Address.Value == address ? Features.DisableMultipointForLeAudioAsync(token) : Task.FromResult(CommandResult.NotConnected),
+                reportLeTransport: token => Features.State.Device?.Address.Value == address ? Features.ReportLeAudioTransportAsync(token) : Task.FromResult(CommandResult.NotConnected)));
     }
 
     private async void OnRestore(object sender, RoutedEventArgs e)

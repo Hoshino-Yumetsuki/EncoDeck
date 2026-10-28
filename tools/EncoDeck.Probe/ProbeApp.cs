@@ -98,6 +98,7 @@ internal static class ProbeApp
                        [--seconds N]     Default 60 seconds. Audio streaming remains unverified.
                        [--pair --confirm-write]  Confirm multipoint off, then wait for pairing mode and replace this PC's bonds.
                        [--legacy-pairing]  With --pair, use explicit addresses without Windows set discovery for comparison.
+                       [--restore --confirm-write]  Remove this PC's LE Audio pairings (pair again in Windows Settings).
               monitor [--seconds N]       Run the app's device runtime headlessly, print state changes
                                           and finally every feature value the session start read.
                       [--set-anc a,b --confirm-write]  Also run commands (off|anc|transparency|adaptive|smart|deep|medium|light|less|standard|more).
