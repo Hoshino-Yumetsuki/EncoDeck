@@ -110,6 +110,26 @@ public class ControlChannelSupervisorTests
     private static Task WaitFor(DeviceStateStore store, DeviceConnectionState state, int timeoutMs = 3000) =>
         OppoDeviceControllerTests.WaitUntil(() => store.Current.Connection == state, timeoutMs);
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Xiaomi_UsesConnectedLeTransportBeforeClassicDiscovery(bool leAudio)
+    {
+        var link = new FakeLink(true);
+        link.SetLeAudio(leAudio);
+        var connector = new FakeConnector { FailWith = ChannelOpenStatus.ServiceNotFound };
+        var profile = EncoDeck.Protocol.Brands.Xiaomi.XiaomiDeviceProfile.Redmi;
+        var (supervisor, store) = Create(link, connector, profile);
+        await using var _ = supervisor;
+        supervisor.Start();
+        await WaitFor(store, DeviceConnectionState.ControlUnavailable);
+
+        var protocolServices = profile.ControlServiceUuids;
+        Assert.Equal(leAudio ? protocolServices[2] : protocolServices[0], connector.LastServices[0]);
+        Assert.Equal(protocolServices.Order(), connector.LastServices.Order());
+        Assert.Equal(1, connector.Attempts);
+    }
+
     [Fact]
     public async Task OnlyTheBridgeLinked_ControlRunsThroughIt()
     {

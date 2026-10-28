@@ -155,16 +155,25 @@ public sealed class RfcommChannelConnector(IDeviceProfileRegistry profiles, ILog
                 continue;
             }
             RfcommDeviceServicesResult services;
+            using var lookupTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            lookupTimeout.CancelAfter(ConnectTimeout);
             try
             {
                 // Sony's control service can change after reconnecting / changing Bluetooth mode.
                 // Resolve its current SDP endpoint rather than repeatedly reopening a stale channel.
                 var cacheMode = SonyAkgProfiles.IsControlService(uuid) ? BluetoothCacheMode.Uncached : BluetoothCacheMode.Cached;
-                services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), cacheMode).AsTask(cancellationToken);
+                _logger.LogInformation("SDP lookup starting: {Service}, cache {CacheMode}", uuid, cacheMode);
+                services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), cacheMode).AsTask(lookupTimeout.Token);
                 if (services.Services.Count == 0 && cacheMode == BluetoothCacheMode.Cached)
                 {
-                    services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
+                    services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(uuid), BluetoothCacheMode.Uncached).AsTask(lookupTimeout.Token);
                 }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("SDP lookup for {Service} timed out", uuid);
+                connectFailure = ChannelOpenResult.Failed(ChannelOpenStatus.ConnectFailed, $"SDP lookup for {uuid:D} timed out.");
+                continue;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

@@ -6,6 +6,7 @@ using EncoDeck.Core.State;
 using EncoDeck.Protocol.Oppo;
 using EncoDeck.Protocol.Brands;
 using EncoDeck.Protocol.Brands.Sony;
+using EncoDeck.Protocol.Brands.Xiaomi;
 using EncoDeck.Protocol.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -238,6 +239,10 @@ public sealed class ControlChannelSupervisor : IAsyncDisposable
         try
         {
             var services = _profile.ControlServiceUuids;
+            // A single LE earbud can answer MMA over GATT without a Classic control link.
+            // Avoid paging stale SPP endpoints before trying the already-connected LE identity.
+            if (_profile.Brand == "xiaomi" && _link.IsLeAudio)
+                services = services.OrderBy(uuid => uuid == XiaomiProtocol.MmaGattServiceUuid ? 0 : 1).ToArray();
             if (_profile.Brand == "sony" && _preferredSonyService is { } preferred)
                 services = services.OrderBy(uuid => uuid == preferred ? 0 : 1).ToArray();
             open = await _connector.OpenAsync(_identity.DeviceId, services, ct).ConfigureAwait(false);
