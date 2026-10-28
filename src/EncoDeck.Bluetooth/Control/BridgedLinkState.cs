@@ -89,6 +89,19 @@ internal sealed class BridgedLinkState : ILinkStateSource
     }
 }
 
+/// <summary>
+/// Windows' link while Windows cannot open the device at all (no Bluetooth radio: A2DP Windows Bridge took the only
+/// adapter over): never connected, so <see cref="BridgedLinkState"/> follows the bridge alone.
+/// </summary>
+internal sealed class NoWindowsLink : ILinkStateSource
+{
+    public bool IsConnected => false;
+
+    public event EventHandler<bool>? ConnectionChanged { add { } remove { } }
+
+    public void Dispose() { }
+}
+
 /// <summary>Opens the control channel over Windows Bluetooth, or through A2DP Windows Bridge while only the bridge is linked.</summary>
 internal sealed class BridgeRoutingConnector(IChannelConnector windows, IChannelConnector bridge, ILinkStateSource link) : IChannelConnector
 {

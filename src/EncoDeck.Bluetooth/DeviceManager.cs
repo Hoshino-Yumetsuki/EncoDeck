@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+using System.Runtime.InteropServices;
 using EncoDeck.Bluetooth.Control;
 using EncoDeck.Bluetooth.Discovery;
 using EncoDeck.Bluetooth.Rfcomm;
@@ -204,7 +205,9 @@ public sealed class DeviceManager : IDeviceManager
                 ?? candidates.FirstOrDefault(c => c.Identity.DeviceId == _active?.Identity.DeviceId)
                 ?? candidates.OrderByDescending(c => c.Profile.MatchScore(c.Identity)).FirstOrDefault();
 
-            if (choice?.Identity.DeviceId == (_usbIdentity?.DeviceId ?? _active?.Identity.DeviceId)) return;
+            if (choice?.Identity.DeviceId == (_usbIdentity?.DeviceId ?? _active?.Identity.DeviceId)
+                // Windows had no radio for it: open it again (the radio may be back) unless the bridge carries it now.
+                && _active is not { WindowsUnavailable: true, Link.IsConnected: false }) return;
 
             await StopUsbAsync().ConfigureAwait(false);
 
@@ -253,10 +256,24 @@ public sealed class DeviceManager : IDeviceManager
                 }
             }
 
-            var link = await BluetoothLinkMonitor.CreateAsync(
-                choice.Identity.DeviceId,
-                profile.Form == DeviceForm.Headphones,
-                cancellationToken).ConfigureAwait(false);
+            ILinkStateSource? link;
+            bool bridgeable = BridgeConnector is not null && profile is IControllableProfile { ControlServiceUuids: var uuids } && uuids.Any(RfcommChannelConnector.IsRfcommService);
+            try
+            {
+                link = await BluetoothLinkMonitor.CreateAsync(
+                    choice.Identity.DeviceId,
+                    profile.Form == DeviceForm.Headphones,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            // 0x800710DF (device not ready): Windows has no Bluetooth radio left, typically because A2DP Windows
+            // Bridge took the only adapter over (WinUSB). The bridge's own link is then the only way to the earbuds.
+            catch (COMException ex) when (bridgeable)
+            {
+                _logger.LogWarning("Windows cannot open {Device} (0x{HResult:X8}): control only through A2DP Windows Bridge", choice.Identity, ex.HResult);
+                link = null;
+            }
+            bool windowsUnavailable = link is null && bridgeable;
+            if (windowsUnavailable) link = new NoWindowsLink();
             if (link is null)
             {
                 _logger.LogWarning("Could not open {Device} for link monitoring", choice.Identity);
@@ -283,7 +300,7 @@ public sealed class DeviceManager : IDeviceManager
             var identity = choice.Identity;
             supervisor.LinkConnected += (_, _) => ActiveDeviceLinkConnected?.Invoke(this, identity);
             supervisor.CaseLidOpened += (_, _) => ActiveDeviceCaseLidOpened?.Invoke(this, identity);
-            _active = new ActiveDevice(identity, supervised, supervisor);
+            _active = new ActiveDevice(identity, supervised, supervisor, windowsUnavailable);
             supervisor.Start();
             KnownDevicesChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -483,7 +500,8 @@ public sealed class DeviceManager : IDeviceManager
         catch (Exception ex) { _logger.LogWarning(ex, "USB monitoring stopped"); }
     }
 
-    private sealed record ActiveDevice(DeviceIdentity Identity, ILinkStateSource Link, ControlChannelSupervisor Supervisor) : IAsyncDisposable
+    /// <param name="WindowsUnavailable">Windows could not open the device (no radio): only the bridge can link it.</param>
+    private sealed record ActiveDevice(DeviceIdentity Identity, ILinkStateSource Link, ControlChannelSupervisor Supervisor, bool WindowsUnavailable = false) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {

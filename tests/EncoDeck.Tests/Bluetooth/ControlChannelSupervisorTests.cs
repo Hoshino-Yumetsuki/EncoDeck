@@ -175,6 +175,25 @@ public class ControlChannelSupervisorTests
     }
 
     [Fact]
+    public async Task NoWindowsRadio_ControlStillRunsThroughTheBridge()
+    {
+        // A2DPWB took the only adapter over: Windows cannot open the earbuds at all (0x800710DF).
+        var bridgeConnector = new FakeConnector();
+        var store = new DeviceStateStore();
+        store.Reset(DeviceState.Empty with { Device = X4, Connection = DeviceConnectionState.PairedNotConnected });
+        // Already streaming when EncoDeck selects the earbuds.
+        store.TryUpdate(X4.DeviceId, s => s with { Bridge = new BridgeAudioLink(true, "LHDC V5", 500, 48000, "X4", CanCarryControl: true) });
+        using var link = new BridgedLinkState(new NoWindowsLink(), store, X4.DeviceId);
+        var connector = new BridgeRoutingConnector(new FakeConnector(), bridgeConnector, link);
+        await using var supervisor = new ControlChannelSupervisor(X4, new OppoDeviceProfile(OppoModels.EncoX4), link, connector, store, FastPolicy, linkSettleDelay: TimeSpan.FromMilliseconds(20));
+        supervisor.Start();
+
+        await WaitFor(store, DeviceConnectionState.ControlReady);
+        Assert.True(store.Current.LinkViaBridge);
+        Assert.Equal(1, bridgeConnector.Attempts);
+    }
+
+    [Fact]
     public void OnlyRfcommServicesGoThroughTheBridge()
     {
         Assert.True(EncoDeck.Bluetooth.Rfcomm.RfcommChannelConnector.IsRfcommService(OppoServiceUuids.Primary));

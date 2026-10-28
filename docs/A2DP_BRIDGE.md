@@ -25,7 +25,7 @@ A2DPWB 通过它自己的适配器连接耳机，这条连接对 Windows 蓝牙�
 现在 EncoDeck 会连接 A2DPWB 后台的本地管道（仅当前用户可访问），读取它正在连接的耳机地址，与 Windows 中配对过的耳机对应起来：
 
 - 首页显示 **“已通过 A2DP Bridge 连接”**，编码标签显示 Bridge 实际使用的编码（如 LDAC）。
-- 只经 Bridge 连接时，Windows 看不到耳机。A2DPWB **2.0.2 及以上**可以替 EncoDeck 打开到耳机的控制通道（RFCOMM）：EncoDeck 经 Bridge 读取电量、更改耳机设置，首页提示“电量读取和耳机设置也经 A2DP Bridge 进行”。控制通道只在 Bridge 以经典蓝牙（A2DP）向这副耳机推流期间可用，断开推流时一并关闭；只有 LE（GATT）控制通道的耳机仍无法经 Bridge 控制。
+- 只经 Bridge 连接时，Windows 看不到耳机。A2DPWB **2.0.2 及以上**可以替 EncoDeck 打开到耳机的控制通道（RFCOMM）：EncoDeck 经 Bridge 读取电量、更改耳机设置，首页提示“电量读取和耳机设置也经 A2DP Bridge 进行”。电脑上唯一的蓝牙适配器交给 Bridge 后（Windows 不再有蓝牙），同样可以这样控制。控制通道只在 Bridge 以经典蓝牙（A2DP）向这副耳机推流期间可用，断开推流时一并关闭；只有 LE（GATT）控制通道的耳机仍无法经 Bridge 控制。
 - A2DPWB 2.0.1 及更早版本不能转发控制通道：只经 Bridge 连接时，EncoDeck **读不到电量、也无法更改耳机设置**。
 - 支持**双设备连接**的耳机可以同时连接这台电脑的自带蓝牙：EncoDeck 优先通过 Windows 控制耳机，声音仍走 Bridge。此时请把 Windows 的默认输出设为其他设备（或让 A2DPWB 采集虚拟声卡），避免两路声音同时发往耳机。
 
