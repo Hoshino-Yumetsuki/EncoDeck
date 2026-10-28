@@ -169,7 +169,7 @@ pwsh build/build-installer.ps1 -WithLhdc -LhdcPowerShellDirectory 'C:/Program Fi
 `lhdc-v<组件版本>` 标签。`.github/workflows/components.yml` 在全新 VS2026 构建机通过微软 WinGet 安装匹配
 SDK/WDK、拉取上游并编译，发布组件 Release（不会成为仓库的“最新版本”），并在运行摘要中给出大小和
 SHA-256；把它们填回 `components.json` 后再发布应用。应用发版不再编译 LHDC：CI 只检查每个固定的组件包
-已经发布且大小、摘要一致（`build/verify-components.ps1`），否则阻止生成应用发布草稿。
+已经发布且大小、摘要一致（`build/verify-components.ps1`），否则阻止发布应用。
 每次构建都会生成新的测试证书，字节不同，因此已发布的组件版本不重建、不覆盖，需要时提高 `-r` 修订号。
 构建依赖以上游为准，目前包括 MSVC x64、SDK/WDK 28000、KMDF 1.33、
 CMake、Ninja、.NET 10、PowerShell 7 x64，以及 Visual Studio 驱动组件和 Spectre 库。
