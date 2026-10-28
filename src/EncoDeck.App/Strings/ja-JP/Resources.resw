@@ -809,7 +809,6 @@
   <data name="LeAudio_Switch" xml:space="preserve"><value>LE Audio に切り替え</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>クラシック Bluetooth に戻す</value></data>
   <data name="LeAudio_StatusLe" xml:space="preserve"><value>左右両方のイヤホンが LE でペアリング済みです。実際のオーディオ接続は Windows が管理します。</value></data>
-  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows にクラシック A2DP エンドポイントが残っています。このイヤホンの「ヘッドホン」エンドポイントを選択すると片耳だけで再生されます。LE Audio の「スピーカー」エンドポイントを選択してください。</value></data>
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>Windows のオーディオエンドポイントの状態を確認できませんでした。ACL/GATT の準備完了は両耳再生を保証するものではありません。</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>クラシックのオーディオエンドポイントを無効化</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>クラシックのオーディオエンドポイントを復元</value></data>

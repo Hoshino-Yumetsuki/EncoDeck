@@ -117,14 +117,12 @@ public sealed partial class LeAudioSettings : UserControl
         // Nothing bonded (e.g. an earlier attempt failed): offer both ways back.
         bool unpaired = _bond is { PrimaryBonded: false, ClassicBonded: false };
         var endpoints = _bond?.AudioEndpoints;
-        bool residualClassic = endpoints?.HasResidualClassicAudio == true;
         bool classicDisabled = endpoints?.ClassicA2dpDisabled == true;
         bool bothLinks = _bond is { PrimaryConnected: true, SecondaryConnected: true };
 
         bool endpointUnknown = _bond is not null && endpoints is { State: LeAudioAudioEndpointState.Unknown };
         string key = unpaired ? "LeAudio_StatusUnpaired" : both ? "LeAudio_StatusLe" : le ? "LeAudio_StatusLeSingle" : "LeAudio_StatusClassic";
         Status.Text = _bond is null ? "" : Loc.Get(key)
-            + (residualClassic ? " " + Loc.Get("LeAudio_StatusClassicEndpoint") : "")
             + (endpointUnknown ? " " + Loc.Get("LeAudio_StatusEndpointUnknown") : "");
         Status.Visibility = Status.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         Switch.Visibility = both ? Visibility.Collapsed : Visibility.Visible;

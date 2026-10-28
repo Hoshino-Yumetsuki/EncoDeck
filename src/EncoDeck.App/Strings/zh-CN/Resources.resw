@@ -809,7 +809,6 @@
   <data name="LeAudio_Switch" xml:space="preserve"><value>切换到 LE Audio</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>恢复传统蓝牙</value></data>
   <data name="LeAudio_StatusLe" xml:space="preserve"><value>左右耳均已完成 LE 配对；实际音频连接由 Windows 管理。</value></data>
-  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows 仍暴露经典 A2DP 端点；选中这副耳机的“耳机”端点会只有单耳有声，请选择 LE Audio 的“扬声器”。</value></data>
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>无法确认 Windows 的音频端点状态；不要把 ACL/GATT 就绪当作双耳播放成功。</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>禁用经典音频端点</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>恢复经典音频端点</value></data>

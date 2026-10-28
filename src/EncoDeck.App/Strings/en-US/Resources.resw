@@ -809,7 +809,6 @@
   <data name="LeAudio_Switch" xml:space="preserve"><value>Switch to LE Audio</value></data>
   <data name="LeAudio_Restore" xml:space="preserve"><value>Restore Classic Bluetooth</value></data>
   <data name="LeAudio_StatusLe" xml:space="preserve"><value>Both earbuds have LE bonds; Windows manages the actual audio connection.</value></data>
-  <data name="LeAudio_StatusClassicEndpoint" xml:space="preserve"><value>Windows still exposes a Classic A2DP endpoint. Selecting these earbuds' "Headphones" endpoint plays on one earbud only; choose the LE Audio "Speakers" endpoint.</value></data>
   <data name="LeAudio_StatusEndpointUnknown" xml:space="preserve"><value>The Windows audio endpoint state could not be confirmed; ACL/GATT readiness does not prove dual-ear playback.</value></data>
   <data name="LeAudio_DisableClassic" xml:space="preserve"><value>Disable Classic audio endpoint</value></data>
   <data name="LeAudio_EnableClassic" xml:space="preserve"><value>Restore Classic audio endpoint</value></data>
