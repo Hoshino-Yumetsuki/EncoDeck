@@ -566,13 +566,14 @@
   <data name="Lhdc_DownloadSize" xml:space="preserve"><value>LHDC コンポーネントをダウンロード（{0:F0} MB）</value></data>
   <data name="Lhdc_Update" xml:space="preserve"><value>LHDC コンポーネントを更新（{0:F0} MB）</value></data>
   <data name="Lhdc_Unpublished" xml:space="preserve"><value>この EncoDeck バージョン用の LHDC コンポーネントはまだ公開されていません。後で EncoDeck を更新してください。</value></data>
-  <data name="Connection_Bridge" xml:space="preserve"><value>A2DP Bridge 経由で接続済み</value></data>
+  <data name="Connection_Bridge" xml:space="preserve"><value>接続済み（音声のみ）</value></data>
   <data name="Connection_BridgeConnecting" xml:space="preserve"><value>A2DP Bridge で接続中…</value></data>
   <data name="Home_Bridge.Title" xml:space="preserve"><value>A2DP Bridge 経由で接続済み</value></data>
   <data name="Home_Bridge_Open.Content" xml:space="preserve"><value>Labs を開く</value></data>
-  <data name="Home_Bridge_Only" xml:space="preserve"><value>イヤホンは A2DP Bridge 専用の USB アダプター（{0}）経由で再生しています。Windows からはこの接続が見えず、A2DP Bridge もこのイヤホンの制御チャネルを中継していない（A2DP Bridge 2.0.2 以降・クラシック接続が必要）ため、EncoDeck は現在バッテリーの読み取りやイヤホン設定の変更ができません。2 台同時接続に対応したイヤホンは、この PC の Bluetooth にも接続して使用できます。</value></data>
-  <data name="Home_Bridge_Both" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。イヤホンの設定は引き続き Windows の Bluetooth 経由で操作します。</value></data>
-  <data name="Home_Bridge_Control" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。Windows からはこの接続が見えないため、バッテリーの読み取りやイヤホン設定の変更も A2DP Bridge 経由で行います。</value></data>
+  <data name="Home_Bridge_Only" xml:space="preserve"><value>イヤホンは A2DP Bridge 経由で再生中です（{0}）が、制御チャネルを使用できません。バッテリーの読み取りと設定の変更には A2DP Bridge 2.0.2 以降とクラシック接続が必要です。</value></data>
+  <data name="Badge_Bridge_AudioOnly" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。Windows からはこの接続が見えません。</value></data>
+  <data name="Badge_Bridge_Windows" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。イヤホンの設定は引き続き Windows の Bluetooth 経由で操作します。</value></data>
+  <data name="Badge_Bridge_Control" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。バッテリーの読み取りやイヤホン設定の変更も A2DP Bridge 経由で行います。</value></data>
   <data name="Bridge_Title.Text" xml:space="preserve"><value>A2DP Bridge（専用 USB Bluetooth アダプター、試験的）</value></data>
   <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge は専用の USB Bluetooth アダプターを占有し、独自の Bluetooth スタックで LDAC、LHDC V5、aptX HD などを使ってイヤホンに音声を送信します。テスト署名ドライバーは不要です。EncoDeck がダウンロード、起動、日常の操作を担い、これを経由して接続したイヤホンをホームページで認識します。</value></data>
   <data name="Bridge_Running" xml:space="preserve"><value>バックグラウンドで実行中: A2DPWB {0}（{1}）</value></data>
@@ -1035,7 +1036,6 @@
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>選択した時間アイドル状態が続くと、ヘッドホンの電源をオフにします</value></data>
   <data name="Codec_Reported" xml:space="preserve"><value>{0} · イヤホン報告</value></data>
   <data name="Codec_ReportedDescription" xml:space="preserve"><value>イヤホンは {0} と報告しています。この PC の再生ストリームのコーデックは未確認です。</value></data>
-  <data name="Codec_Bridge" xml:space="preserve"><value>{0} · Bridge</value></data>
   <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge がこのイヤホンに {0} 音声を送信しています。</value></data>
   <data name="Codec_Unknown" xml:space="preserve"><value>コーデック不明</value></data>
   <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>このモデルでは使用できないコーデック情報がイヤホンから返されました。</value></data>

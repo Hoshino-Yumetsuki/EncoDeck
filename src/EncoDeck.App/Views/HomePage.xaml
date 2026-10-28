@@ -61,10 +61,10 @@
                     Severity="Informational"
                     Title="Unrecognized model"
                     Message="{x:Bind ViewModel.GenericModelMessage, Mode=OneWay}" />
-                <!-- A2DP Windows Bridge streams to these earbuds over its own adapter (Windows may not see them). -->
+                <!-- A2DP Windows Bridge streams to these earbuds over its own adapter, but their controls are unreachable. -->
                 <InfoBar
                     x:Uid="Home_Bridge"
-                    IsOpen="{x:Bind ViewModel.IsBridgeAudio, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.HasBridgeNotice, Mode=OneWay}"
                     IsClosable="False"
                     Severity="Informational"
                     Title="Connected through A2DP Bridge"
@@ -135,6 +135,11 @@
                                       Visibility="{x:Bind ViewModel.IsBusyConnecting, Mode=OneWay}" />
                         <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center"
                                    AutomationProperties.LiveSetting="Polite" />
+                        <Border Style="{StaticResource CodecBadgeSubtleStyle}" Visibility="{x:Bind ViewModel.HasBridgeBadge, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.BridgeBadgeDescription, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ViewModel.BridgeBadgeDescription, Mode=OneWay}">
+                            <TextBlock Text="A2DP Bridge" Style="{StaticResource CodecBadgeSubtleTextStyle}" />
+                        </Border>
                         <Border Style="{StaticResource CodecBadgeStyle}" Visibility="{x:Bind ViewModel.HasCodec, Mode=OneWay}"
                                 ToolTipService.ToolTip="{x:Bind ViewModel.CodecDescription, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind ViewModel.CodecDescription, Mode=OneWay}">

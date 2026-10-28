@@ -566,13 +566,14 @@
   <data name="Lhdc_DownloadSize" xml:space="preserve"><value>下载 LHDC 组件（{0:F0} MB）</value></data>
   <data name="Lhdc_Update" xml:space="preserve"><value>更新 LHDC 组件（{0:F0} MB）</value></data>
   <data name="Lhdc_Unpublished" xml:space="preserve"><value>此版本 EncoDeck 对应的 LHDC 组件尚未发布，请稍后更新 EncoDeck。</value></data>
-  <data name="Connection_Bridge" xml:space="preserve"><value>已通过 A2DP Bridge 连接</value></data>
+  <data name="Connection_Bridge" xml:space="preserve"><value>已连接（仅音频）</value></data>
   <data name="Connection_BridgeConnecting" xml:space="preserve"><value>A2DP Bridge 正在连接…</value></data>
   <data name="Home_Bridge.Title" xml:space="preserve"><value>通过 A2DP Bridge 连接</value></data>
   <data name="Home_Bridge_Open.Content" xml:space="preserve"><value>打开实验室</value></data>
-  <data name="Home_Bridge_Only" xml:space="preserve"><value>耳机正通过 A2DP Bridge 的独立 USB 适配器播放（{0}）。Windows 看不到这条连接，A2DP Bridge 也没有为这副耳机转发控制通道（需要 A2DP Bridge 2.0.2 及以上、经典蓝牙连接），所以 EncoDeck 暂时读不到电量，也无法更改耳机设置；支持双设备连接的耳机也可以同时连接这台电脑的蓝牙。</value></data>
-  <data name="Home_Bridge_Both" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}），耳机设置仍通过 Windows 蓝牙控制。</value></data>
-  <data name="Home_Bridge_Control" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}）。Windows 看不到这条连接，电量读取和耳机设置也经 A2DP Bridge 进行。</value></data>
+  <data name="Home_Bridge_Only" xml:space="preserve"><value>耳机经 A2DP Bridge 播放（{0}），但控制通道不可用：读取电量和更改耳机设置需要 A2DP Bridge 2.0.2 及以上，并使用经典蓝牙连接。</value></data>
+  <data name="Badge_Bridge_AudioOnly" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}）。Windows 看不到这条连接。</value></data>
+  <data name="Badge_Bridge_Windows" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}），耳机设置仍通过 Windows 蓝牙控制。</value></data>
+  <data name="Badge_Bridge_Control" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}），电量读取和耳机设置也经 A2DP Bridge 进行。</value></data>
   <data name="Bridge_Title.Text" xml:space="preserve"><value>A2DP Bridge（独立 USB 蓝牙适配器，实验性）</value></data>
   <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge 接管一个独立的 USB 蓝牙适配器，用自己的蓝牙协议栈以 LDAC、LHDC V5、aptX HD 等编码向耳机发送声音，不需要测试签名驱动。EncoDeck 负责下载、启动和日常控制，并在首页识别通过它连接的耳机。</value></data>
   <data name="Bridge_Running" xml:space="preserve"><value>后台运行中：A2DPWB {0}（{1}）</value></data>
@@ -1035,7 +1036,6 @@
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>耳机闲置达到所选时长后自动关机</value></data>
   <data name="Codec_Reported" xml:space="preserve"><value>{0} · 耳机上报</value></data>
   <data name="Codec_ReportedDescription" xml:space="preserve"><value>耳机上报为 {0}，尚未核实本机播放链路的编码。</value></data>
-  <data name="Codec_Bridge" xml:space="preserve"><value>{0} · Bridge</value></data>
   <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge 正在向这台耳机发送 {0} 音频。</value></data>
   <data name="Codec_Unknown" xml:space="preserve"><value>编码未知</value></data>
   <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>耳机返回了无法用于当前型号的编码信息，暂不显示具体编码。</value></data>

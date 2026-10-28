@@ -109,11 +109,17 @@ public sealed partial class DeviceViewModel : ObservableObject
 
     /// <summary>The audio runs over LE Audio (shown as an "LC3" tag next to the status).</summary>
     [ObservableProperty] public partial bool IsLeAudio { get; set; }
-    /// <summary>A2DP Windows Bridge connects or streams to these earbuds through its own USB adapter.</summary>
-    [ObservableProperty] public partial bool IsBridgeAudio { get; set; }
+    /// <summary>
+    /// A2DP Windows Bridge streams to these earbuds but neither it nor Windows carries their control channel. The
+    /// "A2DP Bridge" tag already names the bridge in every other case, so only this one takes room above the page.
+    /// </summary>
+    [ObservableProperty] public partial bool HasBridgeNotice { get; set; }
     /// <summary>Connected only through the bridge: Windows does not see the earbuds, so their controls are unavailable.</summary>
     [ObservableProperty] public partial bool IsBridgeOnly { get; set; }
     [ObservableProperty] public partial string BridgeMessage { get; set; } = string.Empty;
+    /// <summary>A2DP Windows Bridge streams to these earbuds: an "A2DP Bridge" tag next to the status.</summary>
+    [ObservableProperty] public partial bool HasBridgeBadge { get; set; }
+    [ObservableProperty] public partial string BridgeBadgeDescription { get; set; } = string.Empty;
     /// <summary>Audio codec or link evidence, with its source visible in the label.</summary>
     [ObservableProperty] public partial string CodecLabel { get; set; } = string.Empty;
     [ObservableProperty] public partial string CodecDescription { get; set; } = string.Empty;
@@ -316,28 +322,27 @@ public sealed partial class DeviceViewModel : ObservableObject
         IsLeAudio = state.IsLeAudio && !IsLinkDown;
         // A2DP Windows Bridge streams to these earbuds over its own adapter: Windows (and so the control
         // channel) may not see them at all, but they are connected, and the codec is the bridge's.
-        IsBridgeAudio = state.Bridge is not null;
         IsBridgeOnly = state.Bridge is not null && !state.Connection.IsLinkUp();
-        if (state.Bridge is { } bridge)
+        HasBridgeNotice = IsBridgeOnly && state.Bridge is { IsStreaming: true };
+        BridgeMessage = HasBridgeNotice ? Loc.Format("Home_Bridge_Only", DescribeBridge(state.Bridge!)) : string.Empty;
+        HasBridgeBadge = state.Device?.Transport == DeviceTransport.Bluetooth && state.Bridge is { IsStreaming: true };
+        // With A2DPWB 2.0.2 the control channel itself can run through the bridge.
+        BridgeBadgeDescription = HasBridgeBadge
+            ? Loc.Format(IsBridgeOnly ? "Badge_Bridge_AudioOnly" : state.LinkViaBridge ? "Badge_Bridge_Control" : "Badge_Bridge_Windows", DescribeBridge(state.Bridge!))
+            : string.Empty;
+        if (state.Bridge is { } bridge && IsBridgeOnly)
         {
-            if (IsBridgeOnly)
-            {
-                ConnectionText = Loc.Get(bridge.IsStreaming ? "Connection_Bridge" : "Connection_BridgeConnecting");
-                IsLinkDown = false;
-                IsBusyConnecting = !bridge.IsStreaming;
-                IsLeAudio = false;
-            }
-            // With A2DPWB 2.0.2 the control channel itself can run through the bridge.
-            BridgeMessage = bridge.IsStreaming
-                ? Loc.Format(IsBridgeOnly ? "Home_Bridge_Only" : state.LinkViaBridge ? "Home_Bridge_Control" : "Home_Bridge_Both", DescribeBridge(bridge))
-                : Loc.Get("Connection_BridgeConnecting");
+            ConnectionText = Loc.Get(bridge.IsStreaming ? "Connection_Bridge" : "Connection_BridgeConnecting");
+            IsLinkDown = false;
+            IsBusyConnecting = !bridge.IsStreaming;
+            IsLeAudio = false;
         }
-        else BridgeMessage = string.Empty;
         var codecDisplay = CodecDisplay.Resolve(state);
         CodecLabel = codecDisplay.Kind switch
         {
             CodecDisplayKind.DeviceReport => Loc.Format("Codec_Reported", codecDisplay.Codec),
-            CodecDisplayKind.BridgeStream => Loc.Format("Codec_Bridge", codecDisplay.Codec),
+            // The "A2DP Bridge" tag beside it already names the source.
+            CodecDisplayKind.BridgeStream => codecDisplay.Codec!,
             CodecDisplayKind.LeLink => "LE Audio",
             CodecDisplayKind.UnknownDeviceReport or CodecDisplayKind.UnknownBridgeStream => Loc.Get("Codec_Unknown"),
             _ => string.Empty,
@@ -583,7 +588,7 @@ public sealed partial class DeviceViewModel : ObservableObject
     private string BuildToolTip()
     {
         if (!HasDevice) return "EncoDeck";
-        var parts = new List<string> { $"{DeviceName} · {ConnectionText}" };
+        var parts = new List<string> { $"{DeviceName} · {ConnectionText}" + (HasBridgeBadge ? " · A2DP Bridge" : string.Empty) };
         if (IsHeadphones)
         {
             if (Left.HasValue) parts.Add($"{Left.Label} {Left.LevelText}");
