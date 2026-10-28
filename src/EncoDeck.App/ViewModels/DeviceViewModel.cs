@@ -343,7 +343,7 @@ public sealed partial class DeviceViewModel : ObservableObject
             // The "A2DP Bridge" tag beside a bridge stream already names its source.
             CodecDisplayKind.DeviceReport or CodecDisplayKind.BridgeStream => codecDisplay.Codec!,
             CodecDisplayKind.LeLink => "LE Audio",
-            CodecDisplayKind.UnknownDeviceReport or CodecDisplayKind.UnknownBridgeStream => Loc.Get("Codec_Unknown"),
+            // An unknown codec shows no tag at all (the diagnostics still record why).
             _ => string.Empty,
         };
         CodecDescription = codecDisplay.Kind switch
@@ -351,11 +351,9 @@ public sealed partial class DeviceViewModel : ObservableObject
             CodecDisplayKind.DeviceReport => Loc.Format("Codec_ReportedDescription", codecDisplay.Codec),
             CodecDisplayKind.BridgeStream => Loc.Format("Codec_BridgeDescription", codecDisplay.Codec),
             CodecDisplayKind.LeLink => Loc.Get("Codec_LeAudioDescription"),
-            CodecDisplayKind.UnknownDeviceReport => Loc.Get("Codec_UnknownReportDescription"),
-            CodecDisplayKind.UnknownBridgeStream => Loc.Get("Codec_UnknownBridgeDescription"),
             _ => string.Empty,
         };
-        HasCodec = codecDisplay.Kind != CodecDisplayKind.None;
+        HasCodec = CodecLabel.Length > 0;
         // One earbud worn while the other charges is ordinary use; warn only when the other should be up.
         if (LeAudioStatus.IsMissingEarbud(state, warnWithoutWear: profile is OppoDeviceProfile))
             ConnectionText = Loc.Get("Connection_LeAudioSingleEar");

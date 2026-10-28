@@ -1019,8 +1019,5 @@
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>耳机闲置达到所选时长后自动关机</value></data>
   <data name="Codec_ReportedDescription" xml:space="preserve"><value>音频编码：{0}</value></data>
   <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge 正在向这台耳机发送 {0} 音频。</value></data>
-  <data name="Codec_Unknown" xml:space="preserve"><value>编码未知</value></data>
-  <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>耳机返回了无法用于当前型号的编码信息，暂不显示具体编码。</value></data>
-  <data name="Codec_UnknownBridgeDescription" xml:space="preserve"><value>A2DP Bridge 正在播放，但尚未提供编码信息。</value></data>
   <data name="Codec_LeAudioDescription" xml:space="preserve"><value>LE 链路已连接，尚未确认音频流或 LC3 编码。</value></data>
 </root>
