@@ -1035,8 +1035,7 @@
   <data name="UsbEq_Custom" xml:space="preserve"><value>カスタム</value></data>
   <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分後</value></data>
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>選択した時間アイドル状態が続くと、ヘッドホンの電源をオフにします</value></data>
-  <data name="Codec_Reported" xml:space="preserve"><value>{0} · イヤホン報告</value></data>
-  <data name="Codec_ReportedDescription" xml:space="preserve"><value>イヤホンは {0} と報告しています。この PC の再生ストリームのコーデックは未確認です。</value></data>
+  <data name="Codec_ReportedDescription" xml:space="preserve"><value>オーディオコーデック: {0}</value></data>
   <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge がこのイヤホンに {0} 音声を送信しています。</value></data>
   <data name="Codec_Unknown" xml:space="preserve"><value>コーデック不明</value></data>
   <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>このモデルでは使用できないコーデック情報がイヤホンから返されました。</value></data>

@@ -1035,8 +1035,7 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="UsbEq_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="AutoOff_Minutes" xml:space="preserve"><value>After {0} minutes</value></data>
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>Turn the headset off after it has been idle for the selected time</value></data>
-  <data name="Codec_Reported" xml:space="preserve"><value>{0} · reported</value></data>
-  <data name="Codec_ReportedDescription" xml:space="preserve"><value>The earbuds report {0}. The codec used by this PC's playback stream has not been verified.</value></data>
+  <data name="Codec_ReportedDescription" xml:space="preserve"><value>Audio codec: {0}</value></data>
   <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge is sending {0} audio to these earbuds.</value></data>
   <data name="Codec_Unknown" xml:space="preserve"><value>Codec unknown</value></data>
   <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>The earbuds returned a codec report that cannot be used for this model.</value></data>
