@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using EncoDeck.Core.Capabilities;
+using EncoDeck.Core.State;
 using EncoDeck.Platform.Logging;
 
 namespace EncoDeck.App.Services;
@@ -32,6 +33,14 @@ internal static class DiagnosticsExporter
             connection = state.Connection.ToString(),
             leAudio = new { state.IsLeAudioBonded, links = state.LeAudioLinks, audioStreamingVerified = false },
             firmware = state.Firmware?.Value.Extra,
+            codec = new
+            {
+                reportedId = state.ReportedCodecId?.Value,
+                reportedAt = state.ReportedCodecId?.Timestamp,
+                accepted = state.Codec?.Value.ToString(),
+                displayKind = CodecDisplay.Resolve(state).Kind.ToString(),
+                displayCodec = CodecDisplay.Resolve(state).Codec,
+            },
             battery = new
             {
                 left = state.Battery.Left is { } l ? new { l.Value.Level, l.Value.IsCharging, source = l.Source.ToString(), l.Timestamp } : null,

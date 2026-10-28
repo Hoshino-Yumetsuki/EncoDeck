@@ -101,6 +101,9 @@ public sealed partial class OppoDeviceController : IDeviceController
     /// </summary>
     public async Task<bool> InitializeAsync(CancellationToken cancellationToken)
     {
+        // A new control session must not revive codec data from an earlier connection when its
+        // firmware no longer advertises the query, or when initialization fails before the read.
+        _store.TryUpdate(_identity.DeviceId, s => s with { Codec = null, ReportedCodecId = null });
         RequestResult? handshake = null;
         for (int attempt = 0; attempt < HandshakeAttempts; attempt++)
         {
@@ -122,6 +125,7 @@ public sealed partial class OppoDeviceController : IDeviceController
         // HeyMelody advertises its translation support here; a PC has none.
         await RequestIfAllowedAsync(new OppoRequest(OppoCommand.SetHostCapabilities, [0x00], SequenceMode.FixedSet), cancellationToken).ConfigureAwait(false);
         await ReportLeAudioTransportAsync(cancellationToken).ConfigureAwait(false);
+        StartCodecPolling();
         if (KeepAliveInterval is { } interval)
             _keepAliveTask ??= Task.Run(() => KeepAliveAsync(interval, _keepAliveStop.Token), CancellationToken.None);
         return true;
@@ -177,6 +181,8 @@ public sealed partial class OppoDeviceController : IDeviceController
             if (result?.Response is { } frame) ApplyResponse(frame, StateSource.QueryResponse);
             if (result?.Status != RequestStatus.Timeout) break;
         }
+        if (request.Command == OppoCommand.QueryCodec && result?.Response is null)
+            _store.TryUpdate(_identity.DeviceId, s => s with { Codec = null, ReportedCodecId = null });
         return result;
     }
 
@@ -331,9 +337,7 @@ public sealed partial class OppoDeviceController : IDeviceController
                 ApplyFirmware(frame);
                 break;
             case OppoCommand.QueryCodec:
-                // Unknown or no Classic codec (e.g. LE Audio) clears a value left from an earlier link.
-                Observed<AudioCodec>? codec = OppoParsers.TryParseCodec(frame, out var parsedCodec) ? Observed.From(parsedCodec, _time.GetUtcNow(), source) : null;
-                _store.TryUpdate(_identity.DeviceId, s => s with { Codec = codec });
+                ApplyCodec(frame, source);
                 break;
             default:
                 ApplyFeatureResponse(frame, source);
@@ -942,11 +946,12 @@ public sealed partial class OppoDeviceController : IDeviceController
         _session.UnsolicitedFrame -= OnUnsolicitedFrame;
         _session.Closed -= OnSessionClosed;
         await _keepAliveStop.CancelAsync().ConfigureAwait(false);
-        if (_keepAliveTask is { } keepAlive)
+        foreach (var task in new[] { _keepAliveTask, _codecPollTask })
         {
+            if (task is null) continue;
             try
             {
-                await keepAlive.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                await task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
             }
             catch (TimeoutException)
             {

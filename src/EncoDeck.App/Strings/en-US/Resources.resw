@@ -801,10 +801,6 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Switch device</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0} (not connected)</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>Manage devices</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Classic Bluetooth (A2DP) codec reported by the earbuds</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Classic Bluetooth audio codec</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>LE link connected; Windows manages LC3 streaming, which has not been verified</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>LE link connected; audio streaming unverified</value></data>
   <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>Waiting for LC3 · hold the case button to reconnect</value></data>
   <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio (LC3) connection (experimental)</value></data>
   <data name="LeAudio_Summary.Text" xml:space="preserve"><value>Lets Windows connect these earbuds over LE Audio with the LC3 codec instead of Classic Bluetooth A2DP. Your PC's Bluetooth must support LE Audio.</value></data>
@@ -1037,4 +1033,12 @@ Afterwards Windows lists two entries with the same name (one is the other earbud
   <data name="UsbEq_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="AutoOff_Minutes" xml:space="preserve"><value>After {0} minutes</value></data>
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>Turn the headset off after it has been idle for the selected time</value></data>
+  <data name="Codec_Reported" xml:space="preserve"><value>{0} · reported</value></data>
+  <data name="Codec_ReportedDescription" xml:space="preserve"><value>The earbuds report {0}. The codec used by this PC's playback stream has not been verified.</value></data>
+  <data name="Codec_Bridge" xml:space="preserve"><value>{0} · Bridge</value></data>
+  <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge is sending {0} audio to these earbuds.</value></data>
+  <data name="Codec_Unknown" xml:space="preserve"><value>Codec unknown</value></data>
+  <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>The earbuds returned a codec report that cannot be used for this model.</value></data>
+  <data name="Codec_UnknownBridgeDescription" xml:space="preserve"><value>A2DP Bridge is streaming but has not provided the codec.</value></data>
+  <data name="Codec_LeAudioDescription" xml:space="preserve"><value>The LE link is connected. Audio streaming and the LC3 codec have not been verified.</value></data>
 </root>

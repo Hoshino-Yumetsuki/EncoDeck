@@ -801,10 +801,6 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>デバイスを切り替え</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未接続）</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>デバイスの管理</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>イヤホンが報告したクラシック Bluetooth（A2DP）のコーデック</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>クラシック Bluetooth オーディオコーデック</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>LE リンク接続済み。LC3 ストリーミングは Windows が管理しており、未検証です</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>LE リンク接続済み、オーディオストリーミングは未検証</value></data>
   <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>LC3 を待機中 · ケースのボタンを長押しして再接続</value></data>
   <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio（LC3）接続（試験的）</value></data>
   <data name="LeAudio_Summary.Text" xml:space="preserve"><value>クラシック Bluetooth の A2DP ではなく、LE Audio と LC3 コーデックで Windows がこのイヤホンに接続できるようにします。PC の Bluetooth が LE Audio に対応している必要があります。</value></data>
@@ -1037,4 +1033,12 @@
   <data name="UsbEq_Custom" xml:space="preserve"><value>カスタム</value></data>
   <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分後</value></data>
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>選択した時間アイドル状態が続くと、ヘッドホンの電源をオフにします</value></data>
+  <data name="Codec_Reported" xml:space="preserve"><value>{0} · イヤホン報告</value></data>
+  <data name="Codec_ReportedDescription" xml:space="preserve"><value>イヤホンは {0} と報告しています。この PC の再生ストリームのコーデックは未確認です。</value></data>
+  <data name="Codec_Bridge" xml:space="preserve"><value>{0} · Bridge</value></data>
+  <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge がこのイヤホンに {0} 音声を送信しています。</value></data>
+  <data name="Codec_Unknown" xml:space="preserve"><value>コーデック不明</value></data>
+  <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>このモデルでは使用できないコーデック情報がイヤホンから返されました。</value></data>
+  <data name="Codec_UnknownBridgeDescription" xml:space="preserve"><value>A2DP Bridge は再生中ですが、コーデック情報は未取得です。</value></data>
+  <data name="Codec_LeAudioDescription" xml:space="preserve"><value>LE リンクは接続済みです。音声ストリームと LC3 コーデックは未確認です。</value></data>
 </root>

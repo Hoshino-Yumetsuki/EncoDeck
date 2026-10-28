@@ -801,10 +801,6 @@
   <data name="Home_SwitchDevice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>切换设备</value></data>
   <data name="Home_SwitchDevice_NotConnected" xml:space="preserve"><value>{0}（未连接）</value></data>
   <data name="Home_ManageDevices" xml:space="preserve"><value>管理设备</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>耳机报告的传统蓝牙（A2DP）音频编码</value></data>
-  <data name="Codec_Classic.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>传统蓝牙音频编码</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>已连接 LE 链路；LC3 音频流由 Windows 管理，尚未验证</value></data>
-  <data name="Codec_LeAudio.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>已连接 LE 链路，音频流尚未验证</value></data>
   <data name="Connection_WaitingForLeAudio" xml:space="preserve"><value>等待 LC3 连接 · 长按充电盒按键可恢复</value></data>
   <data name="LeAudio_Title.Text" xml:space="preserve"><value>LE Audio（LC3）连接（实验性）</value></data>
   <data name="LeAudio_Summary.Text" xml:space="preserve"><value>让 Windows 通过 LE Audio 使用 LC3 编码连接这副耳机，取代传统蓝牙的 A2DP。电脑的蓝牙需支持 LE Audio。</value></data>
@@ -1037,4 +1033,12 @@
   <data name="UsbEq_Custom" xml:space="preserve"><value>自定义</value></data>
   <data name="AutoOff_Minutes" xml:space="preserve"><value>{0} 分钟后</value></data>
   <data name="AutoOff_IdleDescription" xml:space="preserve"><value>耳机闲置达到所选时长后自动关机</value></data>
+  <data name="Codec_Reported" xml:space="preserve"><value>{0} · 耳机上报</value></data>
+  <data name="Codec_ReportedDescription" xml:space="preserve"><value>耳机上报为 {0}，尚未核实本机播放链路的编码。</value></data>
+  <data name="Codec_Bridge" xml:space="preserve"><value>{0} · Bridge</value></data>
+  <data name="Codec_BridgeDescription" xml:space="preserve"><value>A2DP Bridge 正在向这台耳机发送 {0} 音频。</value></data>
+  <data name="Codec_Unknown" xml:space="preserve"><value>编码未知</value></data>
+  <data name="Codec_UnknownReportDescription" xml:space="preserve"><value>耳机返回了无法用于当前型号的编码信息，暂不显示具体编码。</value></data>
+  <data name="Codec_UnknownBridgeDescription" xml:space="preserve"><value>A2DP Bridge 正在播放，但尚未提供编码信息。</value></data>
+  <data name="Codec_LeAudioDescription" xml:space="preserve"><value>LE 链路已连接，尚未确认音频流或 LC3 编码。</value></data>
 </root>

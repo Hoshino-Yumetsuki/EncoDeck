@@ -75,10 +75,12 @@ internal static class ProbeApp
                                           (handshake, product id, event codes, feature status,
                                           battery, noise control, equalizer). Prints every frame.
                        [--eq-list]        Also query the equalizer preset list.
+                       [--codec]          Also query the raw vendor codec report (0x0114).
                        [--only a,b]       Run only the named queries.
               listen [--seconds N]        Subscribe to device events and print them (default 60 s).
               watch  [--seconds N]        Subscribe and also poll battery / noise control / features,
                      [--interval-ms N]    printing only changes (default 120 s, 2000 ms).
+                     [--codec]            Also poll codec reports; vendor ids need model validation.
               get --cmd 0x01NN            Send exactly one read (GET-group) request.
                   [--payload HEX]         Commands outside 0x01xx are refused.
 
