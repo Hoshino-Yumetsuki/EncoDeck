@@ -5,7 +5,6 @@ using EncoDeck.App.Services;
 using EncoDeck.Platform.A2dpBridge;
 using EncoDeck.Platform.Components;
 using EncoDeck.Platform.Updates;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -13,27 +12,14 @@ namespace EncoDeck.App.Controls;
 
 /// <summary>
 /// Experimental: A2DP Windows Bridge on a dedicated USB adapter (LDAC, LHDC V5, aptX HD… without test signing).
-/// EncoDeck downloads the pinned component, starts and quits the core and covers daily use; first-run pairing and
-/// firmware stay in A2DPWB's own window. See docs/A2DP_BRIDGE.md.
+/// EncoDeck downloads the pinned component, starts and quits the core, shows its adapter and stream and hands
+/// adapters to it; earbuds, connection profiles and volume stay in A2DPWB's own window. See docs/A2DP_BRIDGE.md.
 /// </summary>
 public sealed partial class A2dpBridgeSettings : UserControl
 {
-    private sealed record ProfileChoice(string Name, string Label);
-
-    private sealed record Candidate(string Address, string Name, string Label);
-
-    private sealed record CodecChoice(string Key, string Label);
-
-    /// <summary>A2DPWB's codec keys for a new profile; Auto picks the best one the earbuds offer.</summary>
-    private static readonly string[] Codecs = ["auto", "ldac", "lhdcv5", "aptxhd", "aptx", "aac", "sbcxq", "sbc"];
-
     private CancellationTokenSource? _download;
-    private DispatcherQueueTimer? _volumeTimer;
     private bool _busy, _syncing, _refreshQueued;
     private string? _windowsAdapter;
-    private string _profileSignature = "";
-    private string _candidateSignature = "";
-    private string? _selectProfile;
 
     public A2dpBridgeSettings()
     {
@@ -46,18 +32,8 @@ public sealed partial class A2dpBridgeSettings : UserControl
             StartCore.Content = Loc.Get("Bridge_Start");
             QuitCore.Content = Loc.Get("Bridge_Quit");
             OpenWindow.Content = Loc.Get("Bridge_OpenWindow");
-            ConnectButton.Content = Loc.Get("Bridge_Connect");
-            DisconnectButton.Content = Loc.Get("Bridge_Disconnect");
-            Profiles.Header = Loc.Get("Bridge_Profile");
-            Volume.Header = Loc.Get("Bridge_Volume");
             RefreshAdapters.Content = Loc.Get("Bridge_RefreshAdapters");
             OpenSettingsFolder.Content = Loc.Get("Bridge_OpenSettingsFolder");
-            Candidates.Header = Loc.Get("Bridge_Candidate");
-            Scan.Content = Loc.Get("Bridge_Scan");
-            Codec.Header = Loc.Get("Bridge_Codec");
-            SaveProfile.Content = Loc.Get("Bridge_SaveProfile");
-            Codec.ItemsSource = Codecs.Select(c => new CodecChoice(c, A2dpBridgeText.Codec(c))).ToArray();
-            Codec.SelectedIndex = 0;
             Bridge.Changed += OnBridgeChanged;
             Bridge.RefreshInstallations();
             Bridge.Monitor.Wake();
@@ -70,7 +46,6 @@ public sealed partial class A2dpBridgeSettings : UserControl
         {
             Bridge.Changed -= OnBridgeChanged;
             _download?.Cancel();
-            _volumeTimer?.Stop();
         };
     }
 
@@ -151,95 +126,7 @@ public sealed partial class A2dpBridgeSettings : UserControl
     {
         AdapterText.Text = DescribeAdapters(snapshot);
         StreamText.Text = DescribeStream(snapshot);
-
-        var choices = snapshot.Profiles.Select(p => new ProfileChoice(p.Name, p.Name == p.DeviceName
-            ? $"{p.Name} · {A2dpBridgeText.Codec(p.Codec)}"
-            : Loc.Format("Bridge_ProfileLabel", p.Name, p.DeviceName.Length > 0 ? p.DeviceName : p.DeviceAddress, A2dpBridgeText.Codec(p.Codec)))).ToArray();
-        string signature = string.Join('\n', choices.Select(c => c.Label));
-        // A profile just saved here is selected once it arrives; otherwise the streamed one, the chosen one, the core's active one.
-        string? wanted = _selectProfile is { } saved && choices.Any(c => c.Name == saved) ? saved
-            : snapshot.ActiveStreamProfile?.Name ?? (Profiles.SelectedItem as ProfileChoice)?.Name ?? snapshot.ActiveProfile;
-        _syncing = true;
-        try
-        {
-            if (signature != _profileSignature)
-            {
-                _profileSignature = signature;
-                Profiles.ItemsSource = choices;
-            }
-            if (snapshot.ActiveStreamProfile is not null || Profiles.SelectedItem is null || wanted == _selectProfile)
-                Profiles.SelectedItem = choices.FirstOrDefault(c => c.Name == wanted) ?? choices.FirstOrDefault();
-            if (wanted == _selectProfile) _selectProfile = null;
-        }
-        finally { _syncing = false; }
-        ProfileRow.Visibility = Show(choices.Length > 0);
-        NoProfiles.Visibility = Show(choices.Length == 0);
-        string? selected = (Profiles.SelectedItem as ProfileChoice)?.Name;
-        bool active = snapshot.Stream.IsActive;
-        ConnectButton.IsEnabled = !_busy && selected is not null && !(active && snapshot.Stream.Profile == selected) && snapshot.HasUsableAdapter;
-        DisconnectButton.IsEnabled = !_busy && active;
-        Profiles.IsEnabled = !_busy;
-
-        bool volume = snapshot.Stream.State == BridgeStreamState.Streaming && snapshot.Stream.Volume is not null;
-        Volume.Visibility = Show(volume);
-        if (volume && _volumeTimer?.IsRunning != true)
-        {
-            _syncing = true;
-            try { Volume.Value = snapshot.Stream.Volume!.Value; }
-            finally { _syncing = false; }
-        }
         ShowAdapters(snapshot);
-        ShowCandidates(snapshot);
-    }
-
-    /// <summary>EncoDeck's current earbuds first (their address is known from Windows), then what A2DPWB found or saved.</summary>
-    private void ShowCandidates(BridgeSnapshot snapshot)
-    {
-        var list = new List<Candidate>();
-        if (App.Instance.Host.Store.Current.Device is { Transport: EncoDeck.Core.Devices.DeviceTransport.Bluetooth } current && current.Address.Value != 0)
-            list.Add(new Candidate(current.Address.ToFullString(), current.Name, Loc.Format("Bridge_CandidateCurrent", current.Name)));
-        foreach (var device in snapshot.Devices.Where(d => d.Audio && !d.LeAudio))
-        {
-            if (BridgeDeviceMatch.ParseAddress(device.Address) is not { } address || list.Any(c => BridgeDeviceMatch.ParseAddress(c.Address) == address)) continue;
-            string name = device.Name.Length > 0 ? device.Name : Loc.Get("Bridge_UnknownDevice");
-            string where = new EncoDeck.Core.Privacy.BluetoothAddress(address).ToRedactedString();
-            list.Add(new Candidate(device.Address, device.Name, device.Rssi is { } rssi ? $"{name} · {where} · {rssi} dBm" : $"{name} · {where}"));
-        }
-        string signature = string.Join('\n', list.Select(c => c.Label));
-        if (signature != _candidateSignature)
-        {
-            _candidateSignature = signature;
-            string? kept = (Candidates.SelectedItem as Candidate)?.Address;
-            Candidates.ItemsSource = list;
-            Candidates.SelectedItem = list.FirstOrDefault(c => c.Address == kept) ?? list.FirstOrDefault();
-        }
-        NoCandidates.Visibility = Show(list.Count == 0);
-        Scan.Content = Loc.Get(snapshot.Scanning ? "Bridge_Scanning" : "Bridge_Scan");
-        Scan.IsEnabled = !_busy && !snapshot.Scanning && snapshot.HasUsableAdapter;
-        SaveProfile.IsEnabled = !_busy && Candidates.SelectedItem is Candidate;
-        Candidates.IsEnabled = Codec.IsEnabled = !_busy;
-    }
-
-    private void OnCandidateChanged(object sender, SelectionChangedEventArgs e) =>
-        SaveProfile.IsEnabled = !_busy && Candidates.SelectedItem is Candidate;
-
-    private async void OnScan(object sender, RoutedEventArgs e) => await Operate(async () =>
-    {
-        Status.Text = Loc.Get("Bridge_ScanningLong");
-        await Bridge.ScanAsync();
-    });
-
-    private async void OnSaveProfile(object sender, RoutedEventArgs e)
-    {
-        if (Candidates.SelectedItem is not Candidate candidate) return;
-        string codec = (Codec.SelectedItem as CodecChoice)?.Key ?? "auto";
-        await Operate(async () =>
-        {
-            string name = await Bridge.SaveProfileAsync(candidate.Name, candidate.Address, codec);
-            _selectProfile = name;
-            AddPanel.IsExpanded = false;
-            CardNotice.Show(Notice, InfoBarSeverity.Success, Loc.Format("Bridge_ProfileSaved", name));
-        });
     }
 
     private static string DescribeAdapters(BridgeSnapshot snapshot)
@@ -403,38 +290,6 @@ public sealed partial class A2dpBridgeSettings : UserControl
             Bridge.Monitor.Wake();
         }
         catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
-    }
-
-    private async void OnConnect(object sender, RoutedEventArgs e)
-    {
-        if (Profiles.SelectedItem is not ProfileChoice profile) return;
-        await Operate(() => Bridge.StartStreamAsync(profile.Name));
-    }
-
-    private async void OnDisconnect(object sender, RoutedEventArgs e) => await Operate(Bridge.StopStreamAsync);
-
-    private void OnProfileChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (!_syncing) Refresh();
-    }
-
-    private void OnVolumeChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-    {
-        if (_syncing) return;
-        // One request when the thumb settles, not one per pixel.
-        if (_volumeTimer is null)
-        {
-            _volumeTimer = DispatcherQueue.CreateTimer();
-            _volumeTimer.Interval = TimeSpan.FromMilliseconds(200);
-            _volumeTimer.IsRepeating = false;
-            _volumeTimer.Tick += async (_, _) =>
-            {
-                try { await Bridge.SetVolumeAsync((int)Math.Round(Volume.Value)); }
-                catch (Exception ex) when (ex is not OutOfMemoryException) { ShowError(ex); }
-            };
-        }
-        _volumeTimer.Stop();
-        _volumeTimer.Start();
     }
 
     private void OnAutoStartToggled(object sender, RoutedEventArgs e)

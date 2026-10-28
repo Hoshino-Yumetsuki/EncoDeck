@@ -87,6 +87,27 @@ public sealed class A2dpBridgeTests
         Assert.False(BridgeDeviceMatch.LinkFor(x4, connected)?.CanCarryControl);
     }
 
+    [Fact]
+    public void ListsEachProfiledAddressAsADeviceOfItsOwn()
+    {
+        var state = State();
+        var profiles = state["profiles"]!.AsArray();
+        // A second profile of the same earbuds, and one without a usable address.
+        profiles.Add(JsonNode.Parse("""{ "name": "X4 2", "device_address": "aa:bb:cc:dd:ee:ff", "device_name": "", "codec": "aac" }"""));
+        profiles.Add(JsonNode.Parse("""{ "name": "Bad", "device_address": "nope", "device_name": "Bad" }"""));
+        var connected = new BridgeStatus(BridgeLink.Connected, BridgeJson.Snapshot(state), "a2dpwb-core/2.0.2", Rfcomm: true);
+
+        var device = Assert.Single(BridgeDeviceMatch.Devices(connected));
+        Assert.Equal(new DeviceIdentity("A2DPWB#AABBCCDDEEFF", "OPPO Enco X4", new BluetoothAddress(0xAABBCCDDEEFF)), device.Identity);
+        Assert.True(device.IsStreaming);
+        // The badge and the control channel match it by address, like a Windows pairing.
+        Assert.True(BridgeDeviceMatch.LinkFor(device.Identity, connected)?.CanCarryControl);
+
+        var connecting = connected with { Snapshot = BridgeJson.Snapshot(State("connecting")) };
+        Assert.False(Assert.Single(BridgeDeviceMatch.Devices(connecting)).IsStreaming);
+        Assert.Empty(BridgeDeviceMatch.Devices(BridgeStatus.NotRunning));
+    }
+
     [Theory]
     [InlineData("AA:BB:CC:DD:EE:FF", 0xAABBCCDDEEFFUL)]
     [InlineData("aa-bb-cc-dd-ee-ff", 0xAABBCCDDEEFFUL)]

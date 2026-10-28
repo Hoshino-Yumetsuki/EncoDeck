@@ -39,35 +39,12 @@
     <Button x:Name="Uninstall" Click="OnUninstall" Visibility="Collapsed" />
    </local:WrapPanel>
 
-   <!-- While EncoDeck is connected to the core: adapter, stream, profiles and volume. -->
+   <!-- While EncoDeck is connected to the core: adapter and stream. Earbuds, connection profiles and volume are
+        A2DPWB's own (its window), so the two never disagree about them. -->
    <StackPanel x:Name="Live" Spacing="10" Visibility="Collapsed">
     <TextBlock x:Name="AdapterText" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
     <TextBlock x:Name="StreamText" TextWrapping="Wrap" />
-    <Grid ColumnSpacing="8" x:Name="ProfileRow">
-     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-     <ComboBox x:Name="Profiles" HorizontalAlignment="Stretch" DisplayMemberPath="Label" SelectionChanged="OnProfileChanged" />
-     <Button x:Name="ConnectButton" Grid.Column="1" VerticalAlignment="Bottom" Click="OnConnect" />
-     <Button x:Name="DisconnectButton" Grid.Column="2" VerticalAlignment="Bottom" Click="OnDisconnect" />
-    </Grid>
-    <TextBlock x:Name="NoProfiles" x:Uid="Bridge_NoProfiles" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" Visibility="Collapsed" />
-    <Slider x:Name="Volume" Minimum="0" Maximum="127" StepFrequency="1" Visibility="Collapsed" ValueChanged="OnVolumeChanged" />
-    <!-- A new profile: EncoDeck's current earbuds (their address is known) or one found by a scan; the first connection pairs. -->
-    <Expander x:Name="AddPanel" x:Uid="Bridge_Add" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-     <StackPanel Spacing="10">
-      <TextBlock x:Uid="Bridge_AddNote" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
-      <Grid ColumnSpacing="8">
-       <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-       <ComboBox x:Name="Candidates" HorizontalAlignment="Stretch" DisplayMemberPath="Label" SelectionChanged="OnCandidateChanged" />
-       <Button x:Name="Scan" Grid.Column="1" VerticalAlignment="Bottom" Click="OnScan" />
-      </Grid>
-      <TextBlock x:Name="NoCandidates" x:Uid="Bridge_NoCandidates" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" Visibility="Collapsed" />
-      <Grid ColumnSpacing="8">
-       <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-       <ComboBox x:Name="Codec" HorizontalAlignment="Stretch" DisplayMemberPath="Label" />
-       <Button x:Name="SaveProfile" Grid.Column="1" VerticalAlignment="Bottom" Click="OnSaveProfile" Style="{StaticResource AccentButtonStyle}" />
-      </Grid>
-     </StackPanel>
-    </Expander>
+    <TextBlock x:Uid="Bridge_ManageInWindow" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
    </StackPanel>
 
    <ToggleSwitch x:Name="AutoStart" x:Uid="Bridge_AutoStart" Toggled="OnAutoStartToggled" Visibility="Collapsed" />

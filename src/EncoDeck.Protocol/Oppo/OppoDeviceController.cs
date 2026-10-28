@@ -28,6 +28,13 @@ public sealed partial class OppoDeviceController : IDeviceController
     /// acknowledgement. The official client trusts the acknowledgement and shows later reports.
     /// </summary>
     private static readonly TimeSpan[] SettleDelays = [TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(800), TimeSpan.FromMilliseconds(1200)];
+
+    /// <summary>
+    /// Connecting a source device: the earbuds acknowledge at once, then page the phone, which takes several seconds
+    /// (about 9 s in all before the connection counts as refused).
+    /// </summary>
+    private static readonly TimeSpan[] ConnectSettleDelays = [.. SettleDelays, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2.5)];
+
     private static readonly TimeSpan LivenessUpdateInterval = TimeSpan.FromSeconds(30);
 
     private readonly OppoSession _session;
@@ -465,7 +472,8 @@ public sealed partial class OppoDeviceController : IDeviceController
         Func<DeviceState, DeviceState> applyOptimistic,
         OppoRequest request,
         Func<CancellationToken, Task<(bool Matches, RequestStatus Status)>> readBack,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyList<TimeSpan>? settleDelays = null)
     {
         if (_remoteCapabilities is { } caps && !caps.Allows(request.Command))
         {
@@ -495,7 +503,7 @@ public sealed partial class OppoDeviceController : IDeviceController
                 {
                     await Task.Delay(ReadBackDelay, _time, cancellationToken).ConfigureAwait(false);
                     var (matches, readStatus) = await readBack(cancellationToken).ConfigureAwait(false);
-                    foreach (var settle in SettleDelays)
+                    foreach (var settle in settleDelays ?? SettleDelays)
                     {
                         if (matches || readStatus != RequestStatus.Success) break;
                         // Keep showing the requested value while the earbuds settle (no flicker back).

@@ -575,7 +575,7 @@
   <data name="Badge_Bridge_Windows" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。イヤホンの設定は引き続き Windows の Bluetooth 経由で操作します。</value></data>
   <data name="Badge_Bridge_Control" xml:space="preserve"><value>音声は A2DP Bridge 専用の USB アダプター（{0}）経由で再生されています。バッテリーの読み取りやイヤホン設定の変更も A2DP Bridge 経由で行います。</value></data>
   <data name="Bridge_Title.Text" xml:space="preserve"><value>A2DP Bridge（専用 USB Bluetooth アダプター、試験的）</value></data>
-  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge は専用の USB Bluetooth アダプターを占有し、独自の Bluetooth スタックで LDAC、LHDC V5、aptX HD などを使ってイヤホンに音声を送信します。テスト署名ドライバーは不要です。EncoDeck がダウンロード、起動、日常の操作を担い、これを経由して接続したイヤホンをホームページで認識します。</value></data>
+  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge は専用の USB Bluetooth アダプターを占有し、独自の Bluetooth スタックで LDAC、LHDC V5、aptX HD などを使ってイヤホンに音声を送信します。テスト署名ドライバーは不要です。EncoDeck がダウンロードと起動を担い、これを経由して接続したイヤホンをホームページで認識して操作します。</value></data>
   <data name="Bridge_Running" xml:space="preserve"><value>バックグラウンドで実行中: A2DPWB {0}（{1}）</value></data>
   <data name="Bridge_Incompatible" xml:space="preserve"><value>実行中の A2DPWB は、この EncoDeck バージョンとは異なるプロトコルを使用しています（{0}）。EncoDeck または A2DPWB を更新してください。</value></data>
   <data name="Bridge_Connecting" xml:space="preserve"><value>A2DPWB のバックグラウンドプロセスに接続しています…</value></data>
@@ -591,14 +591,9 @@
   <data name="Bridge_Start" xml:space="preserve"><value>起動</value></data>
   <data name="Bridge_Quit" xml:space="preserve"><value>終了</value></data>
   <data name="Bridge_OpenWindow" xml:space="preserve"><value>A2DPWB を開く</value></data>
-  <data name="Bridge_Connect" xml:space="preserve"><value>接続</value></data>
-  <data name="Bridge_Disconnect" xml:space="preserve"><value>切断</value></data>
-  <data name="Bridge_Profile" xml:space="preserve"><value>プロファイル</value></data>
-  <data name="Bridge_ProfileLabel" xml:space="preserve"><value>{0} · {1} · {2}</value></data>
-  <data name="Bridge_Volume" xml:space="preserve"><value>ヘッドホンの音量（AVRCP）</value></data>
   <data name="Bridge_RefreshAdapters" xml:space="preserve"><value>更新</value></data>
   <data name="Bridge_OpenSettingsFolder" xml:space="preserve"><value>設定フォルダーを開く</value></data>
-  <data name="Bridge_NoProfiles.Text" xml:space="preserve"><value>プロファイルはまだありません。下の「イヤホンを追加」または A2DPWB のウィンドウで作成してください。</value></data>
+  <data name="Bridge_ManageInWindow.Text" xml:space="preserve"><value>イヤホンのペアリング、接続プロファイル、コーデック、音量は A2DPWB のウィンドウで管理します（「A2DPWB を開く」）。</value></data>
   <data name="Bridge_AutoStart.Header" xml:space="preserve"><value>EncoDeck と同時に A2DPWB のバックグラウンドプロセスを起動</value></data>
   <data name="Bridge_Adapters.Header" xml:space="preserve"><value>アダプター</value></data>
   <data name="Bridge_AdaptersNote.Text" xml:space="preserve"><value>A2DPWB は WinUSB ドライバーを割り当てた専用 USB アダプターのみを使用します。割り当て後、そのアダプターは Windows で使用されなくなります。Windows の Bluetooth が使用中のアダプターを EncoDeck が割り当てることはありません。Realtek アダプターにはファームウェアファイルも必要です。設定フォルダーに配置して「更新」をクリックしてください。</value></data>
@@ -606,9 +601,9 @@
   <data name="Bridge_Disclaimer.Text" xml:space="preserve"><value>免責事項: A2DP Windows Bridge は Seiya Funaoka 氏によるサードパーティのオープンソースプロジェクト（Apache-2.0 / MIT）であり、このコンポーネントはその公式ビルドの無改変コピーです。静的リンクされている BTstack ライブラリのライセンスは、個人的な非商用利用に限られます。イヤホンの互換性、無線品質、アダプターのファームウェアは EncoDeck の管理外です。ご自身の責任でご使用ください。</value></data>
   <data name="Bridge_Help.Header" xml:space="preserve"><value>A2DP Bridge の使い方</value></data>
   <data name="Bridge_HelpRequirements.Text" xml:space="preserve"><value>PC 内蔵の Bluetooth とは別の専用 USB Bluetooth アダプター（アップストリームで TP-Link UB500 / Realtek RTL8761BU を検証済み）と、Windows 10 22H2 または Windows 11 が必要です。内蔵の Bluetooth には絶対に WinUSB を割り当てないでください。</value></data>
-  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. ダウンロードしてバックグラウンドプロセスを起動したら、「アダプター」で専用アダプターに WinUSB を割り当てます（管理者権限が必要）。Realtek アダプターにはファームウェアファイルも必要です。次に「イヤホンを追加」でイヤホンを選び、プロファイルを保存します。A2DPWB 自体の初回セットアップ（「A2DPWB を開く」）も使用できます。</value></data>
-  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. 以降はここでプロファイルを選んで「接続」をクリックします。既定では、A2DPWB は Windows で再生中の音声を送信します。EncoDeck を閉じても音声は止まりません。A2DPWB のバックグラウンドプロセスを EncoDeck から起動させることもできます。</value></data>
-  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. 専用アダプター経由では Windows からイヤホンが見えません。EncoDeck のホームページには「A2DP Bridge 経由で接続済み」と表示されますが、バッテリーやイヤホンの設定は利用できません。2 台同時接続に対応したイヤホンは内蔵の Bluetooth にも接続でき、EncoDeck から通常どおり操作できます。その場合は、2 つの音声がイヤホンに届かないよう、Windows の既定の出力を別のデバイスに設定してください。</value></data>
+  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. ダウンロードしてバックグラウンドプロセスを起動したら、「アダプター」で専用アダプターに WinUSB を割り当てます（管理者権限が必要）。Realtek アダプターにはファームウェアファイルも必要です。次に「A2DPWB を開く」をクリックし、そのウィンドウでイヤホンを追加し、コーデックを選んで接続します。</value></data>
+  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. 以降は A2DPWB のウィンドウでイヤホンの接続と切断、プロファイルの切り替え、音量の調整を行います。既定では、A2DPWB は Windows で再生中の音声を送信します。EncoDeck を閉じても音声は止まりません。A2DPWB のバックグラウンドプロセスを EncoDeck から起動させることもできます。</value></data>
+  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. 専用アダプター経由では Windows からイヤホンが見えません。A2DPWB 2.0.2 以降は EncoDeck のために制御チャネルを開くため、ホームページには A2DP Bridge バッジ付きで通常どおりバッテリーとイヤホンの設定が表示されます。A2DPWB でのみペアリングしたイヤホンも EncoDeck に表示されます。2 台同時接続に対応したイヤホンは内蔵の Bluetooth にも接続できます。その場合は、2 つの音声がイヤホンに届かないよう、Windows の既定の出力を別のデバイスに設定してください。</value></data>
   <data name="Bridge_HelpRestore.Text" xml:space="preserve"><value>4. 使用をやめるときは、「アダプター」で「ドライバーを復元」をクリックしてアダプターを Windows に戻し、バックグラウンドプロセスを終了します。EncoDeck をアンインストールしてもドライバーは復元されません。</value></data>
   <data name="Bridge_Guide.Content" xml:space="preserve"><value>詳しいガイドを読む</value></data>
   <data name="Bridge_Upstream.Content" xml:space="preserve"><value>A2DP Windows Bridge プロジェクトページ</value></data>
@@ -658,18 +653,6 @@
   <data name="Bridge_OriginManaged" xml:space="preserve"><value>EncoDeck で管理</value></data>
   <data name="Bridge_OriginInstalled" xml:space="preserve"><value>A2DPWB 単体のインストール</value></data>
   <data name="Bridge_OriginRunning" xml:space="preserve"><value>実行中のコピー</value></data>
-  <data name="Bridge_Add.Header" xml:space="preserve"><value>イヤホンを追加</value></data>
-  <data name="Bridge_AddNote.Text" xml:space="preserve"><value>EncoDeck で現在のイヤホンを選ぶか、イヤホンをペアリングモードにしてスキャンします。プロファイルを保存してから「接続」をクリックすると、初回接続時に専用アダプター経由でペアリングされます（イヤホンはペアリングモードにしておく必要があります）。</value></data>
-  <data name="Bridge_Candidate" xml:space="preserve"><value>イヤホン</value></data>
-  <data name="Bridge_CandidateCurrent" xml:space="preserve"><value>{0}（EncoDeck の現在のイヤホン）</value></data>
-  <data name="Bridge_UnknownDevice" xml:space="preserve"><value>不明なデバイス</value></data>
-  <data name="Bridge_Scan" xml:space="preserve"><value>スキャン</value></data>
-  <data name="Bridge_Scanning" xml:space="preserve"><value>スキャン中…</value></data>
-  <data name="Bridge_ScanningLong" xml:space="preserve"><value>専用アダプターで近くのデバイスをスキャンしています（約 10 秒）…</value></data>
-  <data name="Bridge_NoCandidates.Text" xml:space="preserve"><value>選択できるイヤホンはまだありません。イヤホンをペアリングモードにして「スキャン」をクリックしてください。</value></data>
-  <data name="Bridge_Codec" xml:space="preserve"><value>コーデック</value></data>
-  <data name="Bridge_SaveProfile" xml:space="preserve"><value>プロファイルを保存</value></data>
-  <data name="Bridge_ProfileSaved" xml:space="preserve"><value>プロファイル「{0}」を保存しました。イヤホンをペアリングモードにして「接続」をクリックしてください。初回接続時にペアリングされます。</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>アップストリームで試験的: エンコーダーのテストと仮想レシーバーでの確認は済んでいますが、実際のヘッドホンではまだ確認されていません</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>試験的なコーデック</value></data>
   <data name="Bridge_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>A2DP Bridge が対応するコーデック</value></data>

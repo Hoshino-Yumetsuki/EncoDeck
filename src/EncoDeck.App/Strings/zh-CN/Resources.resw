@@ -575,7 +575,7 @@
   <data name="Badge_Bridge_Windows" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}），耳机设置仍通过 Windows 蓝牙控制。</value></data>
   <data name="Badge_Bridge_Control" xml:space="preserve"><value>声音经 A2DP Bridge 的独立 USB 适配器播放（{0}），电量读取和耳机设置也经 A2DP Bridge 进行。</value></data>
   <data name="Bridge_Title.Text" xml:space="preserve"><value>A2DP Bridge（独立 USB 蓝牙适配器，实验性）</value></data>
-  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge 接管一个独立的 USB 蓝牙适配器，用自己的蓝牙协议栈以 LDAC、LHDC V5、aptX HD 等编码向耳机发送声音，不需要测试签名驱动。EncoDeck 负责下载、启动和日常控制，并在首页识别通过它连接的耳机。</value></data>
+  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge 接管一个独立的 USB 蓝牙适配器，用自己的蓝牙协议栈以 LDAC、LHDC V5、aptX HD 等编码向耳机发送声音，不需要测试签名驱动。EncoDeck 负责下载和启动它，并在首页识别、控制通过它连接的耳机。</value></data>
   <data name="Bridge_Running" xml:space="preserve"><value>后台运行中：A2DPWB {0}（{1}）</value></data>
   <data name="Bridge_Incompatible" xml:space="preserve"><value>正在运行的 A2DPWB 与此版本 EncoDeck 的通信协议不兼容（{0}）。请更新 EncoDeck 或 A2DPWB。</value></data>
   <data name="Bridge_Connecting" xml:space="preserve"><value>正在连接 A2DPWB 后台…</value></data>
@@ -591,14 +591,9 @@
   <data name="Bridge_Start" xml:space="preserve"><value>启动后台</value></data>
   <data name="Bridge_Quit" xml:space="preserve"><value>退出后台</value></data>
   <data name="Bridge_OpenWindow" xml:space="preserve"><value>打开 A2DPWB</value></data>
-  <data name="Bridge_Connect" xml:space="preserve"><value>连接</value></data>
-  <data name="Bridge_Disconnect" xml:space="preserve"><value>断开</value></data>
-  <data name="Bridge_Profile" xml:space="preserve"><value>连接配置</value></data>
-  <data name="Bridge_ProfileLabel" xml:space="preserve"><value>{0} · {1} · {2}</value></data>
-  <data name="Bridge_Volume" xml:space="preserve"><value>耳机音量（AVRCP）</value></data>
   <data name="Bridge_RefreshAdapters" xml:space="preserve"><value>刷新</value></data>
   <data name="Bridge_OpenSettingsFolder" xml:space="preserve"><value>打开设置文件夹</value></data>
-  <data name="Bridge_NoProfiles.Text" xml:space="preserve"><value>还没有连接配置。在下方“添加耳机”中创建，或在 A2DPWB 窗口中设置。</value></data>
+  <data name="Bridge_ManageInWindow.Text" xml:space="preserve"><value>耳机的配对、连接配置、编码和音量请在 A2DPWB 窗口中管理（“打开 A2DPWB”）。</value></data>
   <data name="Bridge_AutoStart.Header" xml:space="preserve"><value>EncoDeck 启动时同时启动 A2DPWB 后台</value></data>
   <data name="Bridge_Adapters.Header" xml:space="preserve"><value>适配器</value></data>
   <data name="Bridge_AdaptersNote.Text" xml:space="preserve"><value>A2DPWB 只能使用分配了 WinUSB 驱动的独立 USB 适配器，分配后 Windows 不再使用它。EncoDeck 不允许分配 Windows 正在使用的蓝牙适配器。Realtek 适配器还需要固件文件，放入设置文件夹后点击“刷新”。</value></data>
@@ -606,9 +601,9 @@
   <data name="Bridge_Disclaimer.Text" xml:space="preserve"><value>免责声明：A2DP Windows Bridge 是 Seiya Funaoka 的第三方开源项目（Apache-2.0 / MIT），本组件是其官方构建的未修改副本；其中静态链接的 BTstack 仅许可个人、非商业用途。耳机兼容性、无线质量和适配器固件不在 EncoDeck 控制范围内，请自行评估并承担使用风险。</value></data>
   <data name="Bridge_Help.Header" xml:space="preserve"><value>A2DP Bridge 使用说明</value></data>
   <data name="Bridge_HelpRequirements.Text" xml:space="preserve"><value>需要一个独立的 USB 蓝牙适配器（与电脑自带蓝牙分开，上游验证过 TP-Link UB500 / Realtek RTL8761BU），以及 Windows 10 22H2 或 Windows 11。不要把 WinUSB 分配给电脑自带的蓝牙。</value></data>
-  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. 下载组件并启动后台后，在“适配器”中为独立适配器分配 WinUSB（需管理员授权）；Realtek 适配器还需放入固件文件。然后在“添加耳机”中选择耳机并保存连接配置。也可以点击“打开 A2DPWB”使用它的首次设置向导。</value></data>
-  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. 之后在这里选择配置并点击“连接”。A2DPWB 默认采集 Windows 正在播放的声音；关闭 EncoDeck 不会中断播放。可以开启“EncoDeck 启动时同时启动 A2DPWB 后台”。</value></data>
-  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. 通过独立适配器连接时，Windows 看不到耳机：EncoDeck 首页显示“已通过 A2DP Bridge 连接”，但电量和耳机设置不可用。支持双设备连接的耳机可以同时连接电脑自带蓝牙，EncoDeck 就能照常控制；此时请把 Windows 的默认输出设为其他设备，避免两路声音同时发往耳机。</value></data>
+  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. 下载组件并启动后台后，在“适配器”中为独立适配器分配 WinUSB（需管理员授权）；Realtek 适配器还需放入固件文件。然后点击“打开 A2DPWB”，在它的窗口中添加耳机、选择编码并连接。</value></data>
+  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. 之后在 A2DPWB 窗口中连接、断开耳机，切换配置和调节音量。A2DPWB 默认采集 Windows 正在播放的声音；关闭 EncoDeck 不会中断播放。可以开启“EncoDeck 启动时同时启动 A2DPWB 后台”。</value></data>
+  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. 通过独立适配器连接时，Windows 看不到耳机。A2DPWB 2.0.2 及以上可以替 EncoDeck 打开控制通道：首页照常显示电量和耳机设置，并带有 A2DP Bridge 徽标；只在 A2DPWB 中配对过的耳机也会出现在 EncoDeck 中。支持双设备连接的耳机也可以同时连接电脑自带蓝牙；此时请把 Windows 的默认输出设为其他设备，避免两路声音同时发往耳机。</value></data>
   <data name="Bridge_HelpRestore.Text" xml:space="preserve"><value>4. 不再使用时，在“适配器”中点击“恢复驱动”把适配器交还给 Windows，然后退出后台。卸载 EncoDeck 不会自动恢复驱动。</value></data>
   <data name="Bridge_Guide.Content" xml:space="preserve"><value>查看详细教程</value></data>
   <data name="Bridge_Upstream.Content" xml:space="preserve"><value>A2DP Windows Bridge 项目主页</value></data>
@@ -658,18 +653,6 @@
   <data name="Bridge_OriginManaged" xml:space="preserve"><value>EncoDeck 管理</value></data>
   <data name="Bridge_OriginInstalled" xml:space="preserve"><value>A2DPWB 安装版</value></data>
   <data name="Bridge_OriginRunning" xml:space="preserve"><value>正在运行的副本</value></data>
-  <data name="Bridge_Add.Header" xml:space="preserve"><value>添加耳机</value></data>
-  <data name="Bridge_AddNote.Text" xml:space="preserve"><value>选择 EncoDeck 当前的耳机，或让耳机进入配对模式后扫描。保存为连接配置后点击“连接”，首次连接时会通过独立适配器完成配对（耳机需处于配对模式）。</value></data>
-  <data name="Bridge_Candidate" xml:space="preserve"><value>耳机</value></data>
-  <data name="Bridge_CandidateCurrent" xml:space="preserve"><value>{0}（EncoDeck 当前耳机）</value></data>
-  <data name="Bridge_UnknownDevice" xml:space="preserve"><value>未知设备</value></data>
-  <data name="Bridge_Scan" xml:space="preserve"><value>扫描</value></data>
-  <data name="Bridge_Scanning" xml:space="preserve"><value>正在扫描…</value></data>
-  <data name="Bridge_ScanningLong" xml:space="preserve"><value>正在通过独立适配器扫描附近的设备（约 10 秒）…</value></data>
-  <data name="Bridge_NoCandidates.Text" xml:space="preserve"><value>还没有可选的耳机。让耳机进入配对模式后点击“扫描”。</value></data>
-  <data name="Bridge_Codec" xml:space="preserve"><value>编码</value></data>
-  <data name="Bridge_SaveProfile" xml:space="preserve"><value>保存为连接配置</value></data>
-  <data name="Bridge_ProfileSaved" xml:space="preserve"><value>已保存连接配置“{0}”。让耳机进入配对模式后点击“连接”，首次连接会完成配对。</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>实验性：上游已通过编码器和虚拟接收端测试，尚未经真实耳机确认</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>实验性编码</value></data>
   <data name="Bridge_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>A2DP Bridge 支持的编码</value></data>

@@ -2,6 +2,20 @@
 
 本文件记录 EncoDeck 每个版本的用户可见变化，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本按“新增 / 改进 / 修复 / 移除”分类。
 
+## [Unreleased]
+
+### 新增
+
+- 只在 A2DP Bridge 中配对过的耳机也会出现在 EncoDeck 中（[#9](https://github.com/TIANLI0/EncoDeck/issues/9)）：Windows 从未配对、或已从 Windows 蓝牙中删除的耳机，只要在 A2DP Windows Bridge 中有连接配置，就作为一台设备列出（需 A2DPWB 后台运行）；Bridge 向它推流时显示“已连接”并经 Bridge 打开控制通道（需 A2DPWB 2.0.2 及以上）。同一副耳机也在 Windows 中配对时，仍以 Windows 中的设备为准。
+
+### 修复
+
+- OPPO 耳机在控制页通过双设备连接让耳机去连接另一台设备时，不再先提示“耳机拒绝”、过一会儿又连上：耳机接受请求后要几秒才连上手机，现在最多等待约 9 秒确认连接。
+
+### 移除
+
+- 实验室页的 A2DP Bridge 卡片不再提供连接配置选择、连接 / 断开、添加耳机和耳机音量（[#9](https://github.com/TIANLI0/EncoDeck/issues/9)）：这些统一在 A2DPWB 窗口中管理（“打开 A2DPWB”），避免 EncoDeck 显示的配置与 A2DPWB 不一致。卡片保留后台状态、正在使用的编码与码率、启动 / 退出后台、适配器管理和随 EncoDeck 启动等功能。
+
 ## [1.12.0-beta.2] - 2026-10-28 · A2DP Bridge 徽标、编码标记与 X3 LE Audio 修复
 
 ### 改进

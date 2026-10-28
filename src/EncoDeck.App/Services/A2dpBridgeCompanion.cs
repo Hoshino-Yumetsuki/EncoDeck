@@ -250,14 +250,6 @@ public sealed class A2dpBridgeCompanion : IAsyncDisposable
         Monitor.Wake();
     }
 
-    public Task StartStreamAsync(string profile) =>
-        Monitor.RequestAsync("stream.start", new JsonObject { ["profile"] = profile }, TimeSpan.FromSeconds(60));
-
-    public Task StopStreamAsync() => Monitor.RequestAsync("stream.stop", timeout: TimeSpan.FromSeconds(20));
-
-    public Task SetVolumeAsync(int volume) =>
-        Monitor.RequestAsync("stream.set_volume", new JsonObject { ["volume"] = Math.Clamp(volume, 0, 127) });
-
     /// <summary>Assigns WinUSB (the core asks for administrator rights): the adapter leaves Windows' Bluetooth.</summary>
     public Task AssignWinUsbAsync(string instanceId) =>
         Monitor.RequestAsync("adapter.assign_winusb", new JsonObject { ["instance_id"] = instanceId }, TimeSpan.FromMinutes(5));
@@ -267,34 +259,6 @@ public sealed class A2dpBridgeCompanion : IAsyncDisposable
         Monitor.RequestAsync("adapter.restore_driver", new JsonObject { ["instance_id"] = instanceId }, TimeSpan.FromMinutes(5));
 
     public Task RefreshAdaptersAsync() => Monitor.RequestAsync("adapter.list", timeout: TimeSpan.FromSeconds(20));
-
-    /// <summary>Inquiry on A2DPWB's adapter (the found devices arrive as a state event too).</summary>
-    public Task ScanAsync(int seconds = 10) =>
-        Monitor.RequestAsync("device.scan", new JsonObject { ["seconds"] = seconds }, TimeSpan.FromSeconds(seconds + 30));
-
-    /// <summary>
-    /// Saves a connection profile for <paramref name="address"/> with A2DPWB's own defaults for a new profile
-    /// (system audio, volume sync, codec fallback); the first connection pairs. Returns the profile's name, which
-    /// never replaces an existing profile.
-    /// </summary>
-    public async Task<string> SaveProfileAsync(string deviceName, string address, string codec)
-    {
-        var snapshot = Status.Snapshot ?? throw new BridgeUnavailableException();
-        string baseName = deviceName.Trim().Length > 0 ? deviceName.Trim() : address;
-        string name = baseName;
-        for (int n = 2; snapshot.Profiles.Any(p => p.Name == name); n++) name = $"{baseName} {n}";
-        var profile = new JsonObject
-        {
-            ["name"] = name, ["device_address"] = address, ["device_name"] = deviceName.Trim(),
-            ["codec"] = codec, ["quality"] = "hq", ["abr"] = false, ["codec_fallback"] = true,
-            ["sample_rate"] = 0, ["bit_depth"] = 0, ["capture_mode"] = "loopback",
-            ["audio_device_id"] = "", ["audio_device_name"] = "", ["auto_switch_device"] = true,
-            ["app_exe"] = "", ["app_name"] = "", ["volume_sync"] = "auto", ["volume_device_id"] = "", ["volume_device_name"] = "",
-            ["max_media_payload"] = 1023, ["le_audio"] = false, ["le_low_latency"] = true,
-        };
-        await Monitor.RequestAsync("profile.save", new JsonObject { ["profile"] = profile, ["original_name"] = null }).ConfigureAwait(false);
-        return name;
-    }
 
     /// <summary>A2DPWB's diagnostic text with Bluetooth addresses masked, for EncoDeck's diagnostics package.</summary>
     public async Task<string?> DiagnosticsAsync()

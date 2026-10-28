@@ -575,7 +575,7 @@
   <data name="Badge_Bridge_Windows" xml:space="preserve"><value>Audio plays through A2DP Bridge's dedicated USB adapter ({0}); the earbud settings are still controlled over Windows Bluetooth.</value></data>
   <data name="Badge_Bridge_Control" xml:space="preserve"><value>Audio plays through A2DP Bridge's dedicated USB adapter ({0}); EncoDeck reads the battery and changes earbud settings through A2DP Bridge too.</value></data>
   <data name="Bridge_Title.Text" xml:space="preserve"><value>A2DP Bridge (dedicated USB Bluetooth adapter, experimental)</value></data>
-  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge takes over a dedicated USB Bluetooth adapter and sends audio to your earbuds with its own Bluetooth stack in LDAC, LHDC V5, aptX HD and more, without test-signed drivers. EncoDeck downloads, starts and controls it day to day, and recognizes earbuds connected through it on the home page.</value></data>
+  <data name="Bridge_Summary.Text" xml:space="preserve"><value>A2DP Windows Bridge takes over a dedicated USB Bluetooth adapter and sends audio to your earbuds with its own Bluetooth stack in LDAC, LHDC V5, aptX HD and more, without test-signed drivers. EncoDeck downloads and starts it, and recognizes and controls earbuds connected through it on the home page.</value></data>
   <data name="Bridge_Running" xml:space="preserve"><value>Running in the background: A2DPWB {0} ({1})</value></data>
   <data name="Bridge_Incompatible" xml:space="preserve"><value>The running A2DPWB speaks a different protocol than this EncoDeck version ({0}). Update EncoDeck or A2DPWB.</value></data>
   <data name="Bridge_Connecting" xml:space="preserve"><value>Connecting to the A2DPWB background process…</value></data>
@@ -591,14 +591,9 @@
   <data name="Bridge_Start" xml:space="preserve"><value>Start</value></data>
   <data name="Bridge_Quit" xml:space="preserve"><value>Quit</value></data>
   <data name="Bridge_OpenWindow" xml:space="preserve"><value>Open A2DPWB</value></data>
-  <data name="Bridge_Connect" xml:space="preserve"><value>Connect</value></data>
-  <data name="Bridge_Disconnect" xml:space="preserve"><value>Disconnect</value></data>
-  <data name="Bridge_Profile" xml:space="preserve"><value>Profile</value></data>
-  <data name="Bridge_ProfileLabel" xml:space="preserve"><value>{0} · {1} · {2}</value></data>
-  <data name="Bridge_Volume" xml:space="preserve"><value>Headphone volume (AVRCP)</value></data>
   <data name="Bridge_RefreshAdapters" xml:space="preserve"><value>Refresh</value></data>
   <data name="Bridge_OpenSettingsFolder" xml:space="preserve"><value>Open settings folder</value></data>
-  <data name="Bridge_NoProfiles.Text" xml:space="preserve"><value>There are no profiles yet. Create one under "Add earbuds" below, or in the A2DPWB window.</value></data>
+  <data name="Bridge_ManageInWindow.Text" xml:space="preserve"><value>Pair earbuds and manage profiles, codecs and volume in the A2DPWB window ("Open A2DPWB").</value></data>
   <data name="Bridge_AutoStart.Header" xml:space="preserve"><value>Start the A2DPWB background process with EncoDeck</value></data>
   <data name="Bridge_Adapters.Header" xml:space="preserve"><value>Adapters</value></data>
   <data name="Bridge_AdaptersNote.Text" xml:space="preserve"><value>A2DPWB uses only a dedicated USB adapter with the WinUSB driver; Windows no longer uses it once assigned. EncoDeck never assigns the adapter Windows' Bluetooth is using. Realtek adapters also need firmware files: put them in the settings folder and click Refresh.</value></data>
@@ -606,9 +601,9 @@
   <data name="Bridge_Disclaimer.Text" xml:space="preserve"><value>Disclaimer: A2DP Windows Bridge is a third-party open-source project by Seiya Funaoka (Apache-2.0 / MIT); this component is an unmodified copy of its official build. The BTstack library it links statically is licensed for personal, non-commercial use only. Earbud compatibility, radio quality and adapter firmware are outside EncoDeck's control; use it at your own risk.</value></data>
   <data name="Bridge_Help.Header" xml:space="preserve"><value>How to use A2DP Bridge</value></data>
   <data name="Bridge_HelpRequirements.Text" xml:space="preserve"><value>You need a dedicated USB Bluetooth adapter, separate from the PC's built-in Bluetooth (upstream verified the TP-Link UB500 / Realtek RTL8761BU), and Windows 10 22H2 or Windows 11. Never assign WinUSB to the built-in Bluetooth.</value></data>
-  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. After downloading and starting the background process, assign WinUSB to the dedicated adapter under Adapters (administrator rights); Realtek adapters also need their firmware files. Then pick your earbuds under "Add earbuds" and save a profile. A2DPWB's own first-run setup ("Open A2DPWB") works too.</value></data>
-  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. Then choose a profile here and click Connect. By default A2DPWB sends what Windows plays; closing EncoDeck does not stop the audio. You can let EncoDeck start the A2DPWB background process.</value></data>
-  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. Over the dedicated adapter Windows cannot see the earbuds: EncoDeck's home page shows "Connected through A2DP Bridge", but battery and earbud settings are unavailable. Earbuds with dual-device connection can also connect to the built-in Bluetooth, and EncoDeck controls them as usual; then set Windows' default output to another device so that two streams do not reach the earbuds.</value></data>
+  <data name="Bridge_HelpSetup.Text" xml:space="preserve"><value>1. After downloading and starting the background process, assign WinUSB to the dedicated adapter under Adapters (administrator rights); Realtek adapters also need their firmware files. Then click "Open A2DPWB" to add your earbuds, choose a codec and connect in its window.</value></data>
+  <data name="Bridge_HelpDaily.Text" xml:space="preserve"><value>2. From then on, connect and disconnect the earbuds, switch profiles and change the volume in the A2DPWB window. By default A2DPWB sends what Windows plays; closing EncoDeck does not stop the audio. You can let EncoDeck start the A2DPWB background process.</value></data>
+  <data name="Bridge_HelpControls.Text" xml:space="preserve"><value>3. Over the dedicated adapter Windows cannot see the earbuds. A2DPWB 2.0.2 and later opens the control channel for EncoDeck: the home page shows battery and earbud settings as usual, with an A2DP Bridge badge, and earbuds paired only in A2DPWB appear in EncoDeck too. Earbuds with dual-device connection can also connect to the built-in Bluetooth; then set Windows' default output to another device so that two streams do not reach the earbuds.</value></data>
   <data name="Bridge_HelpRestore.Text" xml:space="preserve"><value>4. When you stop using it, click "Restore driver" under Adapters to give the adapter back to Windows, then quit the background process. Uninstalling EncoDeck does not restore the driver.</value></data>
   <data name="Bridge_Guide.Content" xml:space="preserve"><value>Read the full guide</value></data>
   <data name="Bridge_Upstream.Content" xml:space="preserve"><value>A2DP Windows Bridge project page</value></data>
@@ -658,18 +653,6 @@
   <data name="Bridge_OriginManaged" xml:space="preserve"><value>managed by EncoDeck</value></data>
   <data name="Bridge_OriginInstalled" xml:space="preserve"><value>A2DPWB's own installation</value></data>
   <data name="Bridge_OriginRunning" xml:space="preserve"><value>running copy</value></data>
-  <data name="Bridge_Add.Header" xml:space="preserve"><value>Add earbuds</value></data>
-  <data name="Bridge_AddNote.Text" xml:space="preserve"><value>Choose EncoDeck's current earbuds, or put the earbuds in pairing mode and scan. Save a profile, then click Connect: the first connection pairs them over the dedicated adapter (the earbuds must be in pairing mode).</value></data>
-  <data name="Bridge_Candidate" xml:space="preserve"><value>Earbuds</value></data>
-  <data name="Bridge_CandidateCurrent" xml:space="preserve"><value>{0} (EncoDeck's current earbuds)</value></data>
-  <data name="Bridge_UnknownDevice" xml:space="preserve"><value>Unknown device</value></data>
-  <data name="Bridge_Scan" xml:space="preserve"><value>Scan</value></data>
-  <data name="Bridge_Scanning" xml:space="preserve"><value>Scanning…</value></data>
-  <data name="Bridge_ScanningLong" xml:space="preserve"><value>Scanning for nearby devices with the dedicated adapter (about 10 seconds)…</value></data>
-  <data name="Bridge_NoCandidates.Text" xml:space="preserve"><value>No earbuds to choose yet. Put the earbuds in pairing mode and click Scan.</value></data>
-  <data name="Bridge_Codec" xml:space="preserve"><value>Codec</value></data>
-  <data name="Bridge_SaveProfile" xml:space="preserve"><value>Save profile</value></data>
-  <data name="Bridge_ProfileSaved" xml:space="preserve"><value>Saved the profile "{0}". Put the earbuds in pairing mode and click Connect; the first connection pairs them.</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Experimental upstream: passes the encoder tests and a virtual receiver, not yet confirmed with real headphones</value></data>
   <data name="Codec_Experimental.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Experimental codec</value></data>
   <data name="Bridge_Codecs.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Codecs A2DP Bridge supports</value></data>

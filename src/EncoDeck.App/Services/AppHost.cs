@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 using EncoDeck.Bluetooth;
+using EncoDeck.Bluetooth.Discovery;
 using EncoDeck.Bluetooth.Rfcomm;
 using EncoDeck.Core.Notifications;
 using EncoDeck.Core.Profiles;
@@ -37,7 +38,13 @@ public sealed class AppHost : IAsyncDisposable
         StoreUpdates = new StoreUpdateService(loggers.CreateLogger<StoreUpdateService>());
         Bridge = new A2dpBridgeCompanion(Path.Combine(paths.Root, "Components"), store, settings, loggers.CreateLogger<A2dpBridgeCompanion>());
         if (devices is DeviceManager manager)
+        {
             manager.BridgeConnector = new A2dpBridgeChannelConnector(() => Bridge.Monitor, loggers.CreateLogger<A2dpBridgeChannelConnector>());
+            // Earbuds paired with the bridge's adapter alone are unknown to Windows: list them from the bridge's profiles.
+            var bridge = Bridge;
+            bridge.Changed += (_, _) => manager.SetBridgeDevices(BridgeDeviceMatch.Devices(bridge.Status)
+                .Select(d => new PairedDevice(d.Identity, d.IsStreaming, PairedDevice.AudioVideoMajorClass)).ToArray());
+        }
         Paths = paths;
         FileLog = fileLog;
         Loggers = loggers;
